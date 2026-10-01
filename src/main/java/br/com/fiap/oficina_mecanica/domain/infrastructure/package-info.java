@@ -1,1 +1,0 @@
-package br.com.fiap.oficina_mecanica.domain.infrastructure;
