@@ -1,4 +1,4 @@
-package br.com.fiap.oficina_mecanica.ordemservico.domain;
+package br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento;
 
 import java.math.BigDecimal;
 import java.util.UUID;

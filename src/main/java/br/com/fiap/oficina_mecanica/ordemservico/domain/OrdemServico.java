@@ -1,5 +1,7 @@
 package br.com.fiap.oficina_mecanica.ordemservico.domain;
 
+import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
