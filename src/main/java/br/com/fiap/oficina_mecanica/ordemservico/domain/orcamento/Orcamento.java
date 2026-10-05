@@ -16,8 +16,11 @@ public class Orcamento {
     private LocalDateTime dataValidade;
     private StatusOrcamento status;
 
-    public Orcamento(UUID ordemServicoId, LocalDateTime dataValidade) {
-        this.id = UUID.randomUUID();
+    public Orcamento(UUID id, UUID ordemServicoId, LocalDateTime dataValidade) {
+        if (id == null) {
+            throw new IllegalArgumentException("O ID do orçamento não pode ser nulo.");
+        }
+        this.id = id;
         this.ordemServicoId = ordemServicoId;
         this.servicos = new ArrayList<>();
         this.pecas = new ArrayList<>();
