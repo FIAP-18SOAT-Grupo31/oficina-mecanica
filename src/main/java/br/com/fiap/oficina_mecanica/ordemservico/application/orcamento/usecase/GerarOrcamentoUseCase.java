@@ -12,9 +12,11 @@ import org.springframework.stereotype.Service;
 public class GerarOrcamentoUseCase {
 
     private final OrcamentoRepository repository;
+    private final NotificadorOrcamento notificador;
 
-    public GerarOrcamentoUseCase(OrcamentoRepository repository) {
+    public GerarOrcamentoUseCase(OrcamentoRepository repository, NotificadorOrcamento notificador) {
         this.repository = repository;
+        this.notificador = notificador;
     }
 
     public OrcamentoOutput execute(GerarOrcamentoInput input) {
@@ -33,6 +35,8 @@ public class GerarOrcamentoUseCase {
         }
 
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
+
+        notificador.notificarOrcamentoGerado(orcamentoSalvo);
 
         return new OrcamentoOutput(
                 orcamentoSalvo.getId(),

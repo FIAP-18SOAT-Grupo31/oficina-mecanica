@@ -1,4 +1,4 @@
-package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento;
+package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
