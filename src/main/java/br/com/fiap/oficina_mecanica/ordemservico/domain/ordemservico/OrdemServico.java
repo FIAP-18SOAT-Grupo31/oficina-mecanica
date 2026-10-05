@@ -28,8 +28,12 @@ public class OrdemServico {
     private LocalDateTime dataAbertura;
     private LocalDateTime dataConclusao;
 
-    public OrdemServico(UUID clienteId, UUID veiculoId, String relatoProblema) {
-        this.id = UUID.randomUUID();
+    public OrdemServico(UUID id, UUID clienteId, UUID veiculoId, String relatoProblema) {
+        if (id == null) {
+            throw new IllegalArgumentException("O ID da ordem de serviço não pode ser nulo.");
+        }
+
+        this.id = id;
         this.clienteId = clienteId;
         this.veiculoId = veiculoId;
         this.status = StatusOrdemServico.RECEBIDA;
