@@ -6,19 +6,26 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
+import com.github.f4b6a3.uuid.UuidCreator; // <-- Import da lib do UUIDv7
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 public class GerarOrcamentoUseCase {
 
     private final OrcamentoRepository repository;
+    private final NotificadorOrcamento notificador;
 
-    public GerarOrcamentoUseCase(OrcamentoRepository repository) {
+    public GerarOrcamentoUseCase(OrcamentoRepository repository, NotificadorOrcamento notificador) {
         this.repository = repository;
+        this.notificador = notificador;
     }
 
     public OrcamentoOutput execute(GerarOrcamentoInput input) {
-        Orcamento orcamento = new Orcamento(input.ordemServicoId(), input.dataValidade());
+        UUID orcamentoId = UuidCreator.getTimeOrderedEpoch();
+
+        Orcamento orcamento = new Orcamento(orcamentoId, input.ordemServicoId(), input.dataValidade());
 
         if (input.servicos() != null) {
             input.servicos().forEach(s ->
@@ -33,6 +40,7 @@ public class GerarOrcamentoUseCase {
         }
 
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
+        notificador.notificarOrcamentoGerado(orcamentoSalvo);
 
         return new OrcamentoOutput(
                 orcamentoSalvo.getId(),

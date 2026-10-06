@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento;
 
+import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity.OrcamentoEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
