@@ -30,7 +30,7 @@ services:
       - db
 
   app:
-    profiles: ["app"]
+    profiles: ["app", "observabilidade"]
     build: .
     container_name: oficina-app
     restart: always
@@ -46,7 +46,59 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       JWT_SECRET: ${JWT_SECRET:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-}
+      ACTUATOR_EXPOSICAO: health,info,metrics,prometheus
+      APP_LOGS_LOKI_URL: http://loki:3100/loki/api/v1/push
       SPRING_DOCKER_COMPOSE_ENABLED: "false"
+
+  prometheus:
+    profiles: ["observabilidade"]
+    image: prom/prometheus:v3.15.0
+    container_name: oficina-prometheus
+    restart: always
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./observabilidade/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app
+
+  loki:
+    profiles: ["observabilidade"]
+    image: grafana/loki:3.7.8
+    container_name: oficina-loki
+    restart: always
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+
+  grafana:
+    profiles: ["observabilidade"]
+    image: grafana/grafana:12.4.11
+    container_name: oficina-grafana
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./observabilidade/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observabilidade/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
 
 volumes:
   postgres_data:
+  prometheus_data:
+  loki_data:
+  grafana_data:
