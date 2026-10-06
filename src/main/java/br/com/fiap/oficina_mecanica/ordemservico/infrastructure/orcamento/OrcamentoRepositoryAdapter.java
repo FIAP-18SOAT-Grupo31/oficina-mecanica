@@ -2,6 +2,7 @@ package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento;
 
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
+import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity.OrcamentoEntity;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;

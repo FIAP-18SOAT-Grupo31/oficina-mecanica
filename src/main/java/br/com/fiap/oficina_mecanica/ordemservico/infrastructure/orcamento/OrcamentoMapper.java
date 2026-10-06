@@ -3,6 +3,9 @@ package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity.ItemPecaEntity;
+import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity.ItemServicoEntity;
+import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity.OrcamentoEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
