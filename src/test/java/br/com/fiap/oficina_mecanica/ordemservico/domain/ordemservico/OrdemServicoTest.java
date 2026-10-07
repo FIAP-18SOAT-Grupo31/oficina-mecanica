@@ -1,10 +1,10 @@
 package br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,7 +19,7 @@ class OrdemServicoTest {
     }
 
     private Orcamento novoOrcamento(OrdemServico ordemServico) {
-        return new Orcamento(UUID.randomUUID(), ordemServico.getId(), LocalDateTime.now().plusDays(7));
+        return new Orcamento(UUID.randomUUID(), ordemServico.getId(), Horario.agora().plusDays(7));
     }
 
     @Test
@@ -35,23 +35,35 @@ class OrdemServicoTest {
 
     @Test
     void naoAceitaIdNulo() {
-        assertThatThrownBy(() -> new OrdemServico(null, UUID.randomUUID(), UUID.randomUUID(), RELATO))
+        UUID clienteId = UUID.randomUUID();
+        UUID veiculoId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> new OrdemServico(null, clienteId, veiculoId, RELATO))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void naoAceitaRelatoVazio() {
-        assertThatThrownBy(() -> new OrdemServico(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), " "))
+        UUID id = UUID.randomUUID();
+        UUID clienteId = UUID.randomUUID();
+        UUID veiculoId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> new OrdemServico(id, clienteId, veiculoId, " "))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessage("O relato do problema não pode ser nulo ou vazio.");
     }
 
     @Test
     void naoAceitaRelatoForaDoTamanho() {
-        assertThatThrownBy(() -> new OrdemServico(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "curto"))
+        UUID id = UUID.randomUUID();
+        UUID clienteId = UUID.randomUUID();
+        UUID veiculoId = UUID.randomUUID();
+        String relatoLongo = "a".repeat(501);
+
+        assertThatThrownBy(() -> new OrdemServico(id, clienteId, veiculoId, "curto"))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessage("O relato do problema deve ter entre 10 e 500 caracteres.");
-        assertThatThrownBy(() -> new OrdemServico(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "a".repeat(501)))
+        assertThatThrownBy(() -> new OrdemServico(id, clienteId, veiculoId, relatoLongo))
                 .isInstanceOf(RegraNegocioException.class);
     }
 
@@ -78,8 +90,9 @@ class OrdemServicoTest {
     @Test
     void orcamentoSoEhAnexadoDuranteODiagnostico() {
         OrdemServico ordemServico = novaOrdem();
+        Orcamento orcamento = novoOrcamento(ordemServico);
 
-        assertThatThrownBy(() -> ordemServico.anexarOrcamento(novoOrcamento(ordemServico)))
+        assertThatThrownBy(() -> ordemServico.anexarOrcamento(orcamento))
                 .isInstanceOf(RegraNegocioException.class);
     }
 

@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import lombok.AccessLevel;
@@ -39,7 +40,7 @@ public class OrdemServico {
         this.clienteId = clienteId;
         this.veiculoId = veiculoId;
         this.status = StatusOrdemServico.RECEBIDA;
-        this.dataAbertura = LocalDateTime.now();
+        this.dataAbertura = Horario.agora();
         this.orcamentos = new ArrayList<>();
         
         validarRelatoProblema(relatoProblema);
