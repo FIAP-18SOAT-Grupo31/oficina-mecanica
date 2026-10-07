@@ -14,8 +14,8 @@ jobs:
     name: Testes, arquitetura e cobertura mínima de 80%
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -24,7 +24,7 @@ jobs:
         run: sh mvnw -B verify
       - name: Relatório de cobertura
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: relatorio-cobertura
           path: target/site/jacoco
@@ -33,10 +33,10 @@ jobs:
     name: Padrão dos imports
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -50,8 +50,8 @@ jobs:
     name: Vulnerabilidades, segredos e Dockerfile
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -79,7 +79,7 @@ jobs:
           format: table
       - name: Publicar o relatório
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: relatorio-vulnerabilidades
           path: relatorio-vulnerabilidades.txt
