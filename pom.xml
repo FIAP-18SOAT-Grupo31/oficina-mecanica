@@ -21,6 +21,9 @@
 		<jackson-bom.version>3.1.7</jackson-bom.version>
 		<jacoco.version>0.8.14</jacoco.version>
 		<jacoco.cobertura.minima>0.80</jacoco.cobertura.minima>
+		<sonar.projectKey>oficina-mecanica-g31</sonar.projectKey>
+		<sonar.projectName>Oficina Mecânica Grupo 31</sonar.projectName>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -155,6 +158,15 @@
 	</dependencies>
 
 	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.sonarsource.scanner.maven</groupId>
+					<artifactId>sonar-maven-plugin</artifactId>
+					<version>5.8.0.7211</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 		<plugins>
 			<plugin>
 				<groupId>com.diffplug.spotless</groupId>
