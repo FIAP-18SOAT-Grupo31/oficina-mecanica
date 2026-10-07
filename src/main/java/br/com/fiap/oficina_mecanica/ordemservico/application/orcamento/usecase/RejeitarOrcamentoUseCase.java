@@ -5,6 +5,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.Orcam
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -17,6 +18,7 @@ public class RejeitarOrcamentoUseCase {
         this.repository = repository;
     }
 
+    @Transactional
     public OrcamentoOutput execute(UUID orcamentoId) {
         Orcamento orcamento = repository.buscarPorId(orcamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Orçamento não encontrado."));

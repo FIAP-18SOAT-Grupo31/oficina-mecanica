@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,6 +40,7 @@ public class OrdemServico {
         this.veiculoId = veiculoId;
         this.status = StatusOrdemServico.RECEBIDA;
         this.dataAbertura = LocalDateTime.now();
+        this.orcamentos = new ArrayList<>();
         
         validarRelatoProblema(relatoProblema);
         this.relatoProblema = relatoProblema;
@@ -55,8 +57,6 @@ public class OrdemServico {
         if (this.status != StatusOrdemServico.EM_DIAGNOSTICO) {
             throw new RegraNegocioException("O orçamento só pode ser anexado após a fase de diagnóstico.");
         }
-
-        // TODO: adicionar validacao para verificar se orçamento existe, está aprovado ou aguardando aprovação, etc
 
         this.orcamentos.add(orcamento);
         this.status = StatusOrdemServico.AGUARDANDO_APROVACAO;
