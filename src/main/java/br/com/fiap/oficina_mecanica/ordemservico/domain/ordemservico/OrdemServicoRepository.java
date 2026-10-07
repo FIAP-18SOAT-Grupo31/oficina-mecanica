@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface OrdemServicoRepository {
-
-    Optional<OrdemServico> findById(UUID id);
-    OrdemServico save(OrdemServico ordemServico);
+    OrdemServico salvar(OrdemServico ordemServico);
+    Optional<OrdemServico> buscarPorId(UUID id);
 }

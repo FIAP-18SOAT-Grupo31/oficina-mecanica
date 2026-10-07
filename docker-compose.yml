@@ -1,44 +1,52 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
     container_name: oficina-db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       POSTGRES_DB: oficina_mecanica
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d oficina_mecanica"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   pgadmin:
     image: dpage/pgadmin4
     container_name: oficina-pgadmin
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@oficina.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@oficina.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
     ports:
       - "5050:80"
     depends_on:
       - db
 
   app:
+    profiles: ["app"]
     build: .
     container_name: oficina-app
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8080:8080"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/oficina_mecanica
-      - SPRING_DATASOURCE_USERNAME=admin
-      - SPRING_DATASOURCE_PASSWORD=admin
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      SPRING_PROFILES_ACTIVE: ${APP_PROFILES:-dev}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/oficina_mecanica
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      JWT_SECRET: ${JWT_SECRET:-}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-}
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
 
 volumes:
   postgres_data:

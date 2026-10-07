@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    labels: []
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      dependencias:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    labels: []
+    commit-message:
+      prefix: chore
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    labels: []
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      actions:
+        patterns: ['*']
