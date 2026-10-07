@@ -1,5 +1,7 @@
 package br.com.fiap.oficina_mecanica.compartilhado.infrastructure.web;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
+
 import java.time.LocalDateTime;
 
 public record ErroResposta(
@@ -10,6 +12,6 @@ public record ErroResposta(
 ) {
 
     public static ErroResposta de(TipoErro tipo, String mensagem) {
-        return new ErroResposta(tipo.status().value(), tipo.titulo(), mensagem, LocalDateTime.now());
+        return new ErroResposta(tipo.status().value(), tipo.titulo(), mensagem, Horario.agora());
     }
 }
