@@ -32,7 +32,7 @@ jobs:
             erros=1
           fi
 
-          if [ "$BRANCH" != "dev" ] && [ "${BRANCH#dependabot/}" = "$BRANCH" ] && ! printf '%s' "$BRANCH" | grep -qE "^(feat|feature|fix|hotfix|docs|test|refactor|chore|ci)/[a-z0-9-]+$"; then
+          if [ "$BRANCH" != "dev" ] && ! printf '%s' "$BRANCH" | grep -qE "^(feat|feature|fix|hotfix|docs|test|refactor|chore|ci)/[a-z0-9-]+$"; then
             echo "::error::Branch fora do padrão: \"$BRANCH\". Use, por exemplo: feat/cadastro-cliente"
             erros=1
           fi
