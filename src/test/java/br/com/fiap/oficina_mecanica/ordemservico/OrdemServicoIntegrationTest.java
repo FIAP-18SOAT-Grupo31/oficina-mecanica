@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -51,7 +52,7 @@ class OrdemServicoIntegrationTest {
     }
 
     private String criarOrdemServico() throws Exception {
-        String resposta = mvc.perform(post("/api/ordens-servico")
+        String resposta = mvc.perform(post("/api/ordens-servico").with(jwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoOrdemServico(clienteId, veiculoId, "Barulho na suspensão dianteira")))
                 .andExpect(status().isCreated())
@@ -64,7 +65,7 @@ class OrdemServicoIntegrationTest {
     void criaOrdemDeServicoEOrcamentoEAprovaOrcamento() throws Exception {
         String ordemServicoId = criarOrdemServico();
 
-        String orcamento = mvc.perform(post("/api/orcamentos")
+        String orcamento = mvc.perform(post("/api/orcamentos").with(jwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ordemServicoId\":\"" + ordemServicoId + "\",\"dataValidade\":\"2099-12-31T23:59:59\",\"servicos\":[{\"catalogoServicoId\":\""
                                 + UUID.randomUUID() + "\",\"descricao\":\"Troca de óleo\",\"valorMaoDeObra\":200.00}],"
@@ -74,20 +75,20 @@ class OrdemServicoIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         String orcamentoId = JsonPath.read(orcamento, "$.id");
 
-        mvc.perform(get("/api/orcamentos/" + orcamentoId))
+        mvc.perform(get("/api/orcamentos/" + orcamentoId).with(jwt()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ordemServicoId").value(ordemServicoId));
-        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar"))
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwt()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APROVADO"));
-        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar"))
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwt()))
                 .andExpect(status().is(422))
                 .andExpect(jsonPath("$.erro").value("Violação de Regra de Negócio"));
     }
 
     @Test
     void clienteInexistenteVolta404() throws Exception {
-        mvc.perform(post("/api/ordens-servico")
+        mvc.perform(post("/api/ordens-servico").with(jwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoOrdemServico(UUID.randomUUID(), veiculoId, "Barulho na suspensão dianteira")))
                 .andExpect(status().isNotFound())
@@ -96,7 +97,7 @@ class OrdemServicoIntegrationTest {
 
     @Test
     void relatoCurtoVolta400ComOCampo() throws Exception {
-        mvc.perform(post("/api/ordens-servico")
+        mvc.perform(post("/api/ordens-servico").with(jwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoOrdemServico(clienteId, veiculoId, "curto")))
                 .andExpect(status().isBadRequest())
@@ -105,7 +106,7 @@ class OrdemServicoIntegrationTest {
 
     @Test
     void orcamentoInexistenteVolta404() throws Exception {
-        mvc.perform(get("/api/orcamentos/" + UUID.randomUUID()))
+        mvc.perform(get("/api/orcamentos/" + UUID.randomUUID()).with(jwt()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.erro").value("Recurso Não Encontrado"));
     }
