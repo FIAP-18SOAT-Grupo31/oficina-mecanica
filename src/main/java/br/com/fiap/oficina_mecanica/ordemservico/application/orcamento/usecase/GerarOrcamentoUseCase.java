@@ -6,8 +6,9 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
-import com.github.f4b6a3.uuid.UuidCreator; // <-- Import da lib do UUIDv7
+import com.github.f4b6a3.uuid.UuidCreator;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -22,6 +23,7 @@ public class GerarOrcamentoUseCase {
         this.notificador = notificador;
     }
 
+    @Transactional
     public OrcamentoOutput execute(GerarOrcamentoInput input) {
         UUID orcamentoId = UuidCreator.getTimeOrderedEpoch();
 

@@ -1,7 +1,15 @@
 package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity;
 
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.StatusOrcamento;
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,7 +22,6 @@ import java.util.UUID;
 public class OrcamentoEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "ordem_servico_id", nullable = false)
