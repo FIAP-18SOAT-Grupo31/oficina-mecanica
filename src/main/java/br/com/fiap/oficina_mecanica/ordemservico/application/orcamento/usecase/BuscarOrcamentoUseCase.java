@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
@@ -18,7 +19,7 @@ public class BuscarOrcamentoUseCase {
 
     public OrcamentoOutput execute(UUID id) {
         Orcamento orcamento = repository.buscarPorId(id)
-                .orElseThrow(() -> new IllegalArgumentException("Orçamento não encontrado com o ID informado."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Orçamento não encontrado com o ID informado."));
 
         return new OrcamentoOutput(
                 orcamento.getId(),
