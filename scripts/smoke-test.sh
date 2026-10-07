@@ -43,6 +43,7 @@ if ! curl -s "$BASE_URL/v3/api-docs" | grep -q "/api/auth/login"; then
     echo "  autenticação ainda não existe nesta versão, verificações de login puladas"
 else
     req GET /actuator/health;                                          espera "health público" 200
+    req GET /actuator/prometheus;                                      espera "métricas do Prometheus" 200
     req GET /actuator/metrics;                                         espera "actuator sem token" 401
     req POST /api/auth/login "" '{"login":"admin","senha":"errada"}';  espera "login com senha errada" 401
     req POST /api/auth/login "" '{"login":""}';                        espera "login sem senha" 400

@@ -2,13 +2,13 @@ SHELL        := /bin/bash
 PROJETO      ?= oficina-mecanica
 TAG          ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo local)
 COMPOSE      := docker compose
-TODOS_PERFIS := --profile app
+TODOS_PERFIS := --profile app --profile observabilidade
 
 -include .env
 export
 
 .DEFAULT_GOAL := ajuda
-.PHONY: ajuda env run up down logs smoke test verify cobertura image
+.PHONY: ajuda env run up down logs smoke test verify cobertura image observabilidade
 
 ajuda: ## Lista os alvos disponíveis
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(firstword $(MAKEFILE_LIST)) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
@@ -21,6 +21,9 @@ run: env ## Roda a aplicação local com o profile dev (o Postgres sobe pelo doc
 
 up: env ## Sobe banco e aplicação em containers
 	$(COMPOSE) --profile app up --build -d
+
+observabilidade: env ## Sobe aplicação, Prometheus (9090), Loki (3100) e Grafana (3000)
+	APP_PROFILES=dev,loki $(COMPOSE) --profile observabilidade up --build -d
 
 down: ## Para todos os containers do projeto
 	$(COMPOSE) $(TODOS_PERFIS) down
