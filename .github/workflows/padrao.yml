@@ -1,0 +1,64 @@
+name: Padrão de nomes
+
+on:
+  pull_request:
+    branches: [dev, main]
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  nomes:
+    name: Título do PR, branch e commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Conferir nomes
+        env:
+          TITULO: ${{ github.event.pull_request.title }}
+          BRANCH: ${{ github.head_ref }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          TOPO: ${{ github.event.pull_request.head.sha }}
+        run: |
+          tipos='feat|fix|docs|test|refactor|chore|ci|style|perf'
+          padrao="^($tipos)(\([a-z0-9-]+\))?: .+"
+          erros=0
+
+          if ! printf '%s' "$TITULO" | grep -qE "$padrao"; then
+            echo "::error::Título do PR fora do padrão: \"$TITULO\". Use, por exemplo: feat: cadastro de cliente"
+            erros=1
+          fi
+
+          if [ "$BRANCH" != "dev" ] && [ "${BRANCH#dependabot/}" = "$BRANCH" ] && ! printf '%s' "$BRANCH" | grep -qE "^(feat|feature|fix|hotfix|docs|test|refactor|chore|ci)/[a-z0-9-]+$"; then
+            echo "::error::Branch fora do padrão: \"$BRANCH\". Use, por exemplo: feat/cadastro-cliente"
+            erros=1
+          fi
+
+          while IFS= read -r mensagem; do
+            case "$mensagem" in
+              Merge*) continue ;;
+            esac
+            if ! printf '%s' "$mensagem" | grep -qE "$padrao"; then
+              echo "::error::Commit fora do padrão: \"$mensagem\". Use, por exemplo: fix: corrige calculo do orcamento"
+              erros=1
+            fi
+          done < <(git log --format=%s "$BASE..$TOPO")
+
+          exit $erros
+
+  origem:
+    name: Origem do PR para a main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conferir origem
+        env:
+          BASE: ${{ github.base_ref }}
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          if [ "$BASE" = "main" ] && [ "$BRANCH" != "dev" ]; then
+            echo "::error::A main só recebe PR da dev. Abra o PR de \"$BRANCH\" para a dev."
+            exit 1
+          fi

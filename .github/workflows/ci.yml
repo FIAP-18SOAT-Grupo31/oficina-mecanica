@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Testes, arquitetura e cobertura mínima de 80%
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build e testes
+        run: sh mvnw -B verify
+      - name: Relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-cobertura
+          path: target/site/jacoco
+
+  imports:
+    name: Padrão dos imports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Conferir os arquivos alterados
+        env:
+          BASE: ${{ github.base_ref || github.ref_name }}
+        run: sh mvnw -B spotless:check -Dspotless.ratchet=origin/$BASE
+
+  vulnerabilidades:
+    name: Vulnerabilidades, segredos e Dockerfile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Baixar as dependências para o cache do Maven
+        run: sh mvnw -B -q dependency:resolve
+      - name: Relatório completo
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH,MEDIUM
+          skip-dirs: target
+          format: table
+          output: relatorio-vulnerabilidades.txt
+      - name: Bloquear crítica ou alta que já tem correção
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scanners: vuln,secret,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          skip-dirs: target
+          exit-code: '1'
+          format: table
+      - name: Publicar o relatório
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-vulnerabilidades
+          path: relatorio-vulnerabilidades.txt

@@ -15,6 +15,7 @@
 	<description>Sistema de gestão de oficina mecânica</description>
 	<properties>
 		<java.version>21</java.version>
+		<spotless.ratchet>origin/dev</spotless.ratchet>
 		<tomcat.version>11.0.25</tomcat.version>
 		<jackson-2-bom.version>2.21.7</jackson-2-bom.version>
 		<jackson-bom.version>3.1.7</jackson-bom.version>
@@ -112,6 +113,23 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>3.4.0</version>
+				<configuration>
+					<ratchetFrom>${spotless.ratchet}</ratchetFrom>
+					<java>
+						<removeUnusedImports>
+							<engine>cleanthat-javaparser-unnecessaryimport</engine>
+						</removeUnusedImports>
+						<forbidWildcardImports/>
+						<importOrder>
+							<order>,javax|java,\#</order>
+						</importOrder>
+					</java>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
