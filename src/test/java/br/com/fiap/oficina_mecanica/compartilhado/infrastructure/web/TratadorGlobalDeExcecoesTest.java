@@ -189,15 +189,18 @@ class TratadorGlobalDeExcecoesTest {
         }
 
         @PostMapping(value = "/corpo", consumes = MediaType.APPLICATION_JSON_VALUE)
-        void corpo(@Valid @RequestBody CorpoDeTeste corpo) {
+        CorpoDeTeste corpo(@Valid @RequestBody CorpoDeTeste corpo) {
+            return corpo;
         }
 
         @GetMapping("/pagina")
-        void pagina(@RequestParam @Min(value = 1, message = "deve ser a partir de 1") int numero) {
+        int pagina(@RequestParam @Min(value = 1, message = "deve ser a partir de 1") int numero) {
+            return numero;
         }
 
         @GetMapping("/numero/{numero}")
-        void numero(@PathVariable int numero) {
+        int numero(@PathVariable int numero) {
+            return numero;
         }
 
         @GetMapping("/concorrencia")
