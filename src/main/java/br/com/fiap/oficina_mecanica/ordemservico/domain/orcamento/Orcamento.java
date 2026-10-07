@@ -1,5 +1,7 @@
 package br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -63,25 +65,25 @@ public class Orcamento {
 
     public void aprovar() {
         if (this.status != StatusOrcamento.PENDENTE) {
-            throw new IllegalStateException("Apenas orçamentos pendentes podem ser aprovados.");
+            throw new RegraNegocioException("Apenas orçamentos pendentes podem ser aprovados.");
         }
         if (LocalDateTime.now().isAfter(this.dataValidade)) {
             this.status = StatusOrcamento.EXPIRADO;
-            throw new IllegalStateException("O orçamento está expirado e não pode ser aprovado.");
+            throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
         }
         this.status = StatusOrcamento.APROVADO;
     }
 
     public void rejeitar() {
         if (this.status != StatusOrcamento.PENDENTE) {
-            throw new IllegalStateException("Apenas orçamentos pendentes podem ser rejeitados.");
+            throw new RegraNegocioException("Apenas orçamentos pendentes podem ser rejeitados.");
         }
         this.status = StatusOrcamento.REJEITADO;
     }
 
     private void validarModificacao() {
         if (this.status != StatusOrcamento.PENDENTE) {
-            throw new IllegalStateException("Não é possível alterar um orçamento que já foi " + this.status);
+            throw new RegraNegocioException("Não é possível alterar um orçamento que já foi " + this.status);
         }
     }
 
