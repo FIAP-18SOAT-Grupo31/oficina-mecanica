@@ -2,13 +2,14 @@ SHELL        := /bin/bash
 PROJETO      ?= oficina-mecanica
 TAG          ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo local)
 COMPOSE      := docker compose
-TODOS_PERFIS := --profile app --profile observabilidade
+TODOS_PERFIS := --profile app --profile observabilidade --profile qualidade
+TRIVY        := aquasec/trivy:0.75.0
 
 -include .env
 export
 
 .DEFAULT_GOAL := ajuda
-.PHONY: ajuda env run up down logs smoke test verify cobertura image observabilidade
+.PHONY: ajuda env run up down logs smoke test verify cobertura image observabilidade sonar-up sonar scan
 
 ajuda: ## Lista os alvos disponíveis
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(firstword $(MAKEFILE_LIST)) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
@@ -45,3 +46,15 @@ cobertura: verify ## Gera o relatório de cobertura
 
 image: ## Constrói a imagem Docker
 	docker build -t $(PROJETO):$(TAG) .
+
+sonar-up: ## Sobe o SonarQube local em http://localhost:9000
+	$(COMPOSE) --profile qualidade up -d sonarqube
+
+sonar: ## Analisa o projeto no SonarQube local (SONAR_TOKEN no .env)
+	@test -n "$(SONAR_TOKEN)" || (echo "Defina SONAR_TOKEN no .env (gere em http://localhost:9000)"; exit 1)
+	./mvnw -B verify sonar:sonar -Dsonar.host.url=http://localhost:9000 -Dsonar.token=$(SONAR_TOKEN)
+
+scan: ## Vulnerabilidades em dependências, Dockerfile e segredos (Trivy), como no CI
+	./mvnw -B -q dependency:resolve
+	docker run --rm -v "$(CURDIR)":/src -v "$(HOME)/.m2":/root/.m2:ro -v trivy-cache:/root/.cache/trivy -w /src $(TRIVY) \
+		fs --quiet --scanners vuln,secret,misconfig --severity CRITICAL,HIGH,MEDIUM --skip-dirs target .
