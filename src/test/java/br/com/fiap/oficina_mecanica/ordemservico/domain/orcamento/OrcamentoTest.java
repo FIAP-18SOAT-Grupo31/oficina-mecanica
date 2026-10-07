@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +17,7 @@ class OrcamentoTest {
     private final UUID ordemServicoId = UUID.randomUUID();
 
     private Orcamento orcamentoValido() {
-        return new Orcamento(UUID.randomUUID(), ordemServicoId, LocalDateTime.now().plusDays(7));
+        return new Orcamento(UUID.randomUUID(), ordemServicoId, Horario.agora().plusDays(7));
     }
 
     @Test
@@ -62,7 +63,7 @@ class OrcamentoTest {
 
     @Test
     void orcamentoVencidoExpiraAoTentarAprovar() {
-        Orcamento orcamento = new Orcamento(UUID.randomUUID(), ordemServicoId, LocalDateTime.now().minusMinutes(1));
+        Orcamento orcamento = new Orcamento(UUID.randomUUID(), ordemServicoId, Horario.agora().minusMinutes(1));
 
         assertThatThrownBy(orcamento::aprovar)
                 .isInstanceOf(RegraNegocioException.class)
@@ -105,8 +106,8 @@ class OrcamentoTest {
     @Test
     void reconstroiOrcamentoPersistidoComOsMesmosDados() {
         UUID id = UUID.randomUUID();
-        LocalDateTime criacao = LocalDateTime.now().minusDays(1);
-        LocalDateTime validade = LocalDateTime.now().plusDays(6);
+        LocalDateTime criacao = Horario.agora().minusDays(1);
+        LocalDateTime validade = Horario.agora().plusDays(6);
         List<ItemServico> servicos = List.of(new ItemServico(UUID.randomUUID(), "Revisão", new BigDecimal("150.00")));
         List<ItemPeca> pecas = List.of(new ItemPeca(UUID.randomUUID(), "Filtro", 2, new BigDecimal("25.00")));
 

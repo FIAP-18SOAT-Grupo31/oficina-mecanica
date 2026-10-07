@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.GerarOrcamentoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.ItemPecaInput;
@@ -10,7 +11,6 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.StatusOrcament
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -28,7 +28,7 @@ class OrcamentoUseCasesTest {
     private final BuscarOrcamentoUseCase buscarOrcamento = new BuscarOrcamentoUseCase(repository);
 
     private GerarOrcamentoInput entrada(List<ItemServicoInput> servicos, List<ItemPecaInput> pecas) {
-        return new GerarOrcamentoInput(UUID.randomUUID(), LocalDateTime.now().plusDays(7), servicos, pecas);
+        return new GerarOrcamentoInput(UUID.randomUUID(), Horario.agora().plusDays(7), servicos, pecas);
     }
 
     @Test
