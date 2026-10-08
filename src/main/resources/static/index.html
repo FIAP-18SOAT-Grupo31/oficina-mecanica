@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Oficina Mecânica</title>
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <style>
+        :root {
+            --fundo: #f3f5f6;
+            --papel: #ffffff;
+            --tinta: #1a2329;
+            --suave: #55636c;
+            --linha: #d7dde1;
+            --destaque: #0e5a74;
+            --ambar: #b37f0f;
+            --ok: #1f7a4d;
+            --ok-fundo: #e2f2e9;
+            --erro: #a3342b;
+            --erro-fundo: #f8e3e1;
+            --codigo: #eef1f3;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+                --fundo: #12181c;
+                --papel: #1a2227;
+                --tinta: #e6ecef;
+                --suave: #9aa8b0;
+                --linha: #2c3840;
+                --destaque: #6cc2df;
+                --ambar: #f0c063;
+                --ok: #6fd3a0;
+                --ok-fundo: #173327;
+                --erro: #f09a92;
+                --erro-fundo: #3a1d1a;
+                --codigo: #222c32;
+            }
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--fundo);
+            color: var(--tinta);
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 15.5px;
+            line-height: 1.6;
+            padding-inline: 16px;
+            padding-block: 40px 56px;
+        }
+        main { max-width: 880px; margin: 0 auto; display: grid; gap: 28px; }
+        header { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 22px; padding-bottom: 22px; border-bottom: 3px solid var(--tinta); }
+        header img { width: 88px; height: 88px; }
+        .titulo { display: grid; gap: 2px; }
+        h1 { margin: 0; font-size: clamp(30px, 5vw, 42px); line-height: 1.1; letter-spacing: 0.01em; }
+        .subtitulo { margin: 0; color: var(--suave); }
+        .grupo { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ambar); }
+        .status { margin-left: auto; font-family: ui-monospace, Consolas, monospace; font-size: 13px; padding: 4px 12px; border-radius: 20px; background: var(--codigo); color: var(--suave); }
+        .status.ok { background: var(--ok-fundo); color: var(--ok); }
+        .status.erro { background: var(--erro-fundo); color: var(--erro); }
+        .cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+        .cartao { background: var(--papel); border: 1px solid var(--linha); border-radius: 8px; padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+        .cartao h2 { margin: 0; font-size: 18px; }
+        .cartao p { margin: 0; color: var(--suave); }
+        a.botao { justify-self: start; margin-top: 4px; padding: 8px 14px; border-radius: 6px; background: var(--destaque); color: var(--papel); text-decoration: none; font-weight: 600; }
+        a.botao:hover { filter: brightness(1.1); }
+        a:focus-visible { outline: 2px solid var(--ambar); outline-offset: 2px; }
+        section { display: grid; gap: 10px; }
+        section h2 { margin: 0; font-size: 20px; }
+        ol { margin: 0; padding-left: 22px; display: grid; gap: 4px; }
+        code { font-family: ui-monospace, Consolas, monospace; font-size: 0.9em; background: var(--codigo); padding: 1px 5px; border-radius: 3px; }
+        .tabela { overflow-x: auto; border: 1px solid var(--linha); border-radius: 8px; background: var(--papel); }
+        table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+        th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--linha); }
+        th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--suave); font-weight: 600; }
+        tr:last-child td { border-bottom: 0; }
+        td.metodo { font-family: ui-monospace, Consolas, monospace; font-weight: 600; color: var(--destaque); white-space: nowrap; }
+        footer { color: var(--suave); font-size: 13px; border-top: 1px solid var(--linha); padding-top: 14px; }
+    </style>
+</head>
+<body>
+<main>
+    <header>
+        <img src="logo.svg" alt="Logo da Oficina Mecânica">
+        <div class="titulo">
+            <span class="grupo">Grupo 31 · Tech Challenge SOAT FIAP</span>
+            <h1>Oficina Mecânica</h1>
+            <p class="subtitulo">Sistema Integrado de Atendimento e Execução de Serviços</p>
+        </div>
+        <span class="status" id="status">verificando a API</span>
+    </header>
+
+    <div class="cartoes">
+        <div class="cartao">
+            <h2>Documentação da API</h2>
+            <p>Todas as rotas, com exemplos, para testar direto no navegador.</p>
+            <a class="botao" href="swagger-ui.html">Abrir o Swagger</a>
+        </div>
+        <div class="cartao">
+            <h2>Saúde da aplicação</h2>
+            <p>Mostra se a API e o banco estão respondendo.</p>
+            <a class="botao" href="actuator/health">Ver o status</a>
+        </div>
+    </div>
+
+    <section>
+        <h2>Como autenticar</h2>
+        <ol>
+            <li>No Swagger, chame <code>POST /api/auth/login</code> com <code>{"login":"admin","senha":"..."}</code>.</li>
+            <li>Copie o <code>accessToken</code> da resposta.</li>
+            <li>Clique em <strong>Authorize</strong> e cole o token. Ele vale 1 hora.</li>
+            <li>Usuários de demonstração: <code>admin</code>, <code>atendente</code> e <code>mecanico</code>, com a senha de <code>DEMO_PASSWORD</code> do <code>.env</code>.</li>
+        </ol>
+    </section>
+
+    <section>
+        <h2>Rotas principais</h2>
+        <div class="tabela">
+            <table>
+                <thead><tr><th>Método</th><th>Rota</th><th>O que faz</th></tr></thead>
+                <tbody>
+                    <tr><td class="metodo">POST</td><td><code>/api/auth/login</code></td><td>devolve o token JWT</td></tr>
+                    <tr><td class="metodo">POST</td><td><code>/api/ordens-servico</code></td><td>abre uma ordem de serviço para um cliente e um veículo</td></tr>
+                    <tr><td class="metodo">POST</td><td><code>/api/orcamentos</code></td><td>gera o orçamento de uma ordem de serviço</td></tr>
+                    <tr><td class="metodo">GET</td><td><code>/api/orcamentos/{id}</code></td><td>consulta um orçamento</td></tr>
+                    <tr><td class="metodo">PATCH</td><td><code>/api/orcamentos/{id}/aprovar</code></td><td>aprova o orçamento</td></tr>
+                    <tr><td class="metodo">PATCH</td><td><code>/api/orcamentos/{id}/rejeitar</code></td><td>rejeita o orçamento</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <footer>Oficina Mecânica · Grupo 31 · Pós SOAT FIAP</footer>
+</main>
+<script>
+    (function () {
+        var status = document.getElementById("status");
+        fetch("actuator/health", { headers: { "Accept": "application/json" } })
+            .then(function (resposta) { return resposta.json(); })
+            .then(function (saude) {
+                var noAr = saude && saude.status === "UP";
+                status.textContent = noAr ? "API no ar" : "API com problema";
+                status.className = "status " + (noAr ? "ok" : "erro");
+            })
+            .catch(function () {
+                status.textContent = "API fora do ar";
+                status.className = "status erro";
+            });
+    })();
+</script>
+</body>
+</html>

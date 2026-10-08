@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Oficina Mecânica">
+  <circle cx="60" cy="60" r="45" fill="none" stroke="#0e5a74" stroke-width="14" stroke-dasharray="11.78 11.78"/>
+  <circle cx="60" cy="60" r="39" fill="#0e5a74"/>
+  <circle cx="60" cy="60" r="15" fill="#f3f5f6"/>
+  <g transform="rotate(-45 60 60)">
+    <rect x="54" y="30" width="12" height="76" rx="6" fill="#e0a526"/>
+    <circle cx="60" cy="27" r="15" fill="#e0a526"/>
+    <rect x="55" y="8" width="10" height="17" rx="2" fill="#0e5a74"/>
+    <circle cx="60" cy="98" r="3" fill="#0e5a74"/>
+  </g>
+</svg>
