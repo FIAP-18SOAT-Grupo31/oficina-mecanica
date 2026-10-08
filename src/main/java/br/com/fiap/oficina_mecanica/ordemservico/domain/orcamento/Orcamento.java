@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 
 import java.math.BigDecimal;
@@ -26,7 +27,7 @@ public class Orcamento {
         this.ordemServicoId = ordemServicoId;
         this.servicos = new ArrayList<>();
         this.pecas = new ArrayList<>();
-        this.dataCriacao = LocalDateTime.now();
+        this.dataCriacao = Horario.agora();
         this.dataValidade = dataValidade;
         this.status = StatusOrcamento.PENDENTE;
     }
@@ -67,7 +68,7 @@ public class Orcamento {
         if (this.status != StatusOrcamento.PENDENTE) {
             throw new RegraNegocioException("Apenas orçamentos pendentes podem ser aprovados.");
         }
-        if (LocalDateTime.now().isAfter(this.dataValidade)) {
+        if (Horario.agora().isAfter(this.dataValidade)) {
             this.status = StatusOrcamento.EXPIRADO;
             throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
         }
