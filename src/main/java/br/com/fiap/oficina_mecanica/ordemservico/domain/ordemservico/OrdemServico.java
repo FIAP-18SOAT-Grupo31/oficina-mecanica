@@ -30,6 +30,7 @@ public class OrdemServico {
     private List<Orcamento> orcamentos;
     private LocalDateTime dataAbertura;
     private LocalDateTime dataConclusao;
+    private String codigoAcesso;
 
     public OrdemServico(UUID id, UUID clienteId, UUID veiculoId, String relatoProblema) {
         if (id == null) {
@@ -42,6 +43,8 @@ public class OrdemServico {
         this.status = StatusOrdemServico.RECEBIDA;
         this.dataAbertura = Horario.agora();
         this.orcamentos = new ArrayList<>();
+
+        this.codigoAcesso = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         
         validarRelatoProblema(relatoProblema);
         this.relatoProblema = relatoProblema;

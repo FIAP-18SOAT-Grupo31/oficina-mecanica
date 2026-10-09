@@ -19,7 +19,8 @@ public class OrdemServicoMapper {
                 dominio.getRelatoProblema(),
                 dominio.getStatus(),
                 dominio.getDataAbertura(),
-                dominio.getDataConclusao()
+                dominio.getDataConclusao(),
+                dominio.getCodigoAcesso()
         );
     }
 
@@ -32,6 +33,7 @@ public class OrdemServicoMapper {
                 .status(entity.getStatus())
                 .dataAbertura(entity.getDataAbertura())
                 .dataConclusao(entity.getDataConclusao())
+                .codigoAcesso(entity.getCodigoAcesso())
                 .orcamentos(new ArrayList<>(orcamentos))
                 .build();
     }

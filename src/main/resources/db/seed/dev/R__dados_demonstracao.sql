@@ -6,11 +6,11 @@ INSERT INTO veiculos (id, cliente_id, placa, marca, modelo, ano)
 VALUES ('0192f0a0-0000-7000-8000-0000000000e1', '0192f0a0-0000-7000-8000-0000000000d1', 'ABC1D23', 'Fiat', 'Argo', 2022)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO ordens_servico (id, cliente_id, veiculo_id, relato_problema, status, data_abertura)
+INSERT INTO ordens_servico (id, cliente_id, veiculo_id, relato_problema, status, data_abertura, codigo_acesso)
 VALUES ('0192f0a0-0000-7000-8000-0000000000a1', '0192f0a0-0000-7000-8000-0000000000d1',
         '0192f0a0-0000-7000-8000-0000000000e1', 'Barulho na suspensão dianteira', 'AGUARDANDO_APROVACAO',
-        CURRENT_TIMESTAMP)
-ON CONFLICT (id) DO NOTHING;
+        CURRENT_TIMESTAMP, 'DEMO12')
+    ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO orcamentos (id, ordem_servico_id, valor_total, status, data_criacao, data_validade)
 VALUES ('0192f0a0-0000-7000-8000-000000000001', '0192f0a0-0000-7000-8000-0000000000a1', 360.00, 'PENDENTE',
