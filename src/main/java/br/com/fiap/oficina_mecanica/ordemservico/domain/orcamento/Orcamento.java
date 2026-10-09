@@ -64,7 +64,7 @@ public class Orcamento {
         return totalServicos.add(totalPecas);
     }
 
-    public void aprovar() {
+    public void aprovar(List<UUID> servicosAprovadosIds, List<UUID> pecasAprovadasIds) {
         if (this.status != StatusOrcamento.PENDENTE) {
             throw new RegraNegocioException("Apenas orçamentos pendentes podem ser aprovados.");
         }
@@ -72,7 +72,30 @@ public class Orcamento {
             this.status = StatusOrcamento.EXPIRADO;
             throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
         }
-        this.status = StatusOrcamento.APROVADO;
+
+        if (servicosAprovadosIds == null && pecasAprovadasIds == null) {
+            this.status = StatusOrcamento.APROVADO;
+            return;
+        }
+
+        int totalItensOriginal = this.servicos.size() + this.pecas.size();
+
+        if (servicosAprovadosIds != null) {
+            this.servicos.removeIf(s -> !servicosAprovadosIds.contains(s.catalogoServicoId()));
+        }
+        if (pecasAprovadasIds != null) {
+            this.pecas.removeIf(p -> !pecasAprovadasIds.contains(p.produtoEstoqueId()));
+        }
+
+        int totalItensAtual = this.servicos.size() + this.pecas.size();
+
+        if (totalItensAtual == 0) {
+            this.status = StatusOrcamento.REJEITADO;
+        } else if (totalItensAtual < totalItensOriginal) {
+            this.status = StatusOrcamento.APROVADO_PARCIALMENTE;
+        } else {
+            this.status = StatusOrcamento.APROVADO;
+        }
     }
 
     public void rejeitar() {

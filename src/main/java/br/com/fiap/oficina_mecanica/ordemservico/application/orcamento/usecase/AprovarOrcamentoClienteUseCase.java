@@ -1,7 +1,7 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.AprovacaoInput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.AprovacaoClienteInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
@@ -11,24 +11,24 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class AprovarOrcamentoUseCase {
+public class AprovarOrcamentoClienteUseCase {
 
     private final OrcamentoRepository repository;
+    private final VerificadorAcessoCliente verificadorAcesso;
 
-    public AprovarOrcamentoUseCase(OrcamentoRepository repository) {
+    public AprovarOrcamentoClienteUseCase(OrcamentoRepository repository, VerificadorAcessoCliente verificadorAcesso) {
         this.repository = repository;
+        this.verificadorAcesso = verificadorAcesso;
     }
 
     @Transactional
-    public OrcamentoOutput execute(UUID orcamentoId, AprovacaoInput input) {
+    public OrcamentoOutput execute(UUID orcamentoId, AprovacaoClienteInput input) {
         Orcamento orcamento = repository.buscarPorId(orcamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Orçamento não encontrado."));
 
-        if (input == null) {
-            orcamento.aprovar(null, null);
-        } else {
-            orcamento.aprovar(input.servicosAprovados(), input.pecasAprovadas());
-        }
+        verificadorAcesso.validar(orcamento.getOrdemServicoId(), input.cpf(), input.codigoAcesso());
+
+        orcamento.aprovar(input.servicosAprovados(), input.pecasAprovadas());
 
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
 
