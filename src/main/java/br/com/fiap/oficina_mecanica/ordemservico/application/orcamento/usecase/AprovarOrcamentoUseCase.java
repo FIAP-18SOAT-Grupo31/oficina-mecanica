@@ -5,6 +5,8 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.Aprov
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +16,11 @@ import java.util.UUID;
 public class AprovarOrcamentoUseCase {
 
     private final OrcamentoRepository repository;
+    private final OrdemServicoRepository ordemServicoRepository;
 
-    public AprovarOrcamentoUseCase(OrcamentoRepository repository) {
+    public AprovarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository) {
         this.repository = repository;
+        this.ordemServicoRepository = ordemServicoRepository;
     }
 
     @Transactional
@@ -31,6 +35,11 @@ public class AprovarOrcamentoUseCase {
         }
 
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
+
+        OrdemServico os = ordemServicoRepository.buscarPorId(orcamento.getOrdemServicoId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
+        os.aprovarOrcamento();
+        ordemServicoRepository.salvar(os);
 
         return new OrcamentoOutput(
                 orcamentoSalvo.getId(),
