@@ -2,6 +2,7 @@ package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.GerarOrcamentoInput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoMapper;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemServico;
@@ -61,13 +62,6 @@ public class GerarOrcamentoUseCase {
 
         notificador.notificarOrcamentoGerado(orcamentoSalvo);
 
-        return new OrcamentoOutput(
-                orcamentoSalvo.getId(),
-                orcamentoSalvo.getOrdemServicoId(),
-                orcamentoSalvo.calcularValorTotal(),
-                orcamentoSalvo.getStatus(),
-                orcamentoSalvo.getDataCriacao(),
-                orcamentoSalvo.getDataValidade()
-        );
+        return OrcamentoMapper.toOutput(orcamentoSalvo);
     }
 }

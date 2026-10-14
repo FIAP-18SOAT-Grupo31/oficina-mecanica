@@ -1,6 +1,7 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoMapper;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
@@ -27,13 +28,6 @@ public class BuscarOrcamentoClienteUseCase {
 
         verificadorAcesso.validar(orcamento.getOrdemServicoId(), cpf, codigoAcesso);
 
-        return new OrcamentoOutput(
-                orcamento.getId(),
-                orcamento.getOrdemServicoId(),
-                orcamento.calcularValorTotal(),
-                orcamento.getStatus(),
-                orcamento.getDataCriacao(),
-                orcamento.getDataValidade()
-        );
+        return OrcamentoMapper.toOutput(orcamento);
     }
 }
