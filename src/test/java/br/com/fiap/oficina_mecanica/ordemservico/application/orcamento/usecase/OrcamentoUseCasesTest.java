@@ -11,11 +11,18 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.ItemS
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.StatusOrcamento;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class OrcamentoUseCasesTest {
 
     private final OrcamentoRepositoryEmMemoria repository = new OrcamentoRepositoryEmMemoria();
+    private final OrdemServicoRepositoryEmMemoria osRepository = new OrdemServicoRepositoryEmMemoria();
     private final List<Orcamento> notificados = new ArrayList<>();
 
     private final VerificadorAcessoCliente verificadorAcesso = (osId, cpf, codigo) -> {
@@ -32,16 +40,25 @@ class OrcamentoUseCasesTest {
         }
     };
 
-    private final GerarOrcamentoUseCase gerarOrcamento = new GerarOrcamentoUseCase(repository, notificados::add);
-    private final AprovarOrcamentoUseCase aprovarOrcamento = new AprovarOrcamentoUseCase(repository);
-    private final RejeitarOrcamentoUseCase rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository);
+    private final GerarOrcamentoUseCase gerarOrcamento = new GerarOrcamentoUseCase(repository, notificados::add, osRepository);
+    private final AprovarOrcamentoUseCase aprovarOrcamento = new AprovarOrcamentoUseCase(repository, osRepository);
+    private final RejeitarOrcamentoUseCase rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository, osRepository);
     private final BuscarOrcamentoUseCase buscarOrcamento = new BuscarOrcamentoUseCase(repository);
-    private final AprovarOrcamentoClienteUseCase aprovarOrcamentoCliente = new AprovarOrcamentoClienteUseCase(repository, verificadorAcesso);
-    private final RejeitarOrcamentoClienteUseCase rejeitarOrcamentoCliente = new RejeitarOrcamentoClienteUseCase(repository, verificadorAcesso);
+    private final AprovarOrcamentoClienteUseCase aprovarOrcamentoCliente = new AprovarOrcamentoClienteUseCase(repository, verificadorAcesso, osRepository);
+    private final RejeitarOrcamentoClienteUseCase rejeitarOrcamentoCliente = new RejeitarOrcamentoClienteUseCase(repository, verificadorAcesso, osRepository);
     private final BuscarOrcamentoClienteUseCase buscarOrcamentoCliente = new BuscarOrcamentoClienteUseCase(repository, verificadorAcesso);
 
+    private UUID ordemServicoIdFixa;
+
+    @BeforeEach
+    void setup() {
+        ordemServicoIdFixa = UUID.randomUUID();
+        OrdemServico os = new OrdemServico(ordemServicoIdFixa, UUID.randomUUID(), UUID.randomUUID(), "Relato valido longo suficiente");
+        osRepository.salvar(os);
+    }
+
     private GerarOrcamentoInput entrada(List<ItemServicoInput> servicos, List<ItemPecaInput> pecas) {
-        return new GerarOrcamentoInput(UUID.randomUUID(), Horario.agora().plusDays(7), servicos, pecas);
+        return new GerarOrcamentoInput(ordemServicoIdFixa, Horario.agora().plusDays(7), servicos, pecas);
     }
 
     @Test
@@ -72,13 +89,14 @@ class OrcamentoUseCasesTest {
     }
 
     @Test
-    void aprovaOrcamentoExistenteTotalmente() {
+    void aprovaOrcamentoExistenteTotalmenteEAvançaOS() {
         OrcamentoOutput gerado = gerarOrcamento.execute(entrada(List.of(), List.of()));
 
         OrcamentoOutput aprovado = aprovarOrcamento.execute(gerado.id(), null);
 
         assertThat(aprovado.status()).isEqualTo(StatusOrcamento.APROVADO);
         assertThat(repository.buscarPorId(gerado.id()).orElseThrow().getStatus()).isEqualTo(StatusOrcamento.APROVADO);
+        assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus()).isEqualTo(StatusOrdemServico.APROVADA);
     }
 
     @Test
@@ -101,7 +119,6 @@ class OrcamentoUseCasesTest {
         OrcamentoOutput aprovado = aprovarOrcamento.execute(gerado.id(), aprovacaoParcial);
 
         assertThat(aprovado.status()).isEqualTo(StatusOrcamento.APROVADO_PARCIALMENTE);
-
         assertThat(aprovado.valorTotal()).isEqualByComparingTo("200.00");
     }
 
@@ -118,6 +135,7 @@ class OrcamentoUseCasesTest {
         OrcamentoOutput gerado = gerarOrcamento.execute(entrada(List.of(), List.of()));
         OrcamentoOutput rejeitado = rejeitarOrcamento.execute(gerado.id());
         assertThat(rejeitado.status()).isEqualTo(StatusOrcamento.REJEITADO);
+        assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus()).isEqualTo(StatusOrdemServico.RECUSADA);
     }
 
     @Test
@@ -167,6 +185,7 @@ class OrcamentoUseCasesTest {
         OrcamentoOutput aprovado = aprovarOrcamentoCliente.execute(gerado.id(), input);
 
         assertThat(aprovado.status()).isEqualTo(StatusOrcamento.APROVADO);
+        assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus()).isEqualTo(StatusOrdemServico.APROVADA);
     }
 
     @Test
@@ -184,5 +203,21 @@ class OrcamentoUseCasesTest {
         OrcamentoOutput gerado = gerarOrcamento.execute(entrada(List.of(), List.of()));
         OrcamentoOutput rejeitado = rejeitarOrcamentoCliente.execute(gerado.id(), "12345678900", "SENHA123");
         assertThat(rejeitado.status()).isEqualTo(StatusOrcamento.REJEITADO);
+        assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus()).isEqualTo(StatusOrdemServico.RECUSADA);
+    }
+
+    private static class OrdemServicoRepositoryEmMemoria implements OrdemServicoRepository {
+        private final Map<UUID, OrdemServico> ordens = new HashMap<>();
+
+        @Override
+        public OrdemServico salvar(OrdemServico ordemServico) {
+            ordens.put(ordemServico.getId(), ordemServico);
+            return ordemServico;
+        }
+
+        @Override
+        public Optional<OrdemServico> buscarPorId(UUID id) {
+            return Optional.ofNullable(ordens.get(id));
+        }
     }
 }
