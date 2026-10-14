@@ -1,6 +1,8 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
+import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.GerarOrcamentoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoMapper;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
@@ -23,11 +25,15 @@ public class GerarOrcamentoUseCase {
     private final OrcamentoRepository repository;
     private final NotificadorOrcamento notificador;
     private final OrdemServicoRepository ordemServicoRepository;
+    private final ProdutoEstoqueRepository estoqueRepository;
 
-    public GerarOrcamentoUseCase(OrcamentoRepository repository, NotificadorOrcamento notificador, OrdemServicoRepository ordemServicoRepository) {
+    public GerarOrcamentoUseCase(OrcamentoRepository repository, NotificadorOrcamento notificador,
+                                 OrdemServicoRepository ordemServicoRepository,
+                                 ProdutoEstoqueRepository estoqueRepository) {
         this.repository = repository;
         this.notificador = notificador;
         this.ordemServicoRepository = ordemServicoRepository;
+        this.estoqueRepository = estoqueRepository;
     }
 
     @Transactional
@@ -43,9 +49,16 @@ public class GerarOrcamentoUseCase {
         }
 
         if (input.pecas() != null) {
-            input.pecas().forEach(p ->
-                    orcamento.adicionarPeca(new ItemPeca(p.produtoEstoqueId(), p.nomePeca(), p.quantidade(), p.valorUnitario()))
-            );
+            input.pecas().forEach(p -> {
+                ProdutoEstoque produto = estoqueRepository.buscarPorId(p.produtoEstoqueId())
+                        .orElseThrow(() -> new RecursoNaoEncontradoException("Peça não encontrada no estoque: " + p.produtoEstoqueId()));
+
+                produto.reservar(p.quantidade());
+
+                estoqueRepository.salvar(produto);
+
+                orcamento.adicionarPeca(new ItemPeca(p.produtoEstoqueId(), produto.getNomePeca(), p.quantidade(), produto.getValorUnitario()));
+            });
         }
 
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
