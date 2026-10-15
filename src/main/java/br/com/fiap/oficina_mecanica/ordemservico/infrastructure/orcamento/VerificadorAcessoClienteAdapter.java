@@ -26,14 +26,17 @@ public class VerificadorAcessoClienteAdapter implements VerificadorAcessoCliente
         OrdemServicoEntity os = ordemServicoJpaRepository.findById(ordemServicoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
 
-        if (!os.getCodigoAcesso().equals(codigoAcesso)) {
+        if (codigoAcesso == null || !os.getCodigoAcesso().equals(codigoAcesso.trim())) {
             throw new RegraNegocioException("Credenciais inválidas");
         }
 
         String cpfReal = clienteRepository.buscarDocumentoPorId(os.getClienteId())
                 .orElseThrow(() -> new RegraNegocioException("Cliente não encontrado."));
 
-        if (!cpfReal.equals(cpfInformado)) {
+        String cpfRealLimpo = cpfReal.replaceAll("\\D", "");
+        String cpfInformadoLimpo = cpfInformado == null ? "" : cpfInformado.replaceAll("\\D", "");
+
+        if (cpfInformadoLimpo.isEmpty() || !cpfRealLimpo.equals(cpfInformadoLimpo)) {
             throw new RegraNegocioException("Credenciais inválidas");
         }
     }

@@ -64,18 +64,29 @@ public class Orcamento {
         return totalServicos.add(totalPecas);
     }
 
-    public void aprovar(List<UUID> servicosAprovadosIds, List<UUID> pecasAprovadasIds) {
+    public boolean estaExpirado() {
+        return Horario.agora().isAfter(this.dataValidade);
+    }
+
+    public void expirar() {
+        if (this.status != StatusOrcamento.PENDENTE) {
+            throw new RegraNegocioException("Apenas orçamentos pendentes podem ser expirados.");
+        }
+        this.status = StatusOrcamento.EXPIRADO;
+    }
+
+    public List<ItemPeca> aprovar(List<UUID> servicosAprovadosIds, List<UUID> pecasAprovadasIds) {
         if (this.status != StatusOrcamento.PENDENTE) {
             throw new RegraNegocioException("Apenas orçamentos pendentes podem ser aprovados.");
         }
-        if (Horario.agora().isAfter(this.dataValidade)) {
+        if (estaExpirado()) {
             this.status = StatusOrcamento.EXPIRADO;
             throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
         }
 
         if (servicosAprovadosIds == null && pecasAprovadasIds == null) {
             this.status = StatusOrcamento.APROVADO;
-            return;
+            return List.of();
         }
 
         int totalItensOriginal = this.servicos.size() + this.pecas.size();
@@ -83,8 +94,13 @@ public class Orcamento {
         if (servicosAprovadosIds != null) {
             this.servicos.removeIf(s -> !servicosAprovadosIds.contains(s.catalogoServicoId()));
         }
+
+        List<ItemPeca> pecasRecusadas = new ArrayList<>();
         if (pecasAprovadasIds != null) {
-            this.pecas.removeIf(p -> !pecasAprovadasIds.contains(p.produtoEstoqueId()));
+            pecasRecusadas = this.pecas.stream()
+                    .filter(p -> !pecasAprovadasIds.contains(p.produtoEstoqueId()))
+                    .toList();
+            this.pecas.removeAll(pecasRecusadas);
         }
 
         int totalItensAtual = this.servicos.size() + this.pecas.size();
@@ -96,6 +112,8 @@ public class Orcamento {
         } else {
             this.status = StatusOrcamento.APROVADO;
         }
+
+        return pecasRecusadas;
     }
 
     public void rejeitar() {

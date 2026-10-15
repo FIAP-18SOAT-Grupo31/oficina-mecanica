@@ -1,6 +1,8 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.GerarOrcamentoInput;
@@ -38,8 +40,18 @@ public class GerarOrcamentoUseCase {
 
     @Transactional
     public OrcamentoOutput execute(GerarOrcamentoInput input) {
-        UUID orcamentoId = UuidCreator.getTimeOrderedEpoch();
+        if (input.dataValidade() == null || input.dataValidade().isBefore(Horario.agora())) {
+            throw new RegraNegocioException("A data de validade deve ser informada e estar no futuro.");
+        }
 
+        OrdemServico os = ordemServicoRepository.buscarPorId(input.ordemServicoId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
+
+        if (os.getStatus() == StatusOrdemServico.RECEBIDA) {
+            os.iniciarDiagnostico();
+        }
+
+        UUID orcamentoId = UuidCreator.getTimeOrderedEpoch();
         Orcamento orcamento = new Orcamento(orcamentoId, input.ordemServicoId(), input.dataValidade());
 
         if (input.servicos() != null) {
@@ -54,23 +66,15 @@ public class GerarOrcamentoUseCase {
                         .orElseThrow(() -> new RecursoNaoEncontradoException("Peça não encontrada no estoque: " + p.produtoEstoqueId()));
 
                 produto.reservar(p.quantidade());
-
                 estoqueRepository.salvar(produto);
 
                 orcamento.adicionarPeca(new ItemPeca(p.produtoEstoqueId(), produto.getNomePeca(), p.quantidade(), produto.getValorUnitario()));
             });
         }
 
+        os.anexarOrcamento(orcamento);
+
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
-
-        OrdemServico os = ordemServicoRepository.buscarPorId(orcamento.getOrdemServicoId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
-
-        if (os.getStatus() == StatusOrdemServico.RECEBIDA) {
-            os.iniciarDiagnostico();
-        }
-
-        os.anexarOrcamento(orcamentoSalvo);
         ordemServicoRepository.salvar(os);
 
         notificador.notificarOrcamentoGerado(orcamentoSalvo);
