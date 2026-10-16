@@ -42,6 +42,12 @@ public class Orcamento {
         this.pecas = new ArrayList<>(pecas);
     }
 
+    public static void validarDataValidadeFutura(LocalDateTime dataValidade) {
+        if (dataValidade == null || dataValidade.isBefore(Horario.agora())) {
+            throw new RegraNegocioException("A data de validade deve ser informada e estar no futuro.");
+        }
+    }
+
     public void adicionarServico(ItemServico servico) {
         validarModificacao();
         this.servicos.add(servico);
@@ -64,23 +70,19 @@ public class Orcamento {
         return totalServicos.add(totalPecas);
     }
 
-    public boolean estaExpirado() {
-        return Horario.agora().isAfter(this.dataValidade);
-    }
-
-    public void expirar() {
-        if (this.status != StatusOrcamento.PENDENTE) {
-            throw new RegraNegocioException("Apenas orçamentos pendentes podem ser expirados.");
+    public boolean verificarExpiracao() {
+        if (this.status == StatusOrcamento.PENDENTE && Horario.agora().isAfter(this.dataValidade)) {
+            this.status = StatusOrcamento.EXPIRADO;
+            return true;
         }
-        this.status = StatusOrcamento.EXPIRADO;
+        return false;
     }
 
     public List<ItemPeca> aprovar(List<UUID> servicosAprovadosIds, List<UUID> pecasAprovadasIds) {
         if (this.status != StatusOrcamento.PENDENTE) {
             throw new RegraNegocioException("Apenas orçamentos pendentes podem ser aprovados.");
         }
-        if (estaExpirado()) {
-            this.status = StatusOrcamento.EXPIRADO;
+        if (verificarExpiracao()) {
             throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
         }
 

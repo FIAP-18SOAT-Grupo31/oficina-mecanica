@@ -1,8 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
-import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.GerarOrcamentoInput;
@@ -40,9 +38,7 @@ public class GerarOrcamentoUseCase {
 
     @Transactional
     public OrcamentoOutput execute(GerarOrcamentoInput input) {
-        if (input.dataValidade() == null || input.dataValidade().isBefore(Horario.agora())) {
-            throw new RegraNegocioException("A data de validade deve ser informada e estar no futuro.");
-        }
+        Orcamento.validarDataValidadeFutura(input.dataValidade());
 
         OrdemServico os = ordemServicoRepository.buscarPorId(input.ordemServicoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));

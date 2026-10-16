@@ -40,10 +40,8 @@ public class AprovarOrcamentoUseCase {
         OrdemServico os = ordemServicoRepository.buscarPorId(orcamento.getOrdemServicoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
 
-        if (orcamento.getStatus() == StatusOrcamento.PENDENTE && orcamento.estaExpirado()) {
-            orcamento.expirar();
+        if (orcamento.verificarExpiracao()) {
             repository.salvar(orcamento);
-
             orcamento.getPecas().forEach(this::devolverReservaAoEstoque);
 
             os.recusarOrcamento();
@@ -52,12 +50,10 @@ public class AprovarOrcamentoUseCase {
             throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
         }
 
-        List<ItemPeca> pecasRecusadas;
-        if (input == null) {
-            pecasRecusadas = orcamento.aprovar(null, null);
-        } else {
-            pecasRecusadas = orcamento.aprovar(input.servicosAprovados(), input.pecasAprovadas());
-        }
+        List<UUID> servicosAprovados = input != null ? input.servicosAprovados() : null;
+        List<UUID> pecasAprovadas = input != null ? input.pecasAprovadas() : null;
+
+        List<ItemPeca> pecasRecusadas = orcamento.aprovar(servicosAprovados, pecasAprovadas);
 
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
 

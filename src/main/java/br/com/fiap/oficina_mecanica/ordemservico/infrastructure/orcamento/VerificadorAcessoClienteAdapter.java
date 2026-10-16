@@ -33,11 +33,15 @@ public class VerificadorAcessoClienteAdapter implements VerificadorAcessoCliente
         String cpfReal = clienteRepository.buscarDocumentoPorId(os.getClienteId())
                 .orElseThrow(() -> new RegraNegocioException("Cliente não encontrado."));
 
-        String cpfRealLimpo = cpfReal.replaceAll("\\D", "");
-        String cpfInformadoLimpo = cpfInformado == null ? "" : cpfInformado.replaceAll("\\D", "");
+        String cpfRealLimpo = extrairDigitos(cpfReal);
+        String cpfInformadoLimpo = extrairDigitos(cpfInformado);
 
         if (cpfInformadoLimpo.isEmpty() || !cpfRealLimpo.equals(cpfInformadoLimpo)) {
             throw new RegraNegocioException("Credenciais inválidas");
         }
+    }
+
+    private String extrairDigitos(String valor) {
+        return valor == null ? "" : valor.replaceAll("\\D", "");
     }
 }
