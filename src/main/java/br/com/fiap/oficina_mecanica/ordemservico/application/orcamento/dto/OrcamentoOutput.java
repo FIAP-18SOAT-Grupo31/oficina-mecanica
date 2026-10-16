@@ -4,6 +4,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.StatusOrcament
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public record OrcamentoOutput(
@@ -12,5 +13,7 @@ public record OrcamentoOutput(
         BigDecimal valorTotal,
         StatusOrcamento status,
         LocalDateTime dataCriacao,
-        LocalDateTime dataValidade
+        LocalDateTime dataValidade,
+        List<ItemServicoOutput> servicos,
+        List<ItemPecaOutput> pecas
 ) {}
