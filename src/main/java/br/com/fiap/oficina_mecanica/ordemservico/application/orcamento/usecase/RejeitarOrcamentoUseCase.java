@@ -1,9 +1,14 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
+import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
+import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoMapper;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,9 +18,13 @@ import java.util.UUID;
 public class RejeitarOrcamentoUseCase {
 
     private final OrcamentoRepository repository;
+    private final OrdemServicoRepository ordemServicoRepository;
+    private final ProdutoEstoqueRepository estoqueRepository;
 
-    public RejeitarOrcamentoUseCase(OrcamentoRepository repository) {
+    public RejeitarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository, ProdutoEstoqueRepository estoqueRepository) {
         this.repository = repository;
+        this.ordemServicoRepository = ordemServicoRepository;
+        this.estoqueRepository = estoqueRepository;
     }
 
     @Transactional
@@ -26,13 +35,19 @@ public class RejeitarOrcamentoUseCase {
         orcamento.rejeitar();
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
 
-        return new OrcamentoOutput(
-                orcamentoSalvo.getId(),
-                orcamentoSalvo.getOrdemServicoId(),
-                orcamentoSalvo.calcularValorTotal(),
-                orcamentoSalvo.getStatus(),
-                orcamentoSalvo.getDataCriacao(),
-                orcamentoSalvo.getDataValidade()
-        );
+        orcamento.getPecas().forEach(item -> {
+            ProdutoEstoque produto = estoqueRepository.buscarPorId(item.produtoEstoqueId())
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Peça não encontrada no estoque: " + item.produtoEstoqueId()));
+
+            produto.cancelarReserva(item.quantidade());
+            estoqueRepository.salvar(produto);
+        });
+
+        OrdemServico os = ordemServicoRepository.buscarPorId(orcamento.getOrdemServicoId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
+        os.recusarOrcamento();
+        ordemServicoRepository.salvar(os);
+
+        return OrcamentoMapper.toOutput(orcamentoSalvo);
     }
 }

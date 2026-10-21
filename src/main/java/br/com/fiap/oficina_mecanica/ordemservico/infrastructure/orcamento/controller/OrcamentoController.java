@@ -11,6 +11,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.B
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.GerarOrcamentoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.RejeitarOrcamentoClienteUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.RejeitarOrcamentoUseCase;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -55,7 +56,7 @@ public class OrcamentoController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
-    public ResponseEntity<OrcamentoOutput> gerarOrcamento(@RequestBody GerarOrcamentoInput input) {
+    public ResponseEntity<OrcamentoOutput> gerarOrcamento(@Valid @RequestBody GerarOrcamentoInput input) {
         OrcamentoOutput orcamentoGerado = gerarOrcamentoUseCase.execute(input);
         return ResponseEntity.status(HttpStatus.CREATED).body(orcamentoGerado);
     }
@@ -86,7 +87,7 @@ public class OrcamentoController {
     @PostMapping("/{id}/cliente/visualizar")
     public ResponseEntity<OrcamentoOutput> visualizarPeloCliente(
             @PathVariable UUID id,
-            @RequestBody AprovacaoClienteInput input) {
+            @Valid @RequestBody AprovacaoClienteInput input) {
         OrcamentoOutput orcamento = buscarOrcamentoClienteUseCase.execute(id, input.cpf(), input.codigoAcesso());
         return ResponseEntity.ok(orcamento);
     }
@@ -94,7 +95,7 @@ public class OrcamentoController {
     @PostMapping("/{id}/cliente/aprovar")
     public ResponseEntity<OrcamentoOutput> aprovarPeloCliente(
             @PathVariable UUID id,
-            @RequestBody AprovacaoClienteInput input) {
+            @Valid @RequestBody AprovacaoClienteInput input) {
         OrcamentoOutput aprovado = aprovarOrcamentoClienteUseCase.execute(id, input);
         return ResponseEntity.ok(aprovado);
     }
@@ -102,7 +103,7 @@ public class OrcamentoController {
     @PostMapping("/{id}/cliente/rejeitar")
     public ResponseEntity<OrcamentoOutput> rejeitarPeloCliente(
             @PathVariable UUID id,
-            @RequestBody AprovacaoClienteInput input) {
+            @Valid @RequestBody AprovacaoClienteInput input) {
         OrcamentoOutput rejeitado = rejeitarOrcamentoClienteUseCase.execute(id, input.cpf(), input.codigoAcesso());
         return ResponseEntity.ok(rejeitado);
     }
