@@ -4,4 +4,5 @@ import java.util.UUID;
 
 public interface VeiculoRepository {
     boolean existePorId(UUID id);
+    boolean existePorClienteId(UUID clienteId);
 }

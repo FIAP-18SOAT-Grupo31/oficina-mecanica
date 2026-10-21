@@ -18,4 +18,9 @@ public class VeiculoRepositoryAdapter implements VeiculoRepository {
     public boolean existePorId(UUID id) {
         return jpaRepository.existsById(id);
     }
+
+    @Override
+    public boolean existePorClienteId(UUID clienteId) {
+        return jpaRepository.existsByClienteId(clienteId);
+    }
 }

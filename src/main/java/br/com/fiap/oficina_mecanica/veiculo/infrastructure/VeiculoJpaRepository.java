@@ -8,4 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface VeiculoJpaRepository extends JpaRepository<VeiculoEntity, UUID> {
+    boolean existsByClienteId(UUID clienteId);
 }
