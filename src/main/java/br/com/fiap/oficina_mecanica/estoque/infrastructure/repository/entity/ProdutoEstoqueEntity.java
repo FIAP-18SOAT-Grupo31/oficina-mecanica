@@ -1,4 +1,4 @@
-package br.com.fiap.oficina_mecanica.estoque.infrastructure.entity;
+package br.com.fiap.oficina_mecanica.estoque.infrastructure.repository.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
