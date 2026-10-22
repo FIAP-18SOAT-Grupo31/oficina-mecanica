@@ -11,15 +11,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Sobe o contexto da aplicação com um banco H2 só dos testes de cliente (os dados de outros testes de
+ * Sobe o contexto da aplicação com um banco H2 só dos testes de cliente e veículo (os dados de outros testes de
  * integração não interferem nas listagens) e desfaz cada teste no final.
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@SpringBootTest(properties = "spring.datasource.url="
-        + "jdbc=h2:mem:clientes;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH")
+@SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "clientes-test"})
 @Transactional
 public @interface TesteIntegracaoCliente {
 }
