@@ -278,5 +278,14 @@ class OrcamentoUseCasesTest {
         public Optional<ProdutoEstoque> buscarPorId(UUID id) {
             return Optional.ofNullable(estoque.get(id));
         }
+
+
+        @Override
+        public Optional<ProdutoEstoque> buscarPorNomePeca(String nomePeca) {
+            return estoque.values().stream()
+                    .filter(p -> p.getNomePeca().equalsIgnoreCase(nomePeca))
+                    .findFirst();
+        }
+
     }
 }
