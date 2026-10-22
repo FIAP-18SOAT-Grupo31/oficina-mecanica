@@ -1,7 +1,5 @@
 package br.com.fiap.oficina_mecanica.veiculo.domain;
 
-import br.com.fiap.oficina_mecanica.cliente.domain.Cliente;
-
 import java.time.Year;
 import java.util.UUID;
 
@@ -11,29 +9,58 @@ public class Veiculo {
     private String placa;
     private String modelo;
     private String marca;
-    private Cliente cliente;
+    private UUID clienteId;
 
-    public Veiculo(int anoFabricacao, String placa, String modelo, String marca, Cliente cliente) {
+    public Veiculo(int anoFabricacao, String placa, String modelo, String marca, UUID clienteId) {
+        this(UUID.randomUUID(), anoFabricacao, placa, modelo, marca, clienteId);
+    }
+
+    private Veiculo(UUID id, int anoFabricacao, String placa, String modelo, String marca, UUID clienteId) {
+        if (id == null) {
+            throw new IllegalArgumentException("O ID do veículo é inválido");
+        }
 
         String placaNormalizada = validaPlaca(placa);
         String modeloNormalizado = validaString(modelo, "modelo");
         String marcaNormalizada = validaString(marca, "marca");
         validaAnoFabricacao(anoFabricacao);
-        validaCliente(cliente);
+        validaClienteId(clienteId);
 
-        this.id = UUID.randomUUID();
+        this.id = id;
         this.anoFabricacao = anoFabricacao;
-        this.cliente = cliente;
+        this.clienteId = clienteId;
         this.placa = placaNormalizada;
         this.marca = marcaNormalizada;
         this.modelo = modeloNormalizado;
-
     }
 
-    private String validaPlaca(String placa) {
+    public static Veiculo reconstituir(UUID id, int anoFabricacao, String placa, String modelo, String marca,
+                                       UUID clienteId) {
+        return new Veiculo(id, anoFabricacao, placa, modelo, marca, clienteId);
+    }
+
+    /**
+     * Atualiza todos os dados do veículo de uma vez: se algum valor for inválido,
+     * nada é alterado.
+     */
+    public void atualizar(int anoFabricacao, String placa, String modelo, String marca, UUID clienteId) {
+        String placaNormalizada = validaPlaca(placa);
+        String modeloNormalizado = validaString(modelo, "modelo");
+        String marcaNormalizada = validaString(marca, "marca");
+        validaAnoFabricacao(anoFabricacao);
+        validaClienteId(clienteId);
+
+        this.anoFabricacao = anoFabricacao;
+        this.clienteId = clienteId;
+        this.placa = placaNormalizada;
+        this.marca = marcaNormalizada;
+        this.modelo = modeloNormalizado;
+    }
+
+    private static String validaPlaca(String placa) {
         String placaNormalizada = validaString(placa, "placa").replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
 
-        if (placa == null || !placa.matches("^[a-zA-Z0-9-]+$")) {
+        if (!placa.matches("^[a-zA-Z0-9-]+$")) {
             throw new IllegalArgumentException("A placa do veículo é inválida.");
         }
 
@@ -45,19 +72,19 @@ public class Veiculo {
         throw new IllegalArgumentException("A placa do veículo é inválida.");
     }
 
-    private void validaAnoFabricacao(int anoFabricacao) {
+    private static void validaAnoFabricacao(int anoFabricacao) {
         if (anoFabricacao < 1900 || anoFabricacao > Year.now().getValue()) {
             throw new IllegalArgumentException("Ano de fabricação do veículo é inválido.");
         }
     }
 
-    private void validaCliente(Cliente cliente) {
-        if (cliente == null) {
+    private static void validaClienteId(UUID clienteId) {
+        if (clienteId == null) {
             throw new IllegalArgumentException("O cliente do veículo é inválido.");
         }
     }
 
-    private String validaString(String string, String nomeAtributo) {
+    private static String validaString(String string, String nomeAtributo) {
         if (string == null || string.isBlank()) {
             throw new IllegalArgumentException(String.format("O(a) %s do veículo é inválido(a)", nomeAtributo));
         }
@@ -73,8 +100,8 @@ public class Veiculo {
         return anoFabricacao;
     }
 
-    public Cliente getCliente() {
-        return cliente;
+    public UUID getClienteId() {
+        return clienteId;
     }
 
     public String getMarca() {
@@ -106,8 +133,8 @@ public class Veiculo {
         this.marca = validaString(marca, "marca");
     }
 
-    public void setCliente(Cliente cliente) {
-        validaCliente(cliente);
-        this.cliente = cliente;
+    public void setClienteId(UUID clienteId) {
+        validaClienteId(clienteId);
+        this.clienteId = clienteId;
     }
 }

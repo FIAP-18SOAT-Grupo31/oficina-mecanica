@@ -1,28 +1,21 @@
 
 package br.com.fiap.oficina_mecanica.veiculo.domain;
 
-import br.com.fiap.oficina_mecanica.cliente.domain.Cliente;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Year;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 class VeiculoTest {
 
-    private Cliente cliente;
-
-    @BeforeEach
-    void setUp() {
-        cliente = mock(Cliente.class);
-    }
+    private final UUID clienteId = UUID.randomUUID();
 
     private Veiculo criarVeiculo() {
         return new Veiculo(
-                2020, "ABC1234", "Civic", "Honda", cliente
+                2020, "ABC1234", "Civic", "Honda", clienteId
         );
     }
 
@@ -38,7 +31,7 @@ class VeiculoTest {
         assertEquals("ABC1234", veiculo.getPlaca());
         assertEquals("Civic", veiculo.getModelo());
         assertEquals("Honda", veiculo.getMarca());
-        assertSame(cliente, veiculo.getCliente());
+        assertEquals(clienteId, veiculo.getClienteId());
     }
 
     @Test
@@ -51,7 +44,7 @@ class VeiculoTest {
     @DisplayName("Deve remover espaços externos do modelo e da marca")
     void deveNormalizarModeloEMarca() {
         Veiculo veiculo = new Veiculo(
-                2020, "ABC1234", "  Civic  ", "  Honda  ", cliente
+                2020, "ABC1234", "  Civic  ", "  Honda  ", clienteId
         );
 
         assertEquals("Civic", veiculo.getModelo());
@@ -64,7 +57,7 @@ class VeiculoTest {
     @DisplayName("Deve aceitar placa antiga")
     void deveAceitarPlacaAntiga() {
         assertEquals("ABC1234", new Veiculo(
-                2020, "ABC1234", "Civic", "Honda", cliente
+                2020, "ABC1234", "Civic", "Honda", clienteId
         ).getPlaca());
     }
 
@@ -72,7 +65,7 @@ class VeiculoTest {
     @DisplayName("Deve aceitar placa antiga com hífen")
     void deveAceitarPlacaAntigaComHifen() {
         assertEquals("ABC1234", new Veiculo(
-                2020, "ABC-1234", "Civic", "Honda", cliente
+                2020, "ABC-1234", "Civic", "Honda", clienteId
         ).getPlaca());
     }
 
@@ -80,7 +73,7 @@ class VeiculoTest {
     @DisplayName("Deve aceitar placa Mercosul")
     void deveAceitarPlacaMercosul() {
         assertEquals("ABC1D23", new Veiculo(
-                2020, "ABC1D23", "Civic", "Honda", cliente
+                2020, "ABC1D23", "Civic", "Honda", clienteId
         ).getPlaca());
     }
 
@@ -88,7 +81,7 @@ class VeiculoTest {
     @DisplayName("Deve converter placa para maiúsculas")
     void deveNormalizarPlaca() {
         assertEquals("ABC1D23", new Veiculo(
-                2020, "abc1d23", "Civic", "Honda", cliente
+                2020, "abc1d23", "Civic", "Honda", clienteId
         ).getPlaca());
     }
 
@@ -97,7 +90,7 @@ class VeiculoTest {
     void deveRejeitarPlacaComFormatoInvalido() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Veiculo(
-                        2020, "AB123", "Civic", "Honda", cliente
+                        2020, "AB123", "Civic", "Honda", clienteId
                 ));
     }
 
@@ -106,7 +99,7 @@ class VeiculoTest {
     void deveRejeitarPlacaComCaracteresEspeciais() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Veiculo(
-                        2020, "AB@123", "Civic", "Honda", cliente
+                        2020, "AB@123", "Civic", "Honda", clienteId
                 ));
     }
 
@@ -115,7 +108,7 @@ class VeiculoTest {
     void deveRejeitarPlacaNula() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Veiculo(
-                        2020, null, "Civic", "Honda", cliente
+                        2020, null, "Civic", "Honda", clienteId
                 ));
     }
 
@@ -124,7 +117,7 @@ class VeiculoTest {
     void deveRejeitarPlacaEmBranco() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Veiculo(
-                        2020, "   ", "Civic", "Honda", cliente
+                        2020, "   ", "Civic", "Honda", clienteId
                 ));
     }
 
@@ -136,7 +129,7 @@ class VeiculoTest {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> new Veiculo(
-                        2020, "ABC1234", null, "Honda", cliente
+                        2020, "ABC1234", null, "Honda", clienteId
                 )
         );
 
@@ -151,7 +144,7 @@ class VeiculoTest {
     void deveRejeitarModeloEmBranco() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Veiculo(
-                        2020, "ABC1234", "   ", "Honda", cliente
+                        2020, "ABC1234", "   ", "Honda", clienteId
                 ));
     }
 
@@ -161,7 +154,7 @@ class VeiculoTest {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> new Veiculo(
-                        2020, "ABC1234", "Civic", null, cliente
+                        2020, "ABC1234", "Civic", null, clienteId
                 )
         );
 
@@ -176,7 +169,7 @@ class VeiculoTest {
     void deveRejeitarMarcaEmBranco() {
         assertThrows(IllegalArgumentException.class,
                 () -> new Veiculo(
-                        2020, "ABC1234", "Civic", "   ", cliente
+                        2020, "ABC1234", "Civic", "   ", clienteId
                 ));
     }
 
@@ -186,7 +179,7 @@ class VeiculoTest {
     @DisplayName("Deve aceitar o ano mínimo de fabricação")
     void deveAceitarAnoMinimo() {
         assertEquals(1900, new Veiculo(
-                1900, "ABC1234", "Civic", "Honda", cliente
+                1900, "ABC1234", "Civic", "Honda", clienteId
         ).getAnoFabricacao());
     }
 
@@ -196,7 +189,7 @@ class VeiculoTest {
         int anoAtual = Year.now().getValue();
 
         assertEquals(anoAtual, new Veiculo(
-                anoAtual, "ABC1234", "Civic", "Honda", cliente
+                anoAtual, "ABC1234", "Civic", "Honda", clienteId
         ).getAnoFabricacao());
     }
 
@@ -206,7 +199,7 @@ class VeiculoTest {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> new Veiculo(
-                        1899, "ABC1234", "Civic", "Honda", cliente
+                        1899, "ABC1234", "Civic", "Honda", clienteId
                 )
         );
 
@@ -222,15 +215,15 @@ class VeiculoTest {
         assertThrows(IllegalArgumentException.class,
                 () -> new Veiculo(
                         Year.now().getValue() + 1,
-                        "ABC1234", "Civic", "Honda", cliente
+                        "ABC1234", "Civic", "Honda", clienteId
                 ));
     }
 
-    // Validação de cliente
+    // Validação de clienteId
 
     @Test
     @DisplayName("Deve rejeitar cliente nulo")
-    void deveRejeitarClienteNulo() {
+    void deveRejeitarClienteIdNulo() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> new Veiculo(
@@ -347,17 +340,17 @@ class VeiculoTest {
         assertEquals("Honda", veiculo.getMarca());
     }
 
-    // Setter de cliente
+    // Setter de clienteId
 
     @Test
     @DisplayName("Deve atualizar cliente")
     void deveAtualizarCliente() {
         Veiculo veiculo = criarVeiculo();
-        Cliente novoCliente = mock(Cliente.class);
+        UUID novoClienteId = UUID.randomUUID();
 
-        veiculo.setCliente(novoCliente);
+        veiculo.setClienteId(novoClienteId);
 
-        assertSame(novoCliente, veiculo.getCliente());
+        assertEquals(novoClienteId, veiculo.getClienteId());
     }
 
     @Test
@@ -366,8 +359,72 @@ class VeiculoTest {
         Veiculo veiculo = criarVeiculo();
 
         assertThrows(IllegalArgumentException.class,
-                () -> veiculo.setCliente(null));
+                () -> veiculo.setClienteId(null));
 
-        assertSame(cliente, veiculo.getCliente());
+        assertEquals(clienteId, veiculo.getClienteId());
+    }
+
+    // reconstituir
+
+    @Test
+    @DisplayName("reconstituir: mantém o id informado e normaliza os dados")
+    void reconstituirDeveManterOIdENormalizar() {
+        UUID id = UUID.randomUUID();
+
+        Veiculo veiculo = Veiculo.reconstituir(id, 2020, "abc-1234", "  Civic  ", "  Honda  ", clienteId);
+
+        assertEquals(id, veiculo.getId());
+        assertEquals("ABC1234", veiculo.getPlaca());
+        assertEquals("Civic", veiculo.getModelo());
+        assertEquals("Honda", veiculo.getMarca());
+        assertEquals(2020, veiculo.getAnoFabricacao());
+        assertEquals(clienteId, veiculo.getClienteId());
+    }
+
+    @Test
+    @DisplayName("reconstituir: rejeita id nulo")
+    void reconstituirDeveRejeitarIdNulo() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> Veiculo.reconstituir(null, 2020, "ABC1234", "Civic", "Honda", clienteId));
+
+        assertEquals("O ID do veículo é inválido", exception.getMessage());
+    }
+
+    // atualizar
+
+    @Test
+    @DisplayName("atualizar: substitui todos os dados normalizando os valores")
+    void atualizarDeveSubstituirTodosOsDados() {
+        Veiculo veiculo = criarVeiculo();
+        UUID id = veiculo.getId();
+        UUID novoClienteId = UUID.randomUUID();
+
+        veiculo.atualizar(2022, "xyz1d23", "  Corolla  ", "  Toyota  ", novoClienteId);
+
+        assertEquals(id, veiculo.getId());
+        assertEquals(2022, veiculo.getAnoFabricacao());
+        assertEquals("XYZ1D23", veiculo.getPlaca());
+        assertEquals("Corolla", veiculo.getModelo());
+        assertEquals("Toyota", veiculo.getMarca());
+        assertEquals(novoClienteId, veiculo.getClienteId());
+    }
+
+    @Test
+    @DisplayName("atualizar: se qualquer valor for inválido, nada é alterado")
+    void atualizarNaoDeveAlterarNadaQuandoAlgumValorForInvalido() {
+        Veiculo veiculo = criarVeiculo();
+        UUID outro = UUID.randomUUID();
+
+        assertThrows(IllegalArgumentException.class, () -> veiculo.atualizar(2022, "AB123", "Corolla", "Toyota", outro));
+        assertThrows(IllegalArgumentException.class, () -> veiculo.atualizar(2022, "XYZ1D23", " ", "Toyota", outro));
+        assertThrows(IllegalArgumentException.class, () -> veiculo.atualizar(2022, "XYZ1D23", "Corolla", " ", outro));
+        assertThrows(IllegalArgumentException.class, () -> veiculo.atualizar(1899, "XYZ1D23", "Corolla", "Toyota", outro));
+        assertThrows(IllegalArgumentException.class, () -> veiculo.atualizar(2022, "XYZ1D23", "Corolla", "Toyota", null));
+
+        assertEquals(2020, veiculo.getAnoFabricacao());
+        assertEquals("ABC1234", veiculo.getPlaca());
+        assertEquals("Civic", veiculo.getModelo());
+        assertEquals("Honda", veiculo.getMarca());
+        assertEquals(clienteId, veiculo.getClienteId());
     }
 }

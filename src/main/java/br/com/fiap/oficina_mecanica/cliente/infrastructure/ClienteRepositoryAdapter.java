@@ -4,6 +4,7 @@ import br.com.fiap.oficina_mecanica.cliente.domain.Cliente;
 import br.com.fiap.oficina_mecanica.cliente.domain.ClienteRepository;
 import br.com.fiap.oficina_mecanica.cliente.infrastructure.entity.ClienteEntity;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
+import br.com.fiap.oficina_mecanica.compartilhado.infrastructure.persistence.TextoLike;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,8 +19,6 @@ import java.util.UUID;
 
 @Repository
 public class ClienteRepositoryAdapter implements ClienteRepository {
-
-    private static final char ESCAPE = '\\';
 
     private final ClienteJpaRepository jpaRepository;
 
@@ -76,8 +75,8 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
             List<Predicate> predicados = new ArrayList<>();
 
             if (nome != null) {
-                String padrao = "%" + escaparCuringas(nome.toLowerCase()) + "%";
-                predicados.add(builder.like(builder.lower(root.<String>get("nome")), padrao, ESCAPE));
+                predicados.add(builder.like(builder.lower(root.<String>get("nome")), TextoLike.contem(nome),
+                        TextoLike.ESCAPE));
             }
 
             if (documento != null) {
@@ -86,12 +85,5 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
 
             return builder.and(predicados.toArray(new Predicate[0]));
         };
-    }
-
-    private static String escaparCuringas(String texto) {
-        return texto
-                .replace("\\", "\\\\")
-                .replace("%", "\\%")
-                .replace("_", "\\_");
     }
 }
