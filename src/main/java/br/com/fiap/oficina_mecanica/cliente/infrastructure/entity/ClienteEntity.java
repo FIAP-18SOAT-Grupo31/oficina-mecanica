@@ -1,7 +1,11 @@
 package br.com.fiap.oficina_mecanica.cliente.infrastructure.entity;
 
 import br.com.fiap.oficina_mecanica.cliente.infrastructure.EnderecoEmbeddable;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import java.util.UUID;
 

@@ -781,4 +781,3 @@ class ClienteTest {
         assertInalterado(cliente);
     }
 }
-
