@@ -349,7 +349,7 @@ class OrdemServicoIntegrationTest {
     }
 
     @Test
-    void clienteConsultaSuaOrdemSemTokenVendoApenasOrcamentosPendentes() throws Exception {
+    void clienteConsultaSuaOrdemSemToken() throws Exception {
         String ordemServicoId = criarOrdemServico();
         String orcamentoId = gerarOrcamento(ordemServicoId);
         String codigo = codigoAcesso(ordemServicoId);
@@ -364,14 +364,14 @@ class OrdemServicoIntegrationTest {
                 .andExpect(jsonPath("$.status").value("AGUARDANDO_APROVACAO"))
                 .andExpect(jsonPath("$.veiculo.marca").value("Fiat"))
                 .andExpect(jsonPath("$.veiculo.modelo").value("Argo"))
-                .andExpect(jsonPath("$.orcamentosPendentes.length()").value(1))
-                .andExpect(jsonPath("$.orcamentosPendentes[0].id").value(orcamentoId))
+                .andExpect(jsonPath("$.orcamentos.length()").value(1))
+                .andExpect(jsonPath("$.orcamentos[0].id").value(orcamentoId))
                 .andExpect(jsonPath("$.codigoAcesso").doesNotExist())
                 .andExpect(jsonPath("$.cliente").doesNotExist());
     }
 
     @Test
-    void consultaDoClienteEscondeOrcamentoJaDecidido() throws Exception {
+    void consultaDoClienteMostraOrcamentoJaDecidido() throws Exception {
         String ordemServicoId = criarOrdemServico();
         String orcamentoId = gerarOrcamento(ordemServicoId);
         String codigo = codigoAcesso(ordemServicoId);
@@ -383,7 +383,9 @@ class OrdemServicoIntegrationTest {
                         .content(corpoConsulta(documentoCliente, codigo)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APROVADA"))
-                .andExpect(jsonPath("$.orcamentosPendentes").isEmpty());
+                .andExpect(jsonPath("$.orcamentos.length()").value(1))
+                .andExpect(jsonPath("$.orcamentos[0].id").value(orcamentoId))
+                .andExpect(jsonPath("$.orcamentos[0].status").value("APROVADO"));
     }
 
     @Test

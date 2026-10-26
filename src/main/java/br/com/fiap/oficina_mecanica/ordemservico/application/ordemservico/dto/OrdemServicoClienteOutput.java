@@ -15,11 +15,11 @@ public record OrdemServicoClienteOutput(
         LocalDateTime dataAbertura,
         LocalDateTime dataConclusao,
         VeiculoDetalheOutput veiculo,
-        List<OrcamentoOutput> orcamentosPendentes
+        List<OrcamentoOutput> orcamentos
 ) {
 
     public static OrdemServicoClienteOutput de(OrdemServico ordemServico, VeiculoDetalheOutput veiculo,
-                                               List<OrcamentoOutput> orcamentosPendentes) {
+                                               List<OrcamentoOutput> orcamentos) {
         return new OrdemServicoClienteOutput(
                 ordemServico.getId(),
                 ordemServico.getStatus(),
@@ -27,6 +27,6 @@ public record OrdemServicoClienteOutput(
                 ordemServico.getDataAbertura(),
                 ordemServico.getDataConclusao(),
                 veiculo,
-                orcamentosPendentes);
+                orcamentos);
     }
 }

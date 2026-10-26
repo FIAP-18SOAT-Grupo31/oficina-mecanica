@@ -67,14 +67,14 @@ class ConsultarOrdemServicoClienteUseCaseTest {
     }
 
     @Test
-    void devolveOrdemComVeiculoEApenasOrcamentosPendentes() {
+    void devolveOrdemComVeiculoETodosOsOrcamentos() {
         Orcamento pendente = orcamento(StatusOrcamento.PENDENTE, Horario.agora().plusDays(1));
+        Orcamento aprovado = orcamento(StatusOrcamento.APROVADO, Horario.agora().plusDays(1));
+        Orcamento rejeitado = orcamento(StatusOrcamento.REJEITADO, Horario.agora().plusDays(1));
+        Orcamento expirado = orcamento(StatusOrcamento.EXPIRADO, Horario.agora().minusDays(1));
         VeiculoDetalheOutput veiculo = new VeiculoDetalheOutput(veiculoId, "ABC1D23", "Fiat", "Argo", 2022);
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordemComOrcamentos(List.of(
-                pendente,
-                orcamento(StatusOrcamento.APROVADO, Horario.agora().plusDays(1)),
-                orcamento(StatusOrcamento.REJEITADO, Horario.agora().plusDays(1)),
-                orcamento(StatusOrcamento.EXPIRADO, Horario.agora().minusDays(1))))));
+                pendente, aprovado, rejeitado, expirado))));
         when(consultorVeiculos.detalharPorId(veiculoId)).thenReturn(Optional.of(veiculo));
 
         OrdemServicoClienteOutput output = useCase().execute(ordemId, "123.456.789-00", "ABC123");
@@ -84,18 +84,22 @@ class ConsultarOrdemServicoClienteUseCaseTest {
         assertThat(output.status()).isEqualTo(StatusOrdemServico.AGUARDANDO_APROVACAO);
         assertThat(output.relatoProblema()).isEqualTo("Barulho na suspensão dianteira");
         assertThat(output.veiculo()).isEqualTo(veiculo);
-        assertThat(output.orcamentosPendentes()).extracting("id").containsExactly(pendente.getId());
+        assertThat(output.orcamentos()).extracting("id")
+                .containsExactly(pendente.getId(), aprovado.getId(), rejeitado.getId(), expirado.getId());
+        assertThat(output.orcamentos()).extracting("status").containsExactly(
+                StatusOrcamento.PENDENTE, StatusOrcamento.APROVADO, StatusOrcamento.REJEITADO,
+                StatusOrcamento.EXPIRADO);
     }
 
     @Test
-    void orcamentoPendenteComValidadeVencidaNaoApareceComoPendente() {
+    void orcamentoPendenteComValidadeVencidaApareceComoExpirado() {
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordemComOrcamentos(List.of(
                 orcamento(StatusOrcamento.PENDENTE, Horario.agora().minusMinutes(1))))));
         when(consultorVeiculos.detalharPorId(veiculoId)).thenReturn(Optional.empty());
 
         OrdemServicoClienteOutput output = useCase().execute(ordemId, "12345678900", "ABC123");
 
-        assertThat(output.orcamentosPendentes()).isEmpty();
+        assertThat(output.orcamentos()).extracting("status").containsExactly(StatusOrcamento.EXPIRADO);
         assertThat(output.veiculo()).isNull();
     }
 
@@ -104,7 +108,7 @@ class ConsultarOrdemServicoClienteUseCaseTest {
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordemComOrcamentos(List.of())));
         when(consultorVeiculos.detalharPorId(veiculoId)).thenReturn(Optional.empty());
 
-        assertThat(useCase().execute(ordemId, "12345678900", "ABC123").orcamentosPendentes()).isEmpty();
+        assertThat(useCase().execute(ordemId, "12345678900", "ABC123").orcamentos()).isEmpty();
     }
 
     @Test
