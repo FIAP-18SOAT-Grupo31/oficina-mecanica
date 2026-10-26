@@ -62,6 +62,6 @@ public class OrdemServicoRepositoryAdapter implements OrdemServicoRepository {
     }
 
     private List<Orcamento> orcamentosDa(UUID ordemServicoId) {
-        return orcamentoRepository.buscarPorOrdemServicoId(ordemServicoId).stream().toList();
+        return orcamentoRepository.buscarPorOrdemServicoId(ordemServicoId);
     }
 }

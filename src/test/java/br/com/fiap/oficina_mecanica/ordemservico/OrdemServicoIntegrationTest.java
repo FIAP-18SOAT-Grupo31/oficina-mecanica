@@ -37,6 +37,7 @@ class OrdemServicoIntegrationTest {
 
     private UUID clienteId;
     private UUID veiculoId;
+    private String documentoCliente;
 
     private RequestPostProcessor jwtAtendente() {
         return jwt().authorities(new SimpleGrantedAuthority("ROLE_ATENDENTE"));
@@ -51,6 +52,7 @@ class OrdemServicoIntegrationTest {
         clienteId = UUID.randomUUID();
         veiculoId = UUID.randomUUID();
         String documento = String.valueOf(Math.abs(clienteId.getMostSignificantBits())).substring(0, 11);
+        documentoCliente = documento;
         String placa = clienteId.toString().substring(0, 7).toUpperCase();
         jdbc.update("INSERT INTO clientes (id, nome, documento) VALUES (?, ?, ?)", clienteId, "Cliente de teste", documento);
         jdbc.update("INSERT INTO veiculos (id, cliente_id, placa, marca, modelo, ano) VALUES (?, ?, ?, ?, ?, ?)",
@@ -69,6 +71,17 @@ class OrdemServicoIntegrationTest {
                 .andExpect(header().string("Location", containsString("/api/ordens-servico/")))
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(resposta, "$.ordemServicoId");
+    }
+
+    private String gerarOrcamento(String ordemServicoId) throws Exception {
+        String resposta = mvc.perform(post("/api/orcamentos").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ordemServicoId\":\"" + ordemServicoId + "\",\"dataValidade\":\"2099-12-31T23:59:59\",\"servicos\":[{\"catalogoServicoId\":\""
+                                + UUID.randomUUID() + "\",\"descricao\":\"Troca de óleo\",\"valorMaoDeObra\":200.00}],"
+                                + "\"pecas\":[]}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return JsonPath.read(resposta, "$.id");
     }
 
     @Test
@@ -220,5 +233,77 @@ class OrdemServicoIntegrationTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.erro").value("Acesso Negado"));
+    }
+
+    @Test
+    void adminDetalhaOrdemComClienteVeiculoEOrcamentos() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(ordemServicoId))
+                .andExpect(jsonPath("$.status").value("AGUARDANDO_APROVACAO"))
+                .andExpect(jsonPath("$.relatoProblema").value("Barulho na suspensão dianteira"))
+                .andExpect(jsonPath("$.codigoAcesso").isNotEmpty())
+                .andExpect(jsonPath("$.cliente.id").value(clienteId.toString()))
+                .andExpect(jsonPath("$.cliente.nome").value("Cliente de teste"))
+                .andExpect(jsonPath("$.cliente.documento").value(documentoCliente))
+                .andExpect(jsonPath("$.veiculo.id").value(veiculoId.toString()))
+                .andExpect(jsonPath("$.veiculo.ano").value(2022))
+                .andExpect(jsonPath("$.orcamentos.length()").value(1))
+                .andExpect(jsonPath("$.orcamentos[0].id").value(orcamentoId))
+                .andExpect(jsonPath("$.orcamentos[0].status").value("PENDENTE"))
+                .andExpect(jsonPath("$.orcamentos[0].servicos[0].descricao").value("Troca de óleo"));
+    }
+
+    @Test
+    void atendenteDetalhaOrdemSemOrcamentos() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAtendente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RECEBIDA"))
+                .andExpect(jsonPath("$.orcamentos").isEmpty());
+    }
+
+    @Test
+    void detalheMantemOrcamentosJaDecididos() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente()))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APROVADA"))
+                .andExpect(jsonPath("$.orcamentos[0].status").value("APROVADO"));
+    }
+
+    @Test
+    void detalheDeOrdemInexistenteVolta404() throws Exception {
+        mvc.perform(get("/api/ordens-servico/" + UUID.randomUUID()).with(jwtAtendente()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.mensagem").value("Ordem de Serviço não encontrada."));
+    }
+
+    @Test
+    void detalheComIdMalFormadoVolta400() throws Exception {
+        mvc.perform(get("/api/ordens-servico/nao-e-uuid").with(jwtAtendente()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erro").value("Requisição Inválida"));
+    }
+
+    @Test
+    void detalheSemTokenVolta401() throws Exception {
+        mvc.perform(get("/api/ordens-servico/" + UUID.randomUUID()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void detalheComPapelSemPermissaoVolta403() throws Exception {
+        mvc.perform(get("/api/ordens-servico/" + UUID.randomUUID())
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"))))
+                .andExpect(status().isForbidden());
     }
 }

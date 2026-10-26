@@ -2,8 +2,10 @@ package br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.useca
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Paginacao;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.ClienteDetalheOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.ClienteResumoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoResumoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.VeiculoDetalheOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.VeiculoResumoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
@@ -64,6 +66,11 @@ class ListarOrdensServicoUseCaseTest {
             encontrados.keySet().retainAll(clienteIds);
             return encontrados;
         }
+
+        @Override
+        public Optional<ClienteDetalheOutput> detalharPorId(UUID clienteId) {
+            return Optional.empty();
+        }
     }
 
     private static final class ConsultorVeiculosEmMemoria implements ConsultorVeiculos {
@@ -77,6 +84,11 @@ class ListarOrdensServicoUseCaseTest {
             Map<UUID, VeiculoResumoOutput> encontrados = new HashMap<>(veiculos);
             encontrados.keySet().retainAll(veiculoIds);
             return encontrados;
+        }
+
+        @Override
+        public Optional<VeiculoDetalheOutput> detalharPorId(UUID veiculoId) {
+            return Optional.empty();
         }
     }
 

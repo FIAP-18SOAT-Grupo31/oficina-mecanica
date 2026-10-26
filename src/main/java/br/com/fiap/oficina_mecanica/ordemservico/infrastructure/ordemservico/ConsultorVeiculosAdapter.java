@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico;
 
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.VeiculoDetalheOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.VeiculoResumoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.ConsultorVeiculos;
 import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoRepository;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,6 +27,12 @@ public class ConsultorVeiculosAdapter implements ConsultorVeiculos {
     public Map<UUID, VeiculoResumoOutput> resumirPorIds(Collection<UUID> veiculoIds) {
         return veiculoRepository.buscarResumosPorIds(veiculoIds).stream()
                 .collect(Collectors.toMap(VeiculoResumo::id, paraOutput(), (a, b) -> a));
+    }
+
+    @Override
+    public Optional<VeiculoDetalheOutput> detalharPorId(UUID veiculoId) {
+        return veiculoRepository.buscarDetalhePorId(veiculoId)
+                .map(v -> new VeiculoDetalheOutput(v.id(), v.placa(), v.marca(), v.modelo(), v.ano()));
     }
 
     private static Function<VeiculoResumo, VeiculoResumoOutput> paraOutput() {

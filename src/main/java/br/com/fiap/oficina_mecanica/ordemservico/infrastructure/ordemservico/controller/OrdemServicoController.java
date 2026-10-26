@@ -4,7 +4,9 @@ import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Paginacao;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoDetalheOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoResumoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.BuscarOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.CriarOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.ListarOrdensServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
@@ -14,6 +16,7 @@ import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/ordens-servico")
@@ -30,11 +34,20 @@ public class OrdemServicoController {
     private final CriarOrdemServicoUseCase criarOrdemServicoUseCase;
 
     private final ListarOrdensServicoUseCase listarOrdensServicoUseCase;
+    private final BuscarOrdemServicoUseCase buscarOrdemServicoUseCase;
 
     public OrdemServicoController(CriarOrdemServicoUseCase criarOrdemServicoUseCase,
-                                  ListarOrdensServicoUseCase listarOrdensServicoUseCase) {
+                                  ListarOrdensServicoUseCase listarOrdensServicoUseCase,
+                                  BuscarOrdemServicoUseCase buscarOrdemServicoUseCase) {
         this.criarOrdemServicoUseCase = criarOrdemServicoUseCase;
         this.listarOrdensServicoUseCase = listarOrdensServicoUseCase;
+        this.buscarOrdemServicoUseCase = buscarOrdemServicoUseCase;
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    public ResponseEntity<OrdemServicoDetalheOutput> buscarOrdemServico(@PathVariable UUID id) {
+        return ResponseEntity.ok(buscarOrdemServicoUseCase.execute(id));
     }
 
     @GetMapping

@@ -9,4 +9,5 @@ public interface ClienteRepository {
     boolean existePorId(UUID id);
     Optional<String> buscarDocumentoPorId(UUID id);
     List<ClienteResumo> buscarResumosPorIds(Collection<UUID> ids);
+    Optional<ClienteDetalhe> buscarDetalhePorId(UUID id);
 }

@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.cliente.infrastructure;
 
+import br.com.fiap.oficina_mecanica.cliente.domain.ClienteDetalhe;
 import br.com.fiap.oficina_mecanica.cliente.domain.ClienteRepository;
 import br.com.fiap.oficina_mecanica.cliente.domain.ClienteResumo;
 import br.com.fiap.oficina_mecanica.cliente.infrastructure.entity.ClienteEntity;
@@ -34,5 +35,11 @@ public class ClienteRepositoryAdapter implements ClienteRepository {
         return jpaRepository.findAllById(ids).stream()
                 .map(cliente -> new ClienteResumo(cliente.getId(), cliente.getNome()))
                 .toList();
+    }
+
+    @Override
+    public Optional<ClienteDetalhe> buscarDetalhePorId(UUID id) {
+        return jpaRepository.findById(id)
+                .map(c -> new ClienteDetalhe(c.getId(), c.getNome(), c.getDocumento(), c.getEmail(), c.getTelefone()));
     }
 }
