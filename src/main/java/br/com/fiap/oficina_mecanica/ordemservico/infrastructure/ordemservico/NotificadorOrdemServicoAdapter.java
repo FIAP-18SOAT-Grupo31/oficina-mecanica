@@ -3,6 +3,7 @@ package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico;
 import br.com.fiap.oficina_mecanica.compartilhado.infrastructure.evento.ExecucaoSegura;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoAprovada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCancelada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCriada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoFinalizada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoRecusada;
 import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoRepository;
@@ -24,6 +25,23 @@ public class NotificadorOrdemServicoAdapter {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoCriar(OrdemServicoCriada evento) {
+        ExecucaoSegura.executar(LOG, "o aviso de ordem recebida", () ->
+                LOG.info("\n=========================================================================" +
+                                "\n📧 [SIMULAÇÃO DE E-MAIL] - ORDEM DE SERVIÇO RECEBIDA" +
+                                "\n=========================================================================" +
+                                "\nOlá! Recebemos o seu veículo e a sua ordem de serviço foi aberta." +
+                                "\n" +
+                                "\n🔗 Acompanhe o andamento: http://localhost:8080/api/publico/ordens-servico/{}/consultar" +
+                                "\n🔑 Para sua segurança, utilize o seu CPF e o Código de Acesso abaixo:" +
+                                "\n" +
+                                "\n   Código de Acesso: {}" +
+                                "\n" +
+                                "\n=========================================================================\n",
+                        evento.ordemServicoId(), evento.codigoAcesso()));
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void aoAprovar(OrdemServicoAprovada evento) {
         ExecucaoSegura.executar(LOG, "o aviso de orçamento aprovado", () -> {
             String aprovacao = evento.aprovacaoParcial() ? "foi aprovado parcialmente" : "foi aprovado";
@@ -33,7 +51,7 @@ public class NotificadorOrdemServicoAdapter {
                             "\n=========================================================================" +
                             "\nOlá! O orçamento {} e o serviço no seu veículo será iniciado em breve." +
                             "\n" +
-                            "\n🔗 Acompanhe o andamento: http://localhost:8080/api/publico/ordens-servico/{}/consulta" +
+                            "\n🔗 Acompanhe o andamento: http://localhost:8080/api/publico/ordens-servico/{}/consultar" +
                             "\n🔑 Para sua segurança, utilize o seu CPF e o Código de Acesso abaixo:" +
                             "\n" +
                             "\n   Código de Acesso: {}" +

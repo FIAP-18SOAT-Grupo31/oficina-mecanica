@@ -358,7 +358,7 @@ class OrdemServicoIntegrationTest {
         String cpfFormatado = documentoCliente.substring(0, 3) + "." + documentoCliente.substring(3, 6) + "."
                 + documentoCliente.substring(6, 9) + "-" + documentoCliente.substring(9);
 
-        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consulta")
+        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoConsulta(cpfFormatado, codigo)))
                 .andExpect(status().isOk())
@@ -380,7 +380,7 @@ class OrdemServicoIntegrationTest {
         mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente()))
                 .andExpect(status().isOk());
 
-        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consulta")
+        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoConsulta(documentoCliente, codigo)))
                 .andExpect(status().isOk())
@@ -394,7 +394,7 @@ class OrdemServicoIntegrationTest {
     void consultaComCodigoDeAcessoErradoVolta422() throws Exception {
         String ordemServicoId = criarOrdemServico();
 
-        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consulta")
+        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoConsulta(documentoCliente, "ZZZZZZ")))
                 .andExpect(status().is(422))
@@ -406,7 +406,7 @@ class OrdemServicoIntegrationTest {
         String ordemServicoId = criarOrdemServico();
         String codigo = codigoAcesso(ordemServicoId);
 
-        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consulta")
+        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoConsulta("00000000000", codigo)))
                 .andExpect(status().is(422))
@@ -415,7 +415,7 @@ class OrdemServicoIntegrationTest {
 
     @Test
     void consultaSemCamposObrigatoriosVolta400() throws Exception {
-        mvc.perform(post("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consulta")
+        mvc.perform(post("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -426,7 +426,7 @@ class OrdemServicoIntegrationTest {
 
     @Test
     void consultaDeOrdemInexistenteVolta404() throws Exception {
-        mvc.perform(post("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consulta")
+        mvc.perform(post("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoConsulta(documentoCliente, "ABC123")))
                 .andExpect(status().isNotFound());
@@ -434,7 +434,7 @@ class OrdemServicoIntegrationTest {
 
     @Test
     void consultaDoClienteNaoAceitaGet() throws Exception {
-        mvc.perform(get("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consulta"))
+        mvc.perform(get("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consultar"))
                 .andExpect(status().isMethodNotAllowed());
     }
 
@@ -608,7 +608,7 @@ class OrdemServicoIntegrationTest {
 
         assertThat(saida.getOut())
                 .contains("OR\u00c7AMENTO APROVADO")
-                .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consulta");
+                .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consultar");
     }
 
     @Test
@@ -680,7 +680,28 @@ class OrdemServicoIntegrationTest {
 
         assertThat(saida.getOut())
                 .contains("NOVO OR\u00c7AMENTO GERADO")
-                .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consulta");
+                .contains("/api/orcamentos/");
+        assertThat(saida.getOut().split("NOVO OR\u00c7AMENTO GERADO", -1)).hasSize(2);
+    }
+
+    @Test
+    void criarOrdemAvisaOClienteComLinkDeAcompanhamento(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        assertThat(saida.getOut())
+                .contains("ORDEM DE SERVI\u00c7O RECEBIDA")
+                .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
+                .contains("C\u00f3digo de Acesso: " + codigoAcesso(ordemServicoId));
+    }
+
+    @Test
+    void criarOrdemInvalidaNaoAvisaOCliente(CapturedOutput saida) throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoOrdemServico(UUID.randomUUID(), veiculoId, "Barulho na suspensão dianteira")))
+                .andExpect(status().isNotFound());
+
+        assertThat(saida.getOut()).doesNotContain("ORDEM DE SERVI\u00c7O RECEBIDA");
     }
 
     @Test

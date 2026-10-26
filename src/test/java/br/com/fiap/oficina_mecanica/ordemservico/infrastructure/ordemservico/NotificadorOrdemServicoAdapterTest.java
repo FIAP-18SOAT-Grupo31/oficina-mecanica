@@ -2,6 +2,7 @@ package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico;
 
 import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoAprovada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCancelada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCriada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoFinalizada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoRecusada;
 import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoDetalhe;
@@ -89,13 +90,24 @@ class NotificadorOrdemServicoAdapterTest {
     }
 
     @Test
+    void avisaQueAOrdemFoiRecebidaComLinkDeAcompanhamentoECodigoDeAcesso() {
+        adapter().aoCriar(new OrdemServicoCriada(ordemId, "ABC123"));
+
+        assertThat(mensagem())
+                .contains("ORDEM DE SERVIÇO RECEBIDA")
+                .contains("Acompanhe o andamento: http://localhost:8080/api/publico/ordens-servico/" + ordemId + "/consultar")
+                .contains("CPF e o Código de Acesso")
+                .contains("Código de Acesso: ABC123");
+    }
+
+    @Test
     void avisaAprovacaoTotalComLinkDeAcompanhamentoECodigoDeAcesso() {
         adapter().aoAprovar(new OrdemServicoAprovada(ordemId, "ABC123", false));
 
         assertThat(mensagem())
                 .contains("ORÇAMENTO APROVADO")
                 .contains("O orçamento foi aprovado e o serviço")
-                .contains("Acompanhe o andamento: http://localhost:8080/api/publico/ordens-servico/" + ordemId + "/consulta")
+                .contains("Acompanhe o andamento: http://localhost:8080/api/publico/ordens-servico/" + ordemId + "/consultar")
                 .contains("CPF e o Código de Acesso")
                 .contains("Código de Acesso: ABC123")
                 .doesNotContain("parcialmente");
