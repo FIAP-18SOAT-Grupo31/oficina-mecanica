@@ -42,6 +42,10 @@ class OrdemServicoIntegrationTest {
         return jwt().authorities(new SimpleGrantedAuthority("ROLE_ATENDENTE"));
     }
 
+    private RequestPostProcessor jwtAdmin() {
+        return jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"));
+    }
+
     @BeforeEach
     void cadastrarClienteEVeiculo() {
         clienteId = UUID.randomUUID();
@@ -117,5 +121,104 @@ class OrdemServicoIntegrationTest {
         mvc.perform(get("/api/orcamentos/" + UUID.randomUUID()).with(jwtAtendente()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.erro").value("Recurso Não Encontrado"));
+    }
+
+    @Test
+    void atendenteListaOrdensDeServicoComClienteEVeiculo() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String ordem = "$.conteudo[?(@.id=='" + ordemServicoId + "')]";
+
+        mvc.perform(get("/api/ordens-servico").with(jwtAtendente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath(ordem + ".status").value("RECEBIDA"))
+                .andExpect(jsonPath(ordem + ".cliente.id").value(clienteId.toString()))
+                .andExpect(jsonPath(ordem + ".cliente.nome").value("Cliente de teste"))
+                .andExpect(jsonPath(ordem + ".cliente.documento").isEmpty())
+                .andExpect(jsonPath(ordem + ".veiculo.id").value(veiculoId.toString()))
+                .andExpect(jsonPath(ordem + ".veiculo.marca").value("Fiat"))
+                .andExpect(jsonPath(ordem + ".veiculo.modelo").value("Argo"))
+                .andExpect(jsonPath(ordem + ".codigoAcesso").isEmpty())
+                .andExpect(jsonPath("$.pagina").value(0))
+                .andExpect(jsonPath("$.tamanho").value(20));
+    }
+
+    @Test
+    void adminListaOrdensDeServico() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        mvc.perform(get("/api/ordens-servico").with(jwtAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[?(@.id=='" + ordemServicoId + "')]").isNotEmpty());
+    }
+
+    @Test
+    void listaFiltrandoPorStatus() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        mvc.perform(get("/api/ordens-servico").param("status", "RECEBIDA").param("tamanho", "100").with(jwtAtendente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[?(@.id=='" + ordemServicoId + "')]").isNotEmpty())
+                .andExpect(jsonPath("$.conteudo[?(@.status!='RECEBIDA')]").isEmpty());
+
+        mvc.perform(get("/api/ordens-servico").param("status", "FINALIZADA").param("tamanho", "100").with(jwtAtendente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo[?(@.id=='" + ordemServicoId + "')]").isEmpty());
+    }
+
+    @Test
+    void listaPaginadaDevolveMaisRecentesPrimeiroEMetadados() throws Exception {
+        criarOrdemServico();
+        String maisRecente = criarOrdemServico();
+
+        mvc.perform(get("/api/ordens-servico").param("pagina", "0").param("tamanho", "1").with(jwtAtendente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo.length()").value(1))
+                .andExpect(jsonPath("$.conteudo[0].id").value(maisRecente))
+                .andExpect(jsonPath("$.tamanho").value(1))
+                .andExpect(jsonPath("$.totalElementos").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)))
+                .andExpect(jsonPath("$.totalPaginas").value(org.hamcrest.Matchers.greaterThanOrEqualTo(2)));
+    }
+
+    @Test
+    void paginaAlemDoFimVoltaVaziaSemErro() throws Exception {
+        mvc.perform(get("/api/ordens-servico").param("pagina", "100000").with(jwtAtendente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.conteudo").isEmpty());
+    }
+
+    @Test
+    void paginacaoInvalidaVolta400() throws Exception {
+        mvc.perform(get("/api/ordens-servico").param("pagina", "-1").with(jwtAtendente()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erro").value("Dados Inválidos"))
+                .andExpect(jsonPath("$.mensagem").value("pagina: deve ser maior ou igual a 0"));
+        mvc.perform(get("/api/ordens-servico").param("tamanho", "0").with(jwtAtendente()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("tamanho: deve ser entre 1 e 100"));
+        mvc.perform(get("/api/ordens-servico").param("tamanho", "101").with(jwtAtendente()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem").value("tamanho: deve ser entre 1 e 100"));
+    }
+
+    @Test
+    void listaComStatusInvalidoVolta400() throws Exception {
+        mvc.perform(get("/api/ordens-servico").param("status", "INEXISTENTE").with(jwtAtendente()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erro").value("Requisição Inválida"));
+    }
+
+    @Test
+    void listaSemTokenVolta401() throws Exception {
+        mvc.perform(get("/api/ordens-servico"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.erro").value("Não Autenticado"));
+    }
+
+    @Test
+    void listaComPapelSemPermissaoVolta403() throws Exception {
+        mvc.perform(get("/api/ordens-servico")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.erro").value("Acesso Negado"));
     }
 }

@@ -1,5 +1,7 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Paginacao;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoOutput;
@@ -31,6 +33,11 @@ class CriarOrdemServicoUseCaseTest {
         @Override
         public Optional<OrdemServico> buscarPorId(UUID id) {
             return Optional.ofNullable(ordens.get(id));
+        }
+
+        @Override
+        public Pagina<OrdemServico> listar(StatusOrdemServico status, Paginacao paginacao) {
+            throw new UnsupportedOperationException();
         }
     }
 

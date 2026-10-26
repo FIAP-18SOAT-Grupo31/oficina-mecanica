@@ -1,6 +1,8 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Paginacao;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
@@ -342,6 +344,11 @@ class OrcamentoUseCasesTest {
         @Override
         public Optional<OrdemServico> buscarPorId(UUID id) {
             return Optional.ofNullable(ordens.get(id));
+        }
+
+        @Override
+        public Pagina<OrdemServico> listar(StatusOrdemServico status, Paginacao paginacao) {
+            throw new UnsupportedOperationException();
         }
     }
 
