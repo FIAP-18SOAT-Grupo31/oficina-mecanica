@@ -14,6 +14,8 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecas
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.IniciarExecucaoOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.ListarOrdensServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -34,6 +36,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/ordens-servico")
+@Tag(name = "Ordens de Serviço")
 public class OrdemServicoController {
 
     private final CriarOrdemServicoUseCase criarOrdemServicoUseCase;
@@ -63,12 +66,14 @@ public class OrdemServicoController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Detalha uma ordem de serviço, com cliente, veículo e orçamentos")
     public ResponseEntity<OrdemServicoDetalheOutput> buscarOrdemServico(@PathVariable UUID id) {
         return ResponseEntity.ok(buscarOrdemServicoUseCase.execute(id));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Lista as ordens de serviço com paginação, podendo filtrar por status")
     public ResponseEntity<Pagina<OrdemServicoResumoOutput>> listarOrdensServico(
             @RequestParam(required = false) StatusOrdemServico status,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "deve ser maior ou igual a 0") int pagina,
@@ -80,6 +85,7 @@ public class OrdemServicoController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Abre uma ordem de serviço para um cliente e um veículo e avisa o cliente")
     public ResponseEntity<CriarOrdemServicoOutput> criarOrdemServico(@Valid @RequestBody CriarOrdemServicoInput input,
                                                                      UriComponentsBuilder uriBuilder) {
         CriarOrdemServicoOutput ordemServicoCriada = criarOrdemServicoUseCase.execute(input);
@@ -91,6 +97,7 @@ public class OrdemServicoController {
 
     @PatchMapping("/{id}/cancelar")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Cancela a ordem antes da aprovação, rejeita o orçamento pendente e libera as peças reservadas")
     public ResponseEntity<Void> cancelarOrdemServico(@PathVariable UUID id) {
         cancelarOrdemServicoUseCase.execute(id);
         return ResponseEntity.noContent().build();
@@ -98,6 +105,7 @@ public class OrdemServicoController {
 
     @PatchMapping("/{id}/iniciar-execucao")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Inicia a execução de uma ordem com orçamento aprovado")
     public ResponseEntity<Void> iniciarExecucao(@PathVariable UUID id) {
         iniciarExecucaoOrdemServicoUseCase.execute(id);
         return ResponseEntity.noContent().build();
@@ -105,6 +113,7 @@ public class OrdemServicoController {
 
     @PatchMapping("/{id}/finalizar")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Finaliza a execução e avisa o cliente que o veículo está pronto")
     public ResponseEntity<Void> finalizarOrdemServico(@PathVariable UUID id) {
         finalizarOrdemServicoUseCase.execute(id);
         return ResponseEntity.noContent().build();
@@ -112,6 +121,7 @@ public class OrdemServicoController {
 
     @PatchMapping("/{id}/entregar")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Registra a entrega do veículo ao cliente")
     public ResponseEntity<Void> entregarOrdemServico(@PathVariable UUID id) {
         entregarOrdemServicoUseCase.execute(id);
         return ResponseEntity.noContent().build();

@@ -3,6 +3,9 @@ package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.co
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.AcessoClienteInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoClienteOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.ConsultarOrdemServicoClienteUseCase;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +18,8 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/publico/ordens-servico")
+@Tag(name = "Ordens de Serviço - Cliente")
+@SecurityRequirements
 public class OrdemServicoPublicoController {
 
     private final ConsultarOrdemServicoClienteUseCase consultarOrdemServicoClienteUseCase;
@@ -25,6 +30,7 @@ public class OrdemServicoPublicoController {
 
     // POST mantém CPF e código de acesso fora da URL e dos logs de acesso.
     @PostMapping("/{id}/consultar")
+    @Operation(summary = "Consulta o andamento da ordem de serviço com CPF e código de acesso")
     public ResponseEntity<OrdemServicoClienteOutput> consultar(@PathVariable UUID id,
                                                                @Valid @RequestBody AcessoClienteInput input) {
         return ResponseEntity.ok(consultarOrdemServicoClienteUseCase.execute(id, input.cpf(), input.codigoAcesso()));

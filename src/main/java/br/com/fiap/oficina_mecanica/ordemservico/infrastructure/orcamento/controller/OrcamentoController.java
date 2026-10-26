@@ -7,6 +7,8 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.A
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.BuscarOrcamentoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.GerarOrcamentoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.RejeitarOrcamentoUseCase;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/orcamentos")
+@Tag(name = "Orçamentos")
 public class OrcamentoController {
 
     private final GerarOrcamentoUseCase gerarOrcamentoUseCase;
@@ -43,6 +46,7 @@ public class OrcamentoController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Gera o orçamento da ordem de serviço, reserva as peças no estoque e avisa o cliente")
     public ResponseEntity<OrcamentoOutput> gerarOrcamento(@Valid @RequestBody GerarOrcamentoInput input) {
         OrcamentoOutput orcamentoGerado = gerarOrcamentoUseCase.execute(input);
         return ResponseEntity.status(HttpStatus.CREATED).body(orcamentoGerado);
@@ -50,6 +54,7 @@ public class OrcamentoController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Detalha um orçamento, com serviços e peças")
     public ResponseEntity<OrcamentoOutput> buscarOrcamento(@PathVariable UUID id) {
         OrcamentoOutput orcamento = buscarOrcamentoUseCase.execute(id);
         return ResponseEntity.ok(orcamento);
@@ -57,6 +62,7 @@ public class OrcamentoController {
 
     @PatchMapping("/{id}/aprovar")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Aprova o orçamento, total ou parcialmente informando os itens aprovados")
     public ResponseEntity<OrcamentoOutput> aprovarOrcamento(
             @PathVariable UUID id,
             @RequestBody(required = false) AprovacaoInput input) {
@@ -66,6 +72,7 @@ public class OrcamentoController {
 
     @PatchMapping("/{id}/rejeitar")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Rejeita o orçamento inteiro")
     public ResponseEntity<OrcamentoOutput> rejeitarOrcamento(@PathVariable UUID id) {
         OrcamentoOutput orcamentoRejeitado = rejeitarOrcamentoUseCase.execute(id);
         return ResponseEntity.ok(orcamentoRejeitado);
