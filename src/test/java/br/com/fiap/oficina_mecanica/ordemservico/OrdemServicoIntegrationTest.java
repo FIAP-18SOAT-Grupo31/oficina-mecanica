@@ -617,12 +617,60 @@ class OrdemServicoIntegrationTest {
         String orcamentoId = gerarOrcamento(ordemServicoId);
         String codigo = codigoAcesso(ordemServicoId);
 
-        mvc.perform(post("/api/orcamentos/" + orcamentoId + "/cliente/aprovar")
+        mvc.perform(post("/api/publico/orcamentos/" + orcamentoId + "/aprovar")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corpoConsulta(documentoCliente, codigo)))
                 .andExpect(status().isOk());
 
         assertThat(saida.getOut()).contains("OR\u00c7AMENTO APROVADO");
+    }
+
+    @Test
+    void clienteConsultaOrcamentoSemTokenComCpfECodigoDeAcesso() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        String codigo = codigoAcesso(ordemServicoId);
+
+        mvc.perform(post("/api/publico/orcamentos/" + orcamentoId + "/consultar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(documentoCliente, codigo)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(orcamentoId))
+                .andExpect(jsonPath("$.status").value("PENDENTE"));
+    }
+
+    @Test
+    void clienteNaoConsultaOrcamentoComCodigoDeAcessoErrado() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+
+        mvc.perform(post("/api/publico/orcamentos/" + orcamentoId + "/consultar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(documentoCliente, "ERRADO")))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    void clienteRejeitaOrcamentoSemToken(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        String codigo = codigoAcesso(ordemServicoId);
+
+        mvc.perform(post("/api/publico/orcamentos/" + orcamentoId + "/rejeitar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(documentoCliente, codigo)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJEITADO"));
+
+        assertThat(saida.getOut()).contains("OR\u00c7AMENTO N\u00c3O APROVADO");
+    }
+
+    @Test
+    void rotasAntigasDoClienteNoOrcamentoNaoExistemMais() throws Exception {
+        mvc.perform(post("/api/orcamentos/" + UUID.randomUUID() + "/cliente/consultar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(documentoCliente, "ABC123")))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -680,7 +728,7 @@ class OrdemServicoIntegrationTest {
 
         assertThat(saida.getOut())
                 .contains("NOVO OR\u00c7AMENTO GERADO")
-                .contains("/api/orcamentos/");
+                .contains("/api/publico/orcamentos/");
         assertThat(saida.getOut().split("NOVO OR\u00c7AMENTO GERADO", -1)).hasSize(2);
     }
 

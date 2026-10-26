@@ -34,7 +34,7 @@ public class NotificadorEmailAdapter {
                         "\n=========================================================================" +
                         "\nOlá! O diagnóstico do seu veículo foi concluído e o orçamento da OS {} está pronto." +
                         "\n" +
-                        "\n🔗 Acesse o portal: http://localhost:8080/api/orcamentos/{}/cliente/visualizar" +
+                        "\n🔗 Acesse o portal: http://localhost:8080/api/publico/orcamentos/{}/consultar" +
                         "\n🔑 Para sua segurança, utilize o seu CPF e o Código de Acesso abaixo:" +
                         "\n" +
                         "\n   Código de Acesso: {}" +
