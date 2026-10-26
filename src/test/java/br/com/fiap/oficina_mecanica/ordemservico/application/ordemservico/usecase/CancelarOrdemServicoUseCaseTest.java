@@ -1,10 +1,12 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCancelada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
@@ -45,7 +47,7 @@ class CancelarOrdemServicoUseCaseTest {
     private ProdutoEstoqueRepository estoqueRepository;
 
     @Mock
-    private NotificadorOrdemServico notificador;
+    private PublicadorEventos publicador;
 
     @InjectMocks
     private CancelarOrdemServicoUseCase useCase;
@@ -69,13 +71,12 @@ class CancelarOrdemServicoUseCaseTest {
     void cancelaOrdemRecebidaESalva() {
         OrdemServico ordem = ordem(StatusOrdemServico.RECEBIDA, List.of());
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
-        when(repository.salvar(ordem)).thenReturn(ordem);
 
         useCase.execute(ordemId);
 
         assertThat(ordem.getStatus()).isEqualTo(StatusOrdemServico.CANCELADA);
         verify(repository).salvar(ordem);
-        verify(notificador).notificarOrdemCancelada(ordem);
+        verify(publicador).publicar(new OrdemServicoCancelada(ordemId));
         verifyNoInteractions(orcamentoRepository, estoqueRepository);
     }
 
@@ -89,7 +90,6 @@ class CancelarOrdemServicoUseCaseTest {
         OrdemServico ordem = ordem(StatusOrdemServico.AGUARDANDO_APROVACAO, List.of(pendente));
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
         when(estoqueRepository.buscarPorId(produtoId)).thenReturn(Optional.of(produto));
-        when(repository.salvar(ordem)).thenReturn(ordem);
 
         useCase.execute(ordemId);
 
@@ -100,7 +100,7 @@ class CancelarOrdemServicoUseCaseTest {
         verify(orcamentoRepository).salvar(pendente);
         verify(estoqueRepository).salvar(produto);
         verify(repository).salvar(ordem);
-        verify(notificador).notificarOrdemCancelada(ordem);
+        verify(publicador).publicar(new OrdemServicoCancelada(ordemId));
     }
 
     @Test
@@ -108,7 +108,6 @@ class CancelarOrdemServicoUseCaseTest {
         Orcamento expirado = orcamento(StatusOrcamento.EXPIRADO, List.of());
         OrdemServico ordem = ordem(StatusOrdemServico.AGUARDANDO_APROVACAO, List.of(expirado));
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
-        when(repository.salvar(ordem)).thenReturn(ordem);
 
         useCase.execute(ordemId);
 
@@ -124,7 +123,7 @@ class CancelarOrdemServicoUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(ordemId))
                 .isInstanceOf(RecursoNaoEncontradoException.class)
                 .hasMessage("Ordem de Serviço não encontrada.");
-        verifyNoInteractions(notificador);
+        verifyNoInteractions(publicador);
     }
 
     @Test
@@ -136,7 +135,7 @@ class CancelarOrdemServicoUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(ordemId)).isInstanceOf(RegraNegocioException.class);
 
         verify(repository, never()).salvar(any());
-        verifyNoInteractions(orcamentoRepository, estoqueRepository, notificador);
+        verifyNoInteractions(orcamentoRepository, estoqueRepository, publicador);
     }
 
     @Test
@@ -146,7 +145,7 @@ class CancelarOrdemServicoUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(ordemId)).isInstanceOf(RegraNegocioException.class);
         verify(repository, never()).salvar(any());
-        verifyNoInteractions(notificador);
+        verifyNoInteractions(publicador);
     }
 
     @Test
@@ -160,6 +159,6 @@ class CancelarOrdemServicoUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(ordemId)).isInstanceOf(RecursoNaoEncontradoException.class);
         verify(repository, never()).salvar(any());
-        verifyNoInteractions(notificador);
+        verifyNoInteractions(publicador);
     }
 }

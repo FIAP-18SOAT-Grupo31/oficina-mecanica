@@ -1,10 +1,11 @@
 package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
-import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrcamentoGerado;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.OrdemServicoJpaRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.entity.OrdemServicoEntity;
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -16,12 +17,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,7 +34,7 @@ class NotificadorPortalClienteAdapterTest {
     private final Logger logger = (Logger) LoggerFactory.getLogger(NotificadorPortalClienteAdapter.class);
 
     private final UUID ordemId = UUID.randomUUID();
-    private final Orcamento orcamento = new Orcamento(UUID.randomUUID(), ordemId, Horario.agora().plusDays(1));
+    private final OrcamentoGerado evento = new OrcamentoGerado(UUID.randomUUID(), ordemId);
 
     private OrdemServicoEntity ordemEntity() {
         return new OrdemServicoEntity(ordemId, UUID.randomUUID(), UUID.randomUUID(), "Barulho na suspensão",
@@ -56,7 +56,7 @@ class NotificadorPortalClienteAdapterTest {
     void mensagemTrazLinkDoPortalComIdDaOrdemECodigoDeAcesso() {
         when(ordemServicoJpaRepository.findById(ordemId)).thenReturn(Optional.of(ordemEntity()));
 
-        new NotificadorPortalClienteAdapter(ordemServicoJpaRepository).notificarOrcamentoGerado(orcamento);
+        new NotificadorPortalClienteAdapter(ordemServicoJpaRepository).aoGerarOrcamento(evento);
 
         assertThat(logs.list).hasSize(1);
         assertThat(logs.list.getFirst().getFormattedMessage())
@@ -71,7 +71,7 @@ class NotificadorPortalClienteAdapterTest {
     void naoExibeCorpoDaRequisicao() {
         when(ordemServicoJpaRepository.findById(ordemId)).thenReturn(Optional.of(ordemEntity()));
 
-        new NotificadorPortalClienteAdapter(ordemServicoJpaRepository).notificarOrcamentoGerado(orcamento);
+        new NotificadorPortalClienteAdapter(ordemServicoJpaRepository).aoGerarOrcamento(evento);
 
         assertThat(logs.list.getFirst().getFormattedMessage())
                 .doesNotContain("POST")
@@ -79,12 +79,14 @@ class NotificadorPortalClienteAdapterTest {
     }
 
     @Test
-    void ordemInexistenteFalhaSemNotificar() {
+    void ordemInexistenteNaoPropagaFalhaENaoNotifica() {
         when(ordemServicoJpaRepository.findById(ordemId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> new NotificadorPortalClienteAdapter(ordemServicoJpaRepository)
-                .notificarOrcamentoGerado(orcamento))
-                .isInstanceOf(NoSuchElementException.class);
-        assertThat(logs.list).isEmpty();
+        assertThatCode(() -> new NotificadorPortalClienteAdapter(ordemServicoJpaRepository).aoGerarOrcamento(evento))
+                .doesNotThrowAnyException();
+
+        assertThat(logs.list).hasSize(1);
+        assertThat(logs.list.getFirst().getLevel()).isEqualTo(Level.ERROR);
+        assertThat(logs.list.getFirst().getFormattedMessage()).doesNotContain("NOVO ORÇAMENTO GERADO");
     }
 }

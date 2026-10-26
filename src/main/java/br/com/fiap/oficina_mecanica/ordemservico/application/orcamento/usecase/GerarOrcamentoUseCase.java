@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
@@ -10,6 +11,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrcamentoGerado;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
@@ -17,22 +19,21 @@ import com.github.f4b6a3.uuid.UuidCreator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
 public class GerarOrcamentoUseCase {
 
     private final OrcamentoRepository repository;
-    private final List<NotificadorOrcamento> notificadores;
+    private final PublicadorEventos publicador;
     private final OrdemServicoRepository ordemServicoRepository;
     private final ProdutoEstoqueRepository estoqueRepository;
 
-    public GerarOrcamentoUseCase(OrcamentoRepository repository, List<NotificadorOrcamento> notificadores,
+    public GerarOrcamentoUseCase(OrcamentoRepository repository, PublicadorEventos publicador,
                                  OrdemServicoRepository ordemServicoRepository,
                                  ProdutoEstoqueRepository estoqueRepository) {
         this.repository = repository;
-        this.notificadores = notificadores;
+        this.publicador = publicador;
         this.ordemServicoRepository = ordemServicoRepository;
         this.estoqueRepository = estoqueRepository;
     }
@@ -74,7 +75,7 @@ public class GerarOrcamentoUseCase {
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
         ordemServicoRepository.salvar(os);
 
-        notificadores.forEach(notificador -> notificador.notificarOrcamentoGerado(orcamentoSalvo));
+        publicador.publicar(new OrcamentoGerado(orcamentoSalvo.getId(), orcamentoSalvo.getOrdemServicoId()));
 
         return OrcamentoMapper.toOutput(orcamentoSalvo);
     }

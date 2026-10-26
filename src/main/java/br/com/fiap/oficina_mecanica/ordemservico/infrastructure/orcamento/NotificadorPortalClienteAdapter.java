@@ -1,15 +1,17 @@
 package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento;
 
-import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.NotificadorOrcamento;
-import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
+import br.com.fiap.oficina_mecanica.compartilhado.infrastructure.evento.ExecucaoSegura;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrcamentoGerado;
 import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.OrdemServicoJpaRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.entity.OrdemServicoEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
-public class NotificadorPortalClienteAdapter implements NotificadorOrcamento {
+public class NotificadorPortalClienteAdapter {
 
     private static final Logger LOG = LoggerFactory.getLogger(NotificadorPortalClienteAdapter.class);
     private final OrdemServicoJpaRepository ordemServicoJpaRepository;
@@ -18,9 +20,13 @@ public class NotificadorPortalClienteAdapter implements NotificadorOrcamento {
         this.ordemServicoJpaRepository = ordemServicoJpaRepository;
     }
 
-    @Override
-    public void notificarOrcamentoGerado(Orcamento orcamento) {
-        OrdemServicoEntity os = ordemServicoJpaRepository.findById(orcamento.getOrdemServicoId())
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void aoGerarOrcamento(OrcamentoGerado evento) {
+        ExecucaoSegura.executar(LOG, "o aviso do portal do cliente", () -> notificar(evento));
+    }
+
+    private void notificar(OrcamentoGerado evento) {
+        OrdemServicoEntity os = ordemServicoJpaRepository.findById(evento.ordemServicoId())
                 .orElseThrow();
 
         LOG.info("\n=========================================================================" +

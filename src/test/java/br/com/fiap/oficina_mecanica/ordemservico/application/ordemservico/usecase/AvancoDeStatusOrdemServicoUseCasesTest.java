@@ -1,8 +1,10 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoFinalizada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
@@ -32,7 +34,7 @@ class AvancoDeStatusOrdemServicoUseCasesTest {
     private OrdemServicoRepository repository;
 
     @Mock
-    private NotificadorOrdemServico notificador;
+    private PublicadorEventos publicador;
 
     private final UUID ordemId = UUID.randomUUID();
 
@@ -79,38 +81,37 @@ class AvancoDeStatusOrdemServicoUseCasesTest {
     }
 
     @Test
-    void finalizaERegistraADataDeConclusaoENotificaOCliente() {
+    void finalizaERegistraADataDeConclusaoEPublicaOEvento() {
         OrdemServico ordem = ordemComStatus(StatusOrdemServico.EM_EXECUCAO);
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
-        when(repository.salvar(ordem)).thenReturn(ordem);
 
-        new FinalizarOrdemServicoUseCase(repository, notificador).execute(ordemId);
+        new FinalizarOrdemServicoUseCase(repository, publicador).execute(ordemId);
 
         assertThat(ordem.getStatus()).isEqualTo(StatusOrdemServico.FINALIZADA);
         assertThat(ordem.getDataConclusao()).isNotNull();
-        InOrder ordemDeChamadas = inOrder(repository, notificador);
+        InOrder ordemDeChamadas = inOrder(repository, publicador);
         ordemDeChamadas.verify(repository).salvar(ordem);
-        ordemDeChamadas.verify(notificador).notificarOrdemFinalizada(ordem);
+        ordemDeChamadas.verify(publicador).publicar(new OrdemServicoFinalizada(ordemId, ordem.getVeiculoId()));
     }
 
     @Test
-    void finalizarSemEstarEmExecucaoFalhaSemPersistirENotificar() {
+    void finalizarSemEstarEmExecucaoFalhaSemPersistirEPublicar() {
         ordemExistente(StatusOrdemServico.APROVADA);
 
-        assertThatThrownBy(() -> new FinalizarOrdemServicoUseCase(repository, notificador).execute(ordemId))
+        assertThatThrownBy(() -> new FinalizarOrdemServicoUseCase(repository, publicador).execute(ordemId))
                 .isInstanceOf(RegraNegocioException.class);
         verify(repository, never()).salvar(any());
-        verifyNoInteractions(notificador);
+        verifyNoInteractions(publicador);
     }
 
     @Test
-    void finalizarOrdemInexistenteViraRecursoNaoEncontradoSemNotificar() {
+    void finalizarOrdemInexistenteViraRecursoNaoEncontradoSemPublicar() {
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> new FinalizarOrdemServicoUseCase(repository, notificador).execute(ordemId))
+        assertThatThrownBy(() -> new FinalizarOrdemServicoUseCase(repository, publicador).execute(ordemId))
                 .isInstanceOf(RecursoNaoEncontradoException.class);
         verify(repository, never()).salvar(any());
-        verifyNoInteractions(notificador);
+        verifyNoInteractions(publicador);
     }
 
     @Test

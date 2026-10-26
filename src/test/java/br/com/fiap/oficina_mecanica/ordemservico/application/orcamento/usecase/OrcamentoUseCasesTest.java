@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Paginacao;
@@ -13,7 +14,11 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.Gerar
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.ItemPecaInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.ItemServicoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
-import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.NotificadorOrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrcamentoGerado;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoAprovada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCancelada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoFinalizada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoRecusada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.StatusOrcamento;
@@ -39,28 +44,18 @@ class OrcamentoUseCasesTest {
     private final OrcamentoRepositoryEmMemoria repository = new OrcamentoRepositoryEmMemoria();
     private final OrdemServicoRepositoryEmMemoria osRepository = new OrdemServicoRepositoryEmMemoria();
     private final ProdutoEstoqueRepositoryEmMemoria estoqueRepository = new ProdutoEstoqueRepositoryEmMemoria();
-    private final List<Orcamento> notificados = new ArrayList<>();
+    private final List<UUID> notificados = new ArrayList<>();
     private final List<String> avisosOrdem = new ArrayList<>();
 
-    private final NotificadorOrdemServico notificadorOrdemServico = new NotificadorOrdemServico() {
-        @Override
-        public void notificarOrdemAprovada(OrdemServico ordemServico, boolean aprovacaoParcial) {
-            avisosOrdem.add(aprovacaoParcial ? "APROVADA_PARCIALMENTE" : "APROVADA");
-        }
-
-        @Override
-        public void notificarOrdemRecusada(OrdemServico ordemServico) {
-            avisosOrdem.add("RECUSADA");
-        }
-
-        @Override
-        public void notificarOrdemCancelada(OrdemServico ordemServico) {
-            avisosOrdem.add("CANCELADA");
-        }
-
-        @Override
-        public void notificarOrdemFinalizada(OrdemServico ordemServico) {
-            avisosOrdem.add("FINALIZADA");
+    private final PublicadorEventos publicador = evento -> {
+        switch (evento) {
+            case OrcamentoGerado gerado -> notificados.add(gerado.orcamentoId());
+            case OrdemServicoAprovada aprovada ->
+                    avisosOrdem.add(aprovada.aprovacaoParcial() ? "APROVADA_PARCIALMENTE" : "APROVADA");
+            case OrdemServicoRecusada recusada -> avisosOrdem.add("RECUSADA");
+            case OrdemServicoCancelada cancelada -> avisosOrdem.add("CANCELADA");
+            case OrdemServicoFinalizada finalizada -> avisosOrdem.add("FINALIZADA");
+            default -> throw new IllegalStateException("Evento inesperado: " + evento);
         }
     };
 
@@ -84,9 +79,9 @@ class OrcamentoUseCasesTest {
 
     @BeforeEach
     void setup() {
-        gerarOrcamento = new GerarOrcamentoUseCase(repository, List.of(notificados::add), osRepository, estoqueRepository);
-        aprovarOrcamento = new AprovarOrcamentoUseCase(repository, osRepository, estoqueRepository, notificadorOrdemServico);
-        rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository, osRepository, estoqueRepository, notificadorOrdemServico);
+        gerarOrcamento = new GerarOrcamentoUseCase(repository, publicador, osRepository, estoqueRepository);
+        aprovarOrcamento = new AprovarOrcamentoUseCase(repository, osRepository, estoqueRepository, publicador);
+        rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository, osRepository, estoqueRepository, publicador);
         buscarOrcamento = new BuscarOrcamentoUseCase(repository);
         aprovarOrcamentoCliente = new AprovarOrcamentoClienteUseCase(repository, verificadorAcesso, aprovarOrcamento);
         rejeitarOrcamentoCliente = new RejeitarOrcamentoClienteUseCase(repository, verificadorAcesso, rejeitarOrcamento);
@@ -156,7 +151,7 @@ class OrcamentoUseCasesTest {
     @Test
     void notificaOClienteAoGerarOrcamento() {
         OrcamentoOutput output = gerarOrcamento.execute(entrada(List.of(), List.of()));
-        assertThat(notificados).extracting(Orcamento::getId).containsExactly(output.id());
+        assertThat(notificados).containsExactly(output.id());
     }
 
     @Test

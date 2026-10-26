@@ -651,6 +651,52 @@ class OrdemServicoIntegrationTest {
     }
 
     @Test
+    void gerarOrcamentoAvisaOClienteDepoisDoCommit(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        gerarOrcamento(ordemServicoId);
+
+        assertThat(saida.getOut())
+                .contains("NOVO OR\u00c7AMENTO GERADO")
+                .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consulta");
+    }
+
+    @Test
+    void gerarOrcamentoQueFalhaERevertidoNaoAvisaOCliente(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String corpo = "{\"ordemServicoId\":\"" + ordemServicoId + "\",\"dataValidade\":\"2099-12-31T23:59:59\","
+                + "\"servicos\":[],\"pecas\":[{\"produtoEstoqueId\":\"" + UUID.randomUUID()
+                + "\",\"nomePeca\":\"Filtro\",\"quantidade\":1,\"valorUnitario\":10.00}]}";
+
+        mvc.perform(post("/api/orcamentos").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isNotFound());
+
+        assertThat(saida.getOut()).doesNotContain("NOVO OR\u00c7AMENTO GERADO");
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("RECEBIDA"));
+    }
+
+    @Test
+    void aprovarOrcamentoExpiradoFalhaMasMesmoAssimAvisaQueNaoFoiAprovado(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        UUID orcamentoId = UUID.randomUUID();
+        jdbc.update("UPDATE ordens_servico SET status = 'AGUARDANDO_APROVACAO' WHERE id = ?", UUID.fromString(ordemServicoId));
+        jdbc.update("INSERT INTO orcamentos (id, ordem_servico_id, valor_total, status, data_criacao, data_validade) "
+                        + "VALUES (?, ?, 100.00, 'PENDENTE', TIMESTAMP '2020-01-01 10:00:00', TIMESTAMP '2020-01-02 10:00:00')",
+                orcamentoId, UUID.fromString(ordemServicoId));
+
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente()))
+                .andExpect(status().is(422));
+
+        assertThat(saida.getOut())
+                .contains("OR\u00c7AMENTO N\u00c3O APROVADO")
+                .doesNotContain("OR\u00c7AMENTO APROVADO");
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("RECUSADA"));
+    }
+
+    @Test
     void adminTambemAvancaAOrdem() throws Exception {
         String ordemServicoId = criarOrdemAprovada();
 

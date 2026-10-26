@@ -1,6 +1,8 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoFinalizada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import org.springframework.stereotype.Service;
@@ -12,11 +14,11 @@ import java.util.UUID;
 public class FinalizarOrdemServicoUseCase {
 
     private final OrdemServicoRepository repository;
-    private final NotificadorOrdemServico notificador;
+    private final PublicadorEventos publicador;
 
-    public FinalizarOrdemServicoUseCase(OrdemServicoRepository repository, NotificadorOrdemServico notificador) {
+    public FinalizarOrdemServicoUseCase(OrdemServicoRepository repository, PublicadorEventos publicador) {
         this.repository = repository;
-        this.notificador = notificador;
+        this.publicador = publicador;
     }
 
     @Transactional
@@ -26,8 +28,7 @@ public class FinalizarOrdemServicoUseCase {
 
         ordemServico.finalizar();
 
-        OrdemServico ordemFinalizada = repository.salvar(ordemServico);
-
-        notificador.notificarOrdemFinalizada(ordemFinalizada);
+        repository.salvar(ordemServico);
+        publicador.publicar(new OrdemServicoFinalizada(ordemServico.getId(), ordemServico.getVeiculoId()));
     }
 }
