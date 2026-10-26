@@ -19,12 +19,15 @@ public class CancelarOrdemServicoUseCase {
     private final OrdemServicoRepository repository;
     private final OrcamentoRepository orcamentoRepository;
     private final ProdutoEstoqueRepository estoqueRepository;
+    private final NotificadorOrdemServico notificador;
 
     public CancelarOrdemServicoUseCase(OrdemServicoRepository repository, OrcamentoRepository orcamentoRepository,
-                                       ProdutoEstoqueRepository estoqueRepository) {
+                                       ProdutoEstoqueRepository estoqueRepository,
+                                       NotificadorOrdemServico notificador) {
         this.repository = repository;
         this.orcamentoRepository = orcamentoRepository;
         this.estoqueRepository = estoqueRepository;
+        this.notificador = notificador;
     }
 
     @Transactional
@@ -38,7 +41,7 @@ public class CancelarOrdemServicoUseCase {
                 .filter(orcamento -> orcamento.getStatus() == StatusOrcamento.PENDENTE)
                 .forEach(this::rejeitarLiberandoReservas);
 
-        repository.salvar(ordemServico);
+        notificador.notificarOrdemCancelada(repository.salvar(ordemServico));
     }
 
     private void rejeitarLiberandoReservas(Orcamento orcamento) {

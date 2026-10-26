@@ -44,6 +44,9 @@ class CancelarOrdemServicoUseCaseTest {
     @Mock
     private ProdutoEstoqueRepository estoqueRepository;
 
+    @Mock
+    private NotificadorOrdemServico notificador;
+
     @InjectMocks
     private CancelarOrdemServicoUseCase useCase;
 
@@ -66,11 +69,13 @@ class CancelarOrdemServicoUseCaseTest {
     void cancelaOrdemRecebidaESalva() {
         OrdemServico ordem = ordem(StatusOrdemServico.RECEBIDA, List.of());
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
+        when(repository.salvar(ordem)).thenReturn(ordem);
 
         useCase.execute(ordemId);
 
         assertThat(ordem.getStatus()).isEqualTo(StatusOrdemServico.CANCELADA);
         verify(repository).salvar(ordem);
+        verify(notificador).notificarOrdemCancelada(ordem);
         verifyNoInteractions(orcamentoRepository, estoqueRepository);
     }
 
@@ -84,6 +89,7 @@ class CancelarOrdemServicoUseCaseTest {
         OrdemServico ordem = ordem(StatusOrdemServico.AGUARDANDO_APROVACAO, List.of(pendente));
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
         when(estoqueRepository.buscarPorId(produtoId)).thenReturn(Optional.of(produto));
+        when(repository.salvar(ordem)).thenReturn(ordem);
 
         useCase.execute(ordemId);
 
@@ -94,6 +100,7 @@ class CancelarOrdemServicoUseCaseTest {
         verify(orcamentoRepository).salvar(pendente);
         verify(estoqueRepository).salvar(produto);
         verify(repository).salvar(ordem);
+        verify(notificador).notificarOrdemCancelada(ordem);
     }
 
     @Test
@@ -101,6 +108,7 @@ class CancelarOrdemServicoUseCaseTest {
         Orcamento expirado = orcamento(StatusOrcamento.EXPIRADO, List.of());
         OrdemServico ordem = ordem(StatusOrdemServico.AGUARDANDO_APROVACAO, List.of(expirado));
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
+        when(repository.salvar(ordem)).thenReturn(ordem);
 
         useCase.execute(ordemId);
 
@@ -116,6 +124,7 @@ class CancelarOrdemServicoUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(ordemId))
                 .isInstanceOf(RecursoNaoEncontradoException.class)
                 .hasMessage("Ordem de Serviço não encontrada.");
+        verifyNoInteractions(notificador);
     }
 
     @Test
@@ -127,7 +136,7 @@ class CancelarOrdemServicoUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(ordemId)).isInstanceOf(RegraNegocioException.class);
 
         verify(repository, never()).salvar(any());
-        verifyNoInteractions(orcamentoRepository, estoqueRepository);
+        verifyNoInteractions(orcamentoRepository, estoqueRepository, notificador);
     }
 
     @Test
@@ -137,6 +146,7 @@ class CancelarOrdemServicoUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(ordemId)).isInstanceOf(RegraNegocioException.class);
         verify(repository, never()).salvar(any());
+        verifyNoInteractions(notificador);
     }
 
     @Test
@@ -150,5 +160,6 @@ class CancelarOrdemServicoUseCaseTest {
 
         assertThatThrownBy(() -> useCase.execute(ordemId)).isInstanceOf(RecursoNaoEncontradoException.class);
         verify(repository, never()).salvar(any());
+        verifyNoInteractions(notificador);
     }
 }

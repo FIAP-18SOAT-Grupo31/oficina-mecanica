@@ -8,6 +8,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServic
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -18,8 +19,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,6 +30,9 @@ class AvancoDeStatusOrdemServicoUseCasesTest {
 
     @Mock
     private OrdemServicoRepository repository;
+
+    @Mock
+    private NotificadorOrdemServico notificador;
 
     private final UUID ordemId = UUID.randomUUID();
 
@@ -73,33 +79,38 @@ class AvancoDeStatusOrdemServicoUseCasesTest {
     }
 
     @Test
-    void finalizaERegistraADataDeConclusao() {
+    void finalizaERegistraADataDeConclusaoENotificaOCliente() {
         OrdemServico ordem = ordemComStatus(StatusOrdemServico.EM_EXECUCAO);
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
+        when(repository.salvar(ordem)).thenReturn(ordem);
 
-        new FinalizarOrdemServicoUseCase(repository).execute(ordemId);
+        new FinalizarOrdemServicoUseCase(repository, notificador).execute(ordemId);
 
         assertThat(ordem.getStatus()).isEqualTo(StatusOrdemServico.FINALIZADA);
         assertThat(ordem.getDataConclusao()).isNotNull();
-        verify(repository).salvar(ordem);
+        InOrder ordemDeChamadas = inOrder(repository, notificador);
+        ordemDeChamadas.verify(repository).salvar(ordem);
+        ordemDeChamadas.verify(notificador).notificarOrdemFinalizada(ordem);
     }
 
     @Test
-    void finalizarSemEstarEmExecucaoFalhaSemPersistir() {
+    void finalizarSemEstarEmExecucaoFalhaSemPersistirENotificar() {
         ordemExistente(StatusOrdemServico.APROVADA);
 
-        assertThatThrownBy(() -> new FinalizarOrdemServicoUseCase(repository).execute(ordemId))
+        assertThatThrownBy(() -> new FinalizarOrdemServicoUseCase(repository, notificador).execute(ordemId))
                 .isInstanceOf(RegraNegocioException.class);
         verify(repository, never()).salvar(any());
+        verifyNoInteractions(notificador);
     }
 
     @Test
-    void finalizarOrdemInexistenteViraRecursoNaoEncontrado() {
+    void finalizarOrdemInexistenteViraRecursoNaoEncontradoSemNotificar() {
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> new FinalizarOrdemServicoUseCase(repository).execute(ordemId))
+        assertThatThrownBy(() -> new FinalizarOrdemServicoUseCase(repository, notificador).execute(ordemId))
                 .isInstanceOf(RecursoNaoEncontradoException.class);
         verify(repository, never()).salvar(any());
+        verifyNoInteractions(notificador);
     }
 
     @Test

@@ -3,8 +3,11 @@ package br.com.fiap.oficina_mecanica.ordemservico;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -16,6 +19,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -27,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@ExtendWith(OutputCaptureExtension.class)
 class OrdemServicoIntegrationTest {
 
     @Autowired
@@ -546,6 +551,103 @@ class OrdemServicoIntegrationTest {
         mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
                 .andExpect(jsonPath("$.status").value("ENTREGUE"))
                 .andExpect(jsonPath("$.dataConclusao").isNotEmpty());
+    }
+
+    @Test
+    void finalizarAvisaOClienteQueOVeiculoEstaProntoParaRetirada(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+        acao(ordemServicoId, "iniciar-execucao", jwtAtendente(), 204);
+        assertThat(saida.getOut()).doesNotContain("VEÍCULO PRONTO PARA RETIRADA");
+
+        acao(ordemServicoId, "finalizar", jwtAtendente(), 204);
+
+        assertThat(saida.getOut())
+                .contains("VEÍCULO PRONTO PARA RETIRADA")
+                .contains("Argo (placa ");
+    }
+
+    @Test
+    void finalizarComFalhaNaoAvisaOCliente(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+
+        acao(ordemServicoId, "finalizar", jwtAtendente(), 422);
+
+        assertThat(saida.getOut()).doesNotContain("VEÍCULO PRONTO PARA RETIRADA");
+    }
+
+    @Test
+    void aprovarOrcamentoAvisaOClienteParaAcompanharAOrdem(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        assertThat(saida.getOut()).doesNotContain("OR\u00c7AMENTO APROVADO");
+
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente()))
+                .andExpect(status().isOk());
+
+        assertThat(saida.getOut())
+                .contains("OR\u00c7AMENTO APROVADO")
+                .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consulta");
+    }
+
+    @Test
+    void aprovacaoPeloClienteTambemAvisa(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        String codigo = codigoAcesso(ordemServicoId);
+
+        mvc.perform(post("/api/orcamentos/" + orcamentoId + "/cliente/aprovar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(documentoCliente, codigo)))
+                .andExpect(status().isOk());
+
+        assertThat(saida.getOut()).contains("OR\u00c7AMENTO APROVADO");
+    }
+
+    @Test
+    void rejeitarOrcamentoAvisaQueNaoFoiAprovado(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/rejeitar").with(jwtAtendente()))
+                .andExpect(status().isOk());
+
+        assertThat(saida.getOut())
+                .contains("OR\u00c7AMENTO N\u00c3O APROVADO")
+                .doesNotContain("OR\u00c7AMENTO APROVADO");
+    }
+
+    @Test
+    void aprovarComTodosOsItensRecusadosAvisaQueNaoFoiAprovado(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"servicosAprovados\":[],\"pecasAprovadas\":[]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REJEITADO"));
+
+        assertThat(saida.getOut())
+                .contains("OR\u00c7AMENTO N\u00c3O APROVADO")
+                .doesNotContain("OR\u00c7AMENTO APROVADO");
+    }
+
+    @Test
+    void cancelarOrdemAvisaOCliente(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        acao(ordemServicoId, "cancelar", jwtAtendente(), 204);
+
+        assertThat(saida.getOut()).contains("ORDEM DE SERVI\u00c7O CANCELADA");
+    }
+
+    @Test
+    void cancelarOrdemQueNaoPodeSerCanceladaNaoAvisa(CapturedOutput saida) throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+
+        acao(ordemServicoId, "cancelar", jwtAtendente(), 422);
+
+        assertThat(saida.getOut()).doesNotContain("ORDEM DE SERVI\u00c7O CANCELADA");
     }
 
     @Test

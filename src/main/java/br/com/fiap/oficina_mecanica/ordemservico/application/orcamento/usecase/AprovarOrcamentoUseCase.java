@@ -7,6 +7,7 @@ import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.AprovacaoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoMapper;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.NotificadorOrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
@@ -25,11 +26,15 @@ public class AprovarOrcamentoUseCase {
     private final OrcamentoRepository repository;
     private final OrdemServicoRepository ordemServicoRepository;
     private final ProdutoEstoqueRepository estoqueRepository;
+    private final NotificadorOrdemServico notificadorOrdemServico;
 
-    public AprovarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository, ProdutoEstoqueRepository estoqueRepository) {
+    public AprovarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository,
+                                   ProdutoEstoqueRepository estoqueRepository,
+                                   NotificadorOrdemServico notificadorOrdemServico) {
         this.repository = repository;
         this.ordemServicoRepository = ordemServicoRepository;
         this.estoqueRepository = estoqueRepository;
+        this.notificadorOrdemServico = notificadorOrdemServico;
     }
 
     @Transactional(noRollbackFor = RegraNegocioException.class)
@@ -45,7 +50,7 @@ public class AprovarOrcamentoUseCase {
             orcamento.getPecas().forEach(this::devolverReservaAoEstoque);
 
             os.recusarOrcamento();
-            ordemServicoRepository.salvar(os);
+            notificadorOrdemServico.notificarOrdemRecusada(ordemServicoRepository.salvar(os));
 
             throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
         }
@@ -69,10 +74,12 @@ public class AprovarOrcamentoUseCase {
 
         if (orcamento.getStatus() == StatusOrcamento.REJEITADO) {
             os.recusarOrcamento();
+            notificadorOrdemServico.notificarOrdemRecusada(ordemServicoRepository.salvar(os));
         } else {
             os.aprovarOrcamento();
+            notificadorOrdemServico.notificarOrdemAprovada(ordemServicoRepository.salvar(os),
+                    orcamento.getStatus() == StatusOrcamento.APROVADO_PARCIALMENTE);
         }
-        ordemServicoRepository.salvar(os);
 
         return OrcamentoMapper.toOutput(orcamentoSalvo);
     }

@@ -12,9 +12,11 @@ import java.util.UUID;
 public class FinalizarOrdemServicoUseCase {
 
     private final OrdemServicoRepository repository;
+    private final NotificadorOrdemServico notificador;
 
-    public FinalizarOrdemServicoUseCase(OrdemServicoRepository repository) {
+    public FinalizarOrdemServicoUseCase(OrdemServicoRepository repository, NotificadorOrdemServico notificador) {
         this.repository = repository;
+        this.notificador = notificador;
     }
 
     @Transactional
@@ -24,6 +26,8 @@ public class FinalizarOrdemServicoUseCase {
 
         ordemServico.finalizar();
 
-        repository.salvar(ordemServico);
+        OrdemServico ordemFinalizada = repository.salvar(ordemServico);
+
+        notificador.notificarOrdemFinalizada(ordemFinalizada);
     }
 }

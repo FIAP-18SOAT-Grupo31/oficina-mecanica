@@ -5,6 +5,7 @@ import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoMapper;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.NotificadorOrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
@@ -20,11 +21,15 @@ public class RejeitarOrcamentoUseCase {
     private final OrcamentoRepository repository;
     private final OrdemServicoRepository ordemServicoRepository;
     private final ProdutoEstoqueRepository estoqueRepository;
+    private final NotificadorOrdemServico notificadorOrdemServico;
 
-    public RejeitarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository, ProdutoEstoqueRepository estoqueRepository) {
+    public RejeitarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository,
+                                    ProdutoEstoqueRepository estoqueRepository,
+                                    NotificadorOrdemServico notificadorOrdemServico) {
         this.repository = repository;
         this.ordemServicoRepository = ordemServicoRepository;
         this.estoqueRepository = estoqueRepository;
+        this.notificadorOrdemServico = notificadorOrdemServico;
     }
 
     @Transactional
@@ -46,7 +51,7 @@ public class RejeitarOrcamentoUseCase {
         OrdemServico os = ordemServicoRepository.buscarPorId(orcamento.getOrdemServicoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
         os.recusarOrcamento();
-        ordemServicoRepository.salvar(os);
+        notificadorOrdemServico.notificarOrdemRecusada(ordemServicoRepository.salvar(os));
 
         return OrcamentoMapper.toOutput(orcamentoSalvo);
     }
