@@ -38,7 +38,7 @@ public class ConsultarOrdemServicoClienteUseCase {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
 
         VeiculoDetalheOutput veiculo = consultorVeiculos.detalharPorId(ordemServico.getVeiculoId()).orElse(null);
-        // Transação somente leitura: a expiração só reflete no retorno, sem persistir.
+        
         List<OrcamentoOutput> orcamentos = ordemServico.getOrcamentos().stream()
                 .peek(Orcamento::verificarExpiracao)
                 .map(OrcamentoMapper::toOutput)

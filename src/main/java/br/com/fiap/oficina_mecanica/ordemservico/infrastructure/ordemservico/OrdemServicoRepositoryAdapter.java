@@ -22,12 +22,16 @@ import java.util.UUID;
 public class OrdemServicoRepositoryAdapter implements OrdemServicoRepository {
 
     private final OrdemServicoJpaRepository jpaRepository;
+    private final HistoricoStatusJpaRepository historicoRepository;
     private final OrdemServicoMapper mapper;
     private final OrcamentoRepository orcamentoRepository;
 
-    public OrdemServicoRepositoryAdapter(OrdemServicoJpaRepository jpaRepository, OrdemServicoMapper mapper,
+    public OrdemServicoRepositoryAdapter(OrdemServicoJpaRepository jpaRepository,
+                                         HistoricoStatusJpaRepository historicoRepository,
+                                         OrdemServicoMapper mapper,
                                          OrcamentoRepository orcamentoRepository) {
         this.jpaRepository = jpaRepository;
+        this.historicoRepository = historicoRepository;
         this.mapper = mapper;
         this.orcamentoRepository = orcamentoRepository;
     }
@@ -35,6 +39,7 @@ public class OrdemServicoRepositoryAdapter implements OrdemServicoRepository {
     @Override
     public OrdemServico salvar(OrdemServico ordemServico) {
         OrdemServicoEntity savedEntity = jpaRepository.save(mapper.toEntity(ordemServico));
+        registrarNovasTransicoes(ordemServico);
         return mapper.toDomain(savedEntity, ordemServico.getOrcamentos());
     }
 
@@ -59,6 +64,13 @@ public class OrdemServicoRepositoryAdapter implements OrdemServicoRepository {
                 .map(entity -> mapper.toDomain(entity, List.of()))
                 .toList();
         return Pagina.de(ordens, paginacao, pagina.getTotalElements());
+    }
+
+    // O id da transição é definido no domínio, então salvar a mesma OS duas vezes não duplica o registro.
+    private void registrarNovasTransicoes(OrdemServico ordemServico) {
+        historicoRepository.saveAll(ordemServico.getNovasTransicoes().stream()
+                .map(transicao -> mapper.toEntity(ordemServico.getId(), transicao))
+                .toList());
     }
 
     private List<Orcamento> orcamentosDa(UUID ordemServicoId) {

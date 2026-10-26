@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 class OrdemServicoCicloDeVidaTest {
 
@@ -116,5 +117,39 @@ class OrdemServicoCicloDeVidaTest {
     @EnumSource(value = StatusOrdemServico.class, names = {"EM_EXECUCAO", "FINALIZADA", "ENTREGUE"})
     void ordemEmExecucaoOuPosteriorNaoPodeSerCancelada(StatusOrdemServico status) {
         assertThatThrownBy(ordemComStatus(status)::cancelar).isInstanceOf(RegraNegocioException.class);
+    }
+
+    @Test
+    void novaOrdemRegistraAberturaComoNovaTransicao() {
+        OrdemServico ordem = new OrdemServico(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), RELATO);
+
+        assertThat(ordem.getNovasTransicoes()).singleElement().satisfies(t -> {
+            assertThat(t.statusAnterior()).isNull();
+            assertThat(t.statusNovo()).isEqualTo(StatusOrdemServico.RECEBIDA);
+            assertThat(t.dataTransicao()).isEqualTo(ordem.getDataAbertura());
+        });
+    }
+
+    @Test
+    void cadaTransicaoGeraUmRegistroEncadeado() {
+        OrdemServico ordem = ordemComStatus(StatusOrdemServico.APROVADA);
+
+        ordem.iniciarExecucao();
+        ordem.finalizar();
+
+        assertThat(ordem.getNovasTransicoes()).extracting(TransicaoStatus::statusAnterior, TransicaoStatus::statusNovo)
+                .containsExactly(
+                        tuple(StatusOrdemServico.APROVADA, StatusOrdemServico.EM_EXECUCAO),
+                        tuple(StatusOrdemServico.EM_EXECUCAO, StatusOrdemServico.FINALIZADA));
+        assertThat(ordem.getNovasTransicoes().get(1).dataTransicao()).isEqualTo(ordem.getDataConclusao());
+    }
+
+    @Test
+    void transicaoInvalidaNaoRegistraTransicao() {
+        OrdemServico ordem = ordemComStatus(StatusOrdemServico.RECEBIDA);
+
+        assertThatThrownBy(ordem::finalizar).isInstanceOf(RegraNegocioException.class);
+
+        assertThat(ordem.getNovasTransicoes()).isEmpty();
     }
 }

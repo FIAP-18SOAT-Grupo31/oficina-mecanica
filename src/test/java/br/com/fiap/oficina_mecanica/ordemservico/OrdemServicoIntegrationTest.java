@@ -16,6 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
@@ -533,6 +535,24 @@ class OrdemServicoIntegrationTest {
             throws Exception {
         mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/" + caminho).with(usuario))
                 .andExpect(status().is(statusEsperado));
+    }
+
+    @Test
+    void registraHistoricoDeCadaTransicaoDeStatusSemDuplicar() throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+        acao(ordemServicoId, "iniciar-execucao", jwtAtendente(), 204);
+        acao(ordemServicoId, "finalizar", jwtAtendente(), 204);
+        acao(ordemServicoId, "entregar", jwtAtendente(), 204);
+
+        List<Map<String, Object>> historico = jdbc.queryForList(
+                "SELECT status_anterior, status_novo FROM historico_status_ordem_servico "
+                        + "WHERE ordem_servico_id = ? ORDER BY data_transicao, id", UUID.fromString(ordemServicoId));
+
+        assertThat(historico).extracting(h -> h.get("status_novo")).containsExactly(
+                "RECEBIDA", "EM_DIAGNOSTICO", "AGUARDANDO_APROVACAO", "APROVADA", "EM_EXECUCAO", "FINALIZADA",
+                "ENTREGUE");
+        assertThat(historico.get(0).get("status_anterior")).isNull();
+        assertThat(historico.get(6).get("status_anterior")).isEqualTo("FINALIZADA");
     }
 
     @Test
