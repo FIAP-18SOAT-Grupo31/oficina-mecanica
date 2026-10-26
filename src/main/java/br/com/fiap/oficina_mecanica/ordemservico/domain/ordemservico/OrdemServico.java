@@ -79,6 +79,41 @@ public class OrdemServico {
         }
         this.status = StatusOrdemServico.RECUSADA;
     }
+
+    public void cancelar() {
+        if (!podeSerCancelada()) {
+            throw new RegraNegocioException("Uma OS com status " + this.status + " não pode ser cancelada.");
+        }
+        this.status = StatusOrdemServico.CANCELADA;
+    }
+
+    public void iniciarExecucao() {
+        if (this.status != StatusOrdemServico.APROVADA) {
+            throw new RegraNegocioException("A execução só pode ser iniciada em uma OS aprovada.");
+        }
+        this.status = StatusOrdemServico.EM_EXECUCAO;
+    }
+
+    public void finalizar() {
+        if (this.status != StatusOrdemServico.EM_EXECUCAO) {
+            throw new RegraNegocioException("Apenas uma OS em execução pode ser finalizada.");
+        }
+        this.status = StatusOrdemServico.FINALIZADA;
+        this.dataConclusao = Horario.agora();
+    }
+
+    public void entregar() {
+        if (this.status != StatusOrdemServico.FINALIZADA) {
+            throw new RegraNegocioException("Apenas uma OS finalizada pode ser entregue.");
+        }
+        this.status = StatusOrdemServico.ENTREGUE;
+    }
+
+    private boolean podeSerCancelada() {
+        return this.status == StatusOrdemServico.RECEBIDA
+                || this.status == StatusOrdemServico.EM_DIAGNOSTICO
+                || this.status == StatusOrdemServico.AGUARDANDO_APROVACAO;
+    }
     
     private void validarRelatoProblema(String relato) {
         if (relato == null || relato.isBlank()) {

@@ -132,6 +132,31 @@ class OrdemServicoIntegrationTest {
     }
 
     @Test
+    void adminCriaOrdemDeServico() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoOrdemServico(clienteId, veiculoId, "Barulho na suspensão dianteira")))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void criarSemTokenVolta401() throws Exception {
+        mvc.perform(post("/api/ordens-servico")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoOrdemServico(clienteId, veiculoId, "Barulho na suspensão dianteira")))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void criarComPapelSemPermissaoVolta403() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoOrdemServico(clienteId, veiculoId, "Barulho na suspensão dianteira")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.erro").value("Acesso Negado"));
+    }
+
+    @Test
     void relatoCurtoVolta400ComOCampo() throws Exception {
         mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -402,5 +427,201 @@ class OrdemServicoIntegrationTest {
     void consultaDoClienteNaoAceitaGet() throws Exception {
         mvc.perform(get("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consulta"))
                 .andExpect(status().isMethodNotAllowed());
+    }
+
+    @Test
+    void cancelaOrdemRecebida() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/cancelar").with(jwtAtendente()))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("CANCELADA"));
+    }
+
+    @Test
+    void cancelarComOrcamentoPendenteRejeitaOOrcamento() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        gerarOrcamento(ordemServicoId);
+
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/cancelar").with(jwtAdmin()))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("CANCELADA"))
+                .andExpect(jsonPath("$.orcamentos[0].status").value("REJEITADO"));
+    }
+
+    @Test
+    void cancelarDuasVezesVolta422() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/cancelar").with(jwtAtendente()))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/cancelar").with(jwtAtendente()))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.erro").value("Violação de Regra de Negócio"));
+    }
+
+    @Test
+    void cancelarOrdemComOrcamentoAprovadoVolta422() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente()))
+                .andExpect(status().isOk());
+
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/cancelar").with(jwtAtendente()))
+                .andExpect(status().is(422));
+
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("APROVADA"))
+                .andExpect(jsonPath("$.orcamentos[0].status").value("APROVADO"));
+    }
+
+    @Test
+    void cancelarOrdemInexistenteVolta404() throws Exception {
+        mvc.perform(patch("/api/ordens-servico/" + UUID.randomUUID() + "/cancelar").with(jwtAtendente()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void cancelarSemTokenVolta401EComPapelSemPermissaoVolta403() throws Exception {
+        String url = "/api/ordens-servico/" + UUID.randomUUID() + "/cancelar";
+
+        mvc.perform(patch(url)).andExpect(status().isUnauthorized());
+        mvc.perform(patch(url).with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void criarSemTokenVolta401EComPapelSemPermissaoVolta403() throws Exception {
+        String corpo = corpoOrdemServico(clienteId, veiculoId, "Barulho na suspensão dianteira");
+
+        mvc.perform(post("/api/ordens-servico").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/ordens-servico").with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE")))
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.erro").value("Acesso Negado"));
+    }
+
+    @Test
+    void adminTambemPodeCriarOrdemDeServico() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAdmin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoOrdemServico(clienteId, veiculoId, "Barulho na suspensão dianteira")))
+                .andExpect(status().isCreated());
+    }
+
+    private String criarOrdemAprovada() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente()))
+                .andExpect(status().isOk());
+        return ordemServicoId;
+    }
+
+    private void acao(String ordemServicoId, String caminho, RequestPostProcessor usuario, int statusEsperado)
+            throws Exception {
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/" + caminho).with(usuario))
+                .andExpect(status().is(statusEsperado));
+    }
+
+    @Test
+    void percorreOCicloCompletoDaOrdemAteAEntrega() throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+
+        acao(ordemServicoId, "iniciar-execucao", jwtAtendente(), 204);
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("EM_EXECUCAO"))
+                .andExpect(jsonPath("$.dataConclusao").doesNotExist());
+
+        acao(ordemServicoId, "finalizar", jwtAtendente(), 204);
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("FINALIZADA"))
+                .andExpect(jsonPath("$.dataConclusao").isNotEmpty());
+
+        acao(ordemServicoId, "entregar", jwtAtendente(), 204);
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("ENTREGUE"))
+                .andExpect(jsonPath("$.dataConclusao").isNotEmpty());
+    }
+
+    @Test
+    void adminTambemAvancaAOrdem() throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+
+        acao(ordemServicoId, "iniciar-execucao", jwtAdmin(), 204);
+        acao(ordemServicoId, "finalizar", jwtAdmin(), 204);
+        acao(ordemServicoId, "entregar", jwtAdmin(), 204);
+    }
+
+    @Test
+    void naoIniciaExecucaoSemAprovacaoDoOrcamento() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        gerarOrcamento(ordemServicoId);
+
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/iniciar-execucao").with(jwtAtendente()))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensagem").value("A execu\u00e7\u00e3o s\u00f3 pode ser iniciada em uma OS aprovada."));
+    }
+
+    @Test
+    void naoFinalizaOrdemQueNaoEstaEmExecucao() throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/finalizar").with(jwtAtendente()))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensagem").value("Apenas uma OS em execu\u00e7\u00e3o pode ser finalizada."));
+    }
+
+    @Test
+    void naoEntregaOrdemQueNaoFoiFinalizada() throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+        acao(ordemServicoId, "iniciar-execucao", jwtAtendente(), 204);
+
+        mvc.perform(patch("/api/ordens-servico/" + ordemServicoId + "/entregar").with(jwtAtendente()))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensagem").value("Apenas uma OS finalizada pode ser entregue."));
+    }
+
+    @Test
+    void naoRepeteATransicaoJaRealizada() throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+        acao(ordemServicoId, "iniciar-execucao", jwtAtendente(), 204);
+        acao(ordemServicoId, "iniciar-execucao", jwtAtendente(), 422);
+        acao(ordemServicoId, "finalizar", jwtAtendente(), 204);
+        acao(ordemServicoId, "finalizar", jwtAtendente(), 422);
+        acao(ordemServicoId, "entregar", jwtAtendente(), 204);
+        acao(ordemServicoId, "entregar", jwtAtendente(), 422);
+    }
+
+    @Test
+    void ordemEmExecucaoNaoPodeSerCancelada() throws Exception {
+        String ordemServicoId = criarOrdemAprovada();
+        acao(ordemServicoId, "iniciar-execucao", jwtAtendente(), 204);
+
+        acao(ordemServicoId, "cancelar", jwtAtendente(), 422);
+    }
+
+    @Test
+    void ordemInexistenteVolta404NasTresAcoes() throws Exception {
+        String inexistente = UUID.randomUUID().toString();
+
+        acao(inexistente, "iniciar-execucao", jwtAtendente(), 404);
+        acao(inexistente, "finalizar", jwtAtendente(), 404);
+        acao(inexistente, "entregar", jwtAtendente(), 404);
+    }
+
+    @Test
+    void acoesExigemTokenEPapelPermitido() throws Exception {
+        String id = UUID.randomUUID().toString();
+        RequestPostProcessor papelSemPermissao = jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"));
+
+        for (String caminho : new String[]{"iniciar-execucao", "finalizar", "entregar"}) {
+            mvc.perform(patch("/api/ordens-servico/" + id + "/" + caminho)).andExpect(status().isUnauthorized());
+            acao(id, caminho, papelSemPermissao, 403);
+        }
     }
 }

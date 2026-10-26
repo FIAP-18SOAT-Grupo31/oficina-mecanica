@@ -7,7 +7,11 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.Cr
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoDetalheOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoResumoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.BuscarOrdemServicoUseCase;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.CancelarOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.CriarOrdemServicoUseCase;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.EntregarOrdemServicoUseCase;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.FinalizarOrdemServicoUseCase;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.IniciarExecucaoOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.ListarOrdensServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
 import jakarta.validation.Valid;
@@ -16,6 +20,7 @@ import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,13 +40,25 @@ public class OrdemServicoController {
 
     private final ListarOrdensServicoUseCase listarOrdensServicoUseCase;
     private final BuscarOrdemServicoUseCase buscarOrdemServicoUseCase;
+    private final CancelarOrdemServicoUseCase cancelarOrdemServicoUseCase;
+    private final IniciarExecucaoOrdemServicoUseCase iniciarExecucaoOrdemServicoUseCase;
+    private final FinalizarOrdemServicoUseCase finalizarOrdemServicoUseCase;
+    private final EntregarOrdemServicoUseCase entregarOrdemServicoUseCase;
 
     public OrdemServicoController(CriarOrdemServicoUseCase criarOrdemServicoUseCase,
                                   ListarOrdensServicoUseCase listarOrdensServicoUseCase,
-                                  BuscarOrdemServicoUseCase buscarOrdemServicoUseCase) {
+                                  BuscarOrdemServicoUseCase buscarOrdemServicoUseCase,
+                                  CancelarOrdemServicoUseCase cancelarOrdemServicoUseCase,
+                                  IniciarExecucaoOrdemServicoUseCase iniciarExecucaoOrdemServicoUseCase,
+                                  FinalizarOrdemServicoUseCase finalizarOrdemServicoUseCase,
+                                  EntregarOrdemServicoUseCase entregarOrdemServicoUseCase) {
         this.criarOrdemServicoUseCase = criarOrdemServicoUseCase;
         this.listarOrdensServicoUseCase = listarOrdensServicoUseCase;
         this.buscarOrdemServicoUseCase = buscarOrdemServicoUseCase;
+        this.cancelarOrdemServicoUseCase = cancelarOrdemServicoUseCase;
+        this.iniciarExecucaoOrdemServicoUseCase = iniciarExecucaoOrdemServicoUseCase;
+        this.finalizarOrdemServicoUseCase = finalizarOrdemServicoUseCase;
+        this.entregarOrdemServicoUseCase = entregarOrdemServicoUseCase;
     }
 
     @GetMapping("/{id}")
@@ -62,6 +79,7 @@ public class OrdemServicoController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     public ResponseEntity<CriarOrdemServicoOutput> criarOrdemServico(@Valid @RequestBody CriarOrdemServicoInput input,
                                                                      UriComponentsBuilder uriBuilder) {
         CriarOrdemServicoOutput ordemServicoCriada = criarOrdemServicoUseCase.execute(input);
@@ -69,5 +87,33 @@ public class OrdemServicoController {
                 .buildAndExpand(ordemServicoCriada.ordemServicoId())
                 .toUri();
         return ResponseEntity.created(location).body(ordemServicoCriada);
+    }
+
+    @PatchMapping("/{id}/cancelar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    public ResponseEntity<Void> cancelarOrdemServico(@PathVariable UUID id) {
+        cancelarOrdemServicoUseCase.execute(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/iniciar-execucao")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    public ResponseEntity<Void> iniciarExecucao(@PathVariable UUID id) {
+        iniciarExecucaoOrdemServicoUseCase.execute(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/finalizar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    public ResponseEntity<Void> finalizarOrdemServico(@PathVariable UUID id) {
+        finalizarOrdemServicoUseCase.execute(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/entregar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    public ResponseEntity<Void> entregarOrdemServico(@PathVariable UUID id) {
+        entregarOrdemServicoUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 }
