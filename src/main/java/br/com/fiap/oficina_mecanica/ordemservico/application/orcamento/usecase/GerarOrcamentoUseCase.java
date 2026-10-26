@@ -17,21 +17,22 @@ import com.github.f4b6a3.uuid.UuidCreator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
 public class GerarOrcamentoUseCase {
 
     private final OrcamentoRepository repository;
-    private final NotificadorOrcamento notificador;
+    private final List<NotificadorOrcamento> notificadores;
     private final OrdemServicoRepository ordemServicoRepository;
     private final ProdutoEstoqueRepository estoqueRepository;
 
-    public GerarOrcamentoUseCase(OrcamentoRepository repository, NotificadorOrcamento notificador,
+    public GerarOrcamentoUseCase(OrcamentoRepository repository, List<NotificadorOrcamento> notificadores,
                                  OrdemServicoRepository ordemServicoRepository,
                                  ProdutoEstoqueRepository estoqueRepository) {
         this.repository = repository;
-        this.notificador = notificador;
+        this.notificadores = notificadores;
         this.ordemServicoRepository = ordemServicoRepository;
         this.estoqueRepository = estoqueRepository;
     }
@@ -73,7 +74,7 @@ public class GerarOrcamentoUseCase {
         Orcamento orcamentoSalvo = repository.salvar(orcamento);
         ordemServicoRepository.salvar(os);
 
-        notificador.notificarOrcamentoGerado(orcamentoSalvo);
+        notificadores.forEach(notificador -> notificador.notificarOrcamentoGerado(orcamentoSalvo));
 
         return OrcamentoMapper.toOutput(orcamentoSalvo);
     }

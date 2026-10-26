@@ -60,7 +60,7 @@ class OrcamentoUseCasesTest {
 
     @BeforeEach
     void setup() {
-        gerarOrcamento = new GerarOrcamentoUseCase(repository, notificados::add, osRepository, estoqueRepository);
+        gerarOrcamento = new GerarOrcamentoUseCase(repository, List.of(notificados::add), osRepository, estoqueRepository);
         aprovarOrcamento = new AprovarOrcamentoUseCase(repository, osRepository, estoqueRepository);
         rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository, osRepository, estoqueRepository);
         buscarOrcamento = new BuscarOrcamentoUseCase(repository);

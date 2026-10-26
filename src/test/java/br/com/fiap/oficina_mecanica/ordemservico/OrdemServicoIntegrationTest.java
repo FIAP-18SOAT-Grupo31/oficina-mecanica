@@ -84,6 +84,17 @@ class OrdemServicoIntegrationTest {
         return JsonPath.read(resposta, "$.id");
     }
 
+    private String codigoAcesso(String ordemServicoId) throws Exception {
+        String resposta = mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return JsonPath.read(resposta, "$.codigoAcesso");
+    }
+
+    private String corpoConsulta(String cpf, String codigoAcesso) {
+        return "{\"cpf\":\"" + cpf + "\",\"codigoAcesso\":\"" + codigoAcesso + "\"}";
+    }
+
     @Test
     void criaOrdemDeServicoEOrcamentoEAprovaOrcamento() throws Exception {
         String ordemServicoId = criarOrdemServico();
@@ -305,5 +316,91 @@ class OrdemServicoIntegrationTest {
         mvc.perform(get("/api/ordens-servico/" + UUID.randomUUID())
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"))))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void clienteConsultaSuaOrdemSemTokenVendoApenasOrcamentosPendentes() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        String codigo = codigoAcesso(ordemServicoId);
+        String cpfFormatado = documentoCliente.substring(0, 3) + "." + documentoCliente.substring(3, 6) + "."
+                + documentoCliente.substring(6, 9) + "-" + documentoCliente.substring(9);
+
+        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consulta")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(cpfFormatado, codigo)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(ordemServicoId))
+                .andExpect(jsonPath("$.status").value("AGUARDANDO_APROVACAO"))
+                .andExpect(jsonPath("$.veiculo.marca").value("Fiat"))
+                .andExpect(jsonPath("$.veiculo.modelo").value("Argo"))
+                .andExpect(jsonPath("$.orcamentosPendentes.length()").value(1))
+                .andExpect(jsonPath("$.orcamentosPendentes[0].id").value(orcamentoId))
+                .andExpect(jsonPath("$.codigoAcesso").doesNotExist())
+                .andExpect(jsonPath("$.cliente").doesNotExist());
+    }
+
+    @Test
+    void consultaDoClienteEscondeOrcamentoJaDecidido() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String orcamentoId = gerarOrcamento(ordemServicoId);
+        String codigo = codigoAcesso(ordemServicoId);
+        mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente()))
+                .andExpect(status().isOk());
+
+        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consulta")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(documentoCliente, codigo)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APROVADA"))
+                .andExpect(jsonPath("$.orcamentosPendentes").isEmpty());
+    }
+
+    @Test
+    void consultaComCodigoDeAcessoErradoVolta422() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consulta")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(documentoCliente, "ZZZZZZ")))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensagem").value("Credenciais inválidas"));
+    }
+
+    @Test
+    void consultaComCpfDeOutroClienteVolta422() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+        String codigo = codigoAcesso(ordemServicoId);
+
+        mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consulta")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta("00000000000", codigo)))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensagem").value("Credenciais inválidas"));
+    }
+
+    @Test
+    void consultaSemCamposObrigatoriosVolta400() throws Exception {
+        mvc.perform(post("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consulta")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erro").value("Dados Inválidos"))
+                .andExpect(jsonPath("$.mensagem")
+                        .value("codigoAcesso: O código de acesso é obrigatório.; cpf: O CPF é obrigatório."));
+    }
+
+    @Test
+    void consultaDeOrdemInexistenteVolta404() throws Exception {
+        mvc.perform(post("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consulta")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoConsulta(documentoCliente, "ABC123")))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void consultaDoClienteNaoAceitaGet() throws Exception {
+        mvc.perform(get("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consulta"))
+                .andExpect(status().isMethodNotAllowed());
     }
 }
