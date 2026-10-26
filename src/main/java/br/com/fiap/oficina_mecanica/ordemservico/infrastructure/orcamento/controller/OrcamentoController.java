@@ -4,6 +4,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.Aprov
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.AprovacaoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.GerarOrcamentoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.AcessoClienteInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.AprovarOrcamentoClienteUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.AprovarOrcamentoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.BuscarOrcamentoClienteUseCase;
@@ -87,7 +88,7 @@ public class OrcamentoController {
     @PostMapping("/{id}/cliente/visualizar")
     public ResponseEntity<OrcamentoOutput> visualizarPeloCliente(
             @PathVariable UUID id,
-            @Valid @RequestBody AprovacaoClienteInput input) {
+            @Valid @RequestBody AcessoClienteInput input) {
         OrcamentoOutput orcamento = buscarOrcamentoClienteUseCase.execute(id, input.cpf(), input.codigoAcesso());
         return ResponseEntity.ok(orcamento);
     }
@@ -103,7 +104,7 @@ public class OrcamentoController {
     @PostMapping("/{id}/cliente/rejeitar")
     public ResponseEntity<OrcamentoOutput> rejeitarPeloCliente(
             @PathVariable UUID id,
-            @Valid @RequestBody AprovacaoClienteInput input) {
+            @Valid @RequestBody AcessoClienteInput input) {
         OrcamentoOutput rejeitado = rejeitarOrcamentoClienteUseCase.execute(id, input.cpf(), input.codigoAcesso());
         return ResponseEntity.ok(rejeitado);
     }

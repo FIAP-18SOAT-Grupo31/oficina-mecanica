@@ -1,6 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.controller;
 
-import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.ConsultaClienteInput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.AcessoClienteInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoClienteOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.ConsultarOrdemServicoClienteUseCase;
 import jakarta.validation.Valid;
@@ -26,7 +26,7 @@ public class OrdemServicoPublicoController {
     // POST mantém CPF e código de acesso fora da URL e dos logs de acesso.
     @PostMapping("/{id}/consultar")
     public ResponseEntity<OrdemServicoClienteOutput> consultar(@PathVariable UUID id,
-                                                               @Valid @RequestBody ConsultaClienteInput input) {
+                                                               @Valid @RequestBody AcessoClienteInput input) {
         return ResponseEntity.ok(consultarOrdemServicoClienteUseCase.execute(id, input.cpf(), input.codigoAcesso()));
     }
 }
