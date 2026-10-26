@@ -4,6 +4,7 @@ import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase.VerificadorAcessoCliente;
+import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoResumoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoClienteOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.VeiculoDetalheOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
@@ -12,6 +13,8 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServic
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -62,19 +65,19 @@ class ConsultarOrdemServicoClienteUseCaseTest {
     }
 
     private Orcamento orcamento(StatusOrcamento status, LocalDateTime validade) {
-        return new Orcamento(UUID.randomUUID(), ordemId, Horario.agora().minusDays(2), validade, status,
-                List.of(), List.of());
+        return orcamento(status, Horario.agora().minusDays(2), validade);
+    }
+
+    private Orcamento orcamento(StatusOrcamento status, LocalDateTime criacao, LocalDateTime validade) {
+        return new Orcamento(UUID.randomUUID(), ordemId, criacao, validade, status, List.of(), List.of());
     }
 
     @Test
-    void devolveOrdemComVeiculoETodosOsOrcamentos() {
-        Orcamento pendente = orcamento(StatusOrcamento.PENDENTE, Horario.agora().plusDays(1));
-        Orcamento aprovado = orcamento(StatusOrcamento.APROVADO, Horario.agora().plusDays(1));
-        Orcamento rejeitado = orcamento(StatusOrcamento.REJEITADO, Horario.agora().plusDays(1));
-        Orcamento expirado = orcamento(StatusOrcamento.EXPIRADO, Horario.agora().minusDays(1));
+    void devolveOrdemComVeiculoEResumoDoUltimoOrcamento() {
+        Orcamento antigo = orcamento(StatusOrcamento.REJEITADO, Horario.agora().minusDays(5), Horario.agora().plusDays(1));
+        Orcamento recente = orcamento(StatusOrcamento.PENDENTE, Horario.agora().minusDays(1), Horario.agora().plusDays(1));
         VeiculoDetalheOutput veiculo = new VeiculoDetalheOutput(veiculoId, "ABC1D23", "Fiat", "Argo", 2022);
-        when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordemComOrcamentos(List.of(
-                pendente, aprovado, rejeitado, expirado))));
+        when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordemComOrcamentos(List.of(recente, antigo))));
         when(consultorVeiculos.detalharPorId(veiculoId)).thenReturn(Optional.of(veiculo));
 
         OrdemServicoClienteOutput output = useCase().execute(ordemId, "123.456.789-00", "ABC123");
@@ -84,11 +87,19 @@ class ConsultarOrdemServicoClienteUseCaseTest {
         assertThat(output.status()).isEqualTo(StatusOrdemServico.AGUARDANDO_APROVACAO);
         assertThat(output.relatoProblema()).isEqualTo("Barulho na suspensão dianteira");
         assertThat(output.veiculo()).isEqualTo(veiculo);
-        assertThat(output.orcamentos()).extracting("id")
-                .containsExactly(pendente.getId(), aprovado.getId(), rejeitado.getId(), expirado.getId());
-        assertThat(output.orcamentos()).extracting("status").containsExactly(
-                StatusOrcamento.PENDENTE, StatusOrcamento.APROVADO, StatusOrcamento.REJEITADO,
-                StatusOrcamento.EXPIRADO);
+        assertThat(output.ultimoOrcamento()).isEqualTo(new OrcamentoResumoOutput(
+                recente.getId(), recente.calcularValorTotal(), StatusOrcamento.PENDENTE,
+                recente.getDataCriacao(), recente.getDataValidade()));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusOrcamento.class, names = {"APROVADO", "REJEITADO", "APROVADO_PARCIALMENTE"})
+    void resumoMostraOStatusJaDecididoDoOrcamento(StatusOrcamento status) {
+        when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordemComOrcamentos(List.of(
+                orcamento(status, Horario.agora().plusDays(1))))));
+        when(consultorVeiculos.detalharPorId(veiculoId)).thenReturn(Optional.empty());
+
+        assertThat(useCase().execute(ordemId, "12345678900", "ABC123").ultimoOrcamento().status()).isEqualTo(status);
     }
 
     @Test
@@ -99,16 +110,16 @@ class ConsultarOrdemServicoClienteUseCaseTest {
 
         OrdemServicoClienteOutput output = useCase().execute(ordemId, "12345678900", "ABC123");
 
-        assertThat(output.orcamentos()).extracting("status").containsExactly(StatusOrcamento.EXPIRADO);
+        assertThat(output.ultimoOrcamento().status()).isEqualTo(StatusOrcamento.EXPIRADO);
         assertThat(output.veiculo()).isNull();
     }
 
     @Test
-    void semOrcamentosDevolveListaVazia() {
+    void semOrcamentosUltimoOrcamentoEhNulo() {
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordemComOrcamentos(List.of())));
         when(consultorVeiculos.detalharPorId(veiculoId)).thenReturn(Optional.empty());
 
-        assertThat(useCase().execute(ordemId, "12345678900", "ABC123").orcamentos()).isEmpty();
+        assertThat(useCase().execute(ordemId, "12345678900", "ABC123").ultimoOrcamento()).isNull();
     }
 
     @Test

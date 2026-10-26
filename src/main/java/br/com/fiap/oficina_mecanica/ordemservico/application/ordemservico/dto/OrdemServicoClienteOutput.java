@@ -1,11 +1,10 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto;
 
-import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoResumoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 public record OrdemServicoClienteOutput(
@@ -15,11 +14,11 @@ public record OrdemServicoClienteOutput(
         LocalDateTime dataAbertura,
         LocalDateTime dataConclusao,
         VeiculoDetalheOutput veiculo,
-        List<OrcamentoOutput> orcamentos
+        OrcamentoResumoOutput ultimoOrcamento
 ) {
 
     public static OrdemServicoClienteOutput de(OrdemServico ordemServico, VeiculoDetalheOutput veiculo,
-                                               List<OrcamentoOutput> orcamentos) {
+                                               OrcamentoResumoOutput ultimoOrcamento) {
         return new OrdemServicoClienteOutput(
                 ordemServico.getId(),
                 ordemServico.getStatus(),
@@ -27,6 +26,6 @@ public record OrdemServicoClienteOutput(
                 ordemServico.getDataAbertura(),
                 ordemServico.getDataConclusao(),
                 veiculo,
-                orcamentos);
+                ultimoOrcamento);
     }
 }

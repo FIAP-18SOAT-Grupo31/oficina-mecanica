@@ -366,8 +366,13 @@ class OrdemServicoIntegrationTest {
                 .andExpect(jsonPath("$.status").value("AGUARDANDO_APROVACAO"))
                 .andExpect(jsonPath("$.veiculo.marca").value("Fiat"))
                 .andExpect(jsonPath("$.veiculo.modelo").value("Argo"))
-                .andExpect(jsonPath("$.orcamentos.length()").value(1))
-                .andExpect(jsonPath("$.orcamentos[0].id").value(orcamentoId))
+                .andExpect(jsonPath("$.ultimoOrcamento.id").value(orcamentoId))
+                .andExpect(jsonPath("$.ultimoOrcamento.status").value("PENDENTE"))
+                .andExpect(jsonPath("$.ultimoOrcamento.valorTotal").value(200.00))
+                .andExpect(jsonPath("$.ultimoOrcamento.dataCriacao").isNotEmpty())
+                .andExpect(jsonPath("$.ultimoOrcamento.dataValidade").isNotEmpty())
+                .andExpect(jsonPath("$.ultimoOrcamento.servicos").doesNotExist())
+                .andExpect(jsonPath("$.orcamentos").doesNotExist())
                 .andExpect(jsonPath("$.codigoAcesso").doesNotExist())
                 .andExpect(jsonPath("$.cliente").doesNotExist());
     }
@@ -385,9 +390,8 @@ class OrdemServicoIntegrationTest {
                         .content(corpoConsulta(documentoCliente, codigo)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APROVADA"))
-                .andExpect(jsonPath("$.orcamentos.length()").value(1))
-                .andExpect(jsonPath("$.orcamentos[0].id").value(orcamentoId))
-                .andExpect(jsonPath("$.orcamentos[0].status").value("APROVADO"));
+                .andExpect(jsonPath("$.ultimoOrcamento.id").value(orcamentoId))
+                .andExpect(jsonPath("$.ultimoOrcamento.status").value("APROVADO"));
     }
 
     @Test
