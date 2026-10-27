@@ -343,6 +343,11 @@ class OrcamentoUseCasesTest {
         public Optional<OrdemServico> buscarPorId(UUID id) {
             return Optional.ofNullable(ordens.get(id));
         }
+
+        @Override
+        public boolean existePorVeiculoId(UUID veiculoId) {
+            return ordens.values().stream().anyMatch(ordem -> ordem.getVeiculoId().equals(veiculoId));
+        }
     }
 
     private static class ProdutoEstoqueRepositoryEmMemoria implements ProdutoEstoqueRepository {

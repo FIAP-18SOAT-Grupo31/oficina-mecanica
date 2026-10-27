@@ -5,7 +5,9 @@ import br.com.fiap.oficina_mecanica.cliente.domain.Endereco;
 public class EnderecoMapper {
 
     public static EnderecoEmbeddable toEmbeddable(Endereco endereco) {
-        assert endereco != null;
+        if(endereco == null){
+            throw new IllegalArgumentException("O endereco não pode ser null");
+        }
         return new EnderecoEmbeddable(
                 endereco.getRua(),
                 endereco.getNumero(),
@@ -18,7 +20,9 @@ public class EnderecoMapper {
     }
 
     public static Endereco toDomain( EnderecoEmbeddable enderecoEmbeddable){
-        assert enderecoEmbeddable != null;
+        if(enderecoEmbeddable == null){
+            throw new IllegalArgumentException("O enderecoEmbeddable não pode ser null");
+        }
         return new Endereco(
                 enderecoEmbeddable.getRua(),
                 enderecoEmbeddable.getNumero(),

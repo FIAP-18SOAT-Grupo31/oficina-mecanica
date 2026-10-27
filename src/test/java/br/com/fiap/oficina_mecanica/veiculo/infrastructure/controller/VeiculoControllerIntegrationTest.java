@@ -2,6 +2,7 @@ package br.com.fiap.oficina_mecanica.veiculo.infrastructure.controller;
 
 import br.com.fiap.oficina_mecanica.cliente.infrastructure.TesteIntegracaoCliente;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ class VeiculoControllerIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private UUID clienteA;
     private UUID clienteB;
@@ -387,6 +391,31 @@ class VeiculoControllerIntegrationTest {
                 .andExpect(status().isNoContent());
 
         mvc.perform(delete("/api/clientes/" + clienteA).with(jwtAtendente()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void veiculoComOrdemServicoNaoPodeSerExcluido() throws Exception {
+        String veiculoId = cadastrar(corpo(clienteA, "ABC1D23", "Fiat", "Argo", 2022));
+        // o JPA só grava o veículo no flush; sem isso o INSERT via JDBC abaixo não enxerga o veículo (FK)
+        entityManager.flush();
+        UUID ordemServicoId = UUID.randomUUID();
+        jdbc.update("INSERT INTO ordens_servico (id, cliente_id, veiculo_id, relato_problema, status, "
+                        + "data_abertura, codigo_acesso) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)",
+                ordemServicoId, clienteA, UUID.fromString(veiculoId), "Barulho na suspensão dianteira",
+                "AGUARDANDO_APROVACAO", "TESTE1");
+
+        mvc.perform(delete("/api/veiculos/" + veiculoId).with(jwtAtendente()))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensagem")
+                        .value("Não é possível excluir o veículo: existem ordens de serviço vinculadas a ele."));
+
+        mvc.perform(get("/api/veiculos/" + veiculoId).with(jwtAtendente()))
+                .andExpect(status().isOk());
+
+        jdbc.update("DELETE FROM ordens_servico WHERE id = ?", ordemServicoId);
+
+        mvc.perform(delete("/api/veiculos/" + veiculoId).with(jwtAtendente()))
                 .andExpect(status().isNoContent());
     }
 

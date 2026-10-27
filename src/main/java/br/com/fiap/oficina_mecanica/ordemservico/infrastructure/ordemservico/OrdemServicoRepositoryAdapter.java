@@ -37,6 +37,11 @@ public class OrdemServicoRepositoryAdapter implements OrdemServicoRepository {
                 .map(entity -> mapper.toDomain(entity, orcamentosDa(entity.getId())));
     }
 
+    @Override
+    public boolean existePorVeiculoId(UUID veiculoId) {
+        return jpaRepository.existsByVeiculoId(veiculoId);
+    }
+
     private List<Orcamento> orcamentosDa(UUID ordemServicoId) {
         return orcamentoRepository.buscarPorOrdemServicoId(ordemServicoId).stream().toList();
     }

@@ -99,7 +99,7 @@ public class VeiculoController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
-    @Operation(summary = "Exclui um veículo")
+    @Operation(summary = "Exclui um veículo que não tenha ordens de serviço vinculadas")
     public ResponseEntity<Void> excluir(@PathVariable UUID id) {
         excluirVeiculoUseCase.execute(id);
         return ResponseEntity.noContent().build();
