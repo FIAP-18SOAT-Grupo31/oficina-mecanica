@@ -8,7 +8,6 @@ import br.com.fiap.oficina_mecanica.estoque.application.usecase.BuscarProdutoEst
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.CriarProdutoEstoqueUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.ReservarPecaUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.RetirarPecaUseCase;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
