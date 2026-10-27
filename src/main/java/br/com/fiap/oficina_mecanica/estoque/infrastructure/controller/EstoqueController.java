@@ -50,14 +50,14 @@ public class EstoqueController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE', 'MECANICO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     public ResponseEntity<EstoqueOutput> buscarPorId(@PathVariable UUID id) {
         EstoqueOutput produto = buscarProdutoEstoquePorIdUseCase.execute(id);
         return ok(produto);
     }
 
     @GetMapping("/peca")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE', 'MECANICO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     public ResponseEntity<EstoqueOutput> buscarPorNomePeca(@RequestParam String nomePeca) {
         EstoqueOutput produto = buscarProdutoEstoquePorNomeUseCase.execute(nomePeca);
         return ok(produto);
@@ -71,7 +71,7 @@ public class EstoqueController {
     }
 
     @PostMapping("/{id}/reservar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE', 'MECANICO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     public ResponseEntity<EstoqueOutput> reservarPeca(
             @PathVariable UUID id,
             @RequestBody AjustarQuantidadeInput input) {
@@ -80,7 +80,7 @@ public class EstoqueController {
     }
 
     @DeleteMapping("/{id}/retirar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE', 'MECANICO')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     public ResponseEntity<EstoqueOutput> retirarPeca(
             @PathVariable UUID id,
             @RequestBody AjustarQuantidadeInput input) {
