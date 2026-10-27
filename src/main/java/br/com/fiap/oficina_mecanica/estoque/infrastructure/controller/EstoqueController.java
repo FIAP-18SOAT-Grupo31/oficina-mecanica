@@ -8,6 +8,7 @@ import br.com.fiap.oficina_mecanica.estoque.application.usecase.BuscarProdutoEst
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.CriarProdutoEstoqueUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.ReservarPecaUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.RetirarPecaUseCase;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -64,7 +65,7 @@ public class EstoqueController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
-    public ResponseEntity<EstoqueOutput> criarPeca(@RequestBody CriarProdutoEstoqueInput input) {
+    public ResponseEntity<EstoqueOutput> criarPeca(@Valid @RequestBody CriarProdutoEstoqueInput input) {
         EstoqueOutput produtoCriado = criarProdutoEstoqueUseCase.execute(input);
         return status(CREATED).body(produtoCriado);
     }
@@ -73,7 +74,7 @@ public class EstoqueController {
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     public ResponseEntity<EstoqueOutput> reservarPeca(
             @PathVariable UUID id,
-            @RequestBody AjustarQuantidadeInput input) {
+            @Valid @RequestBody AjustarQuantidadeInput input) {
         EstoqueOutput produtoAtualizado = reservarPecaUseCase.execute(id, input);
         return ok(produtoAtualizado);
     }
@@ -82,7 +83,7 @@ public class EstoqueController {
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     public ResponseEntity<EstoqueOutput> retirarPeca(
             @PathVariable UUID id,
-            @RequestBody AjustarQuantidadeInput input) {
+            @Valid @RequestBody AjustarQuantidadeInput input) {
         EstoqueOutput produtoAtualizado = retirarPecaUseCase.execute(id, input);
         return ok(produtoAtualizado);
     }

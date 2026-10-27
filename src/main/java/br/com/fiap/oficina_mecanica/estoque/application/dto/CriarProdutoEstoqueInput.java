@@ -17,7 +17,7 @@ public record CriarProdutoEstoqueInput(
 
         @NotNull(message = "A quantidade disponivel é obrigatória.")
         @PositiveOrZero(message = "A quantidade deve ser zero ou maior.")
-        int quantidadeDisponivel
+        Integer quantidadeDisponivel
 
 
 ) {
