@@ -82,14 +82,13 @@ Fontes:
 
 Desenhado na página 9 do [`diagramas.pdf`](diagramas.pdf). U é o contexto upstream (fornecedor) e D o downstream (cliente, que consome o U).
 
-| Relação | Padrão |
-|---|---|
-| Clientes (U) → Atendimento e execução (D) | camada anticorrupção: portas `VerificadorCliente` e `ConsultorClientes` no núcleo |
-| Veículos (U) → Atendimento e execução (D) | camada anticorrupção: portas `VerificadorVeiculo` e `ConsultorVeiculos` |
-| Estoque (U) → Atendimento e execução (D) | cliente-fornecedor: o orçamento usa `ProdutoEstoqueRepository` na mesma transação |
-| Catálogo (U) → Atendimento e execução (D) | conformista: o orçamento lê `ServicoRepository` e copia nome e valor |
-| Autenticação (U) → demais contextos (D) | genérico: JWT nas rotas administrativas |
-| Atendimento e execução (U) → E-mail ao cliente (D) | eventos de domínio depois do commit, e-mail simulado no log |
+Como cada relação aparece no código:
+
+- **Clientes e Veículos → Atendimento e execução.** A OS consulta cliente e veículo pelas portas `VerificadorCliente` e `VerificadorVeiculo` (só respondem se o cadastro existe) e, na consulta da OS, por `ConsultorClientes` e `ConsultorVeiculos`, que devolvem DTOs do próprio módulo de OS. O módulo de OS não conhece as classes de cliente e veículo; quem traduz são os adapters na infraestrutura. Por isso chamamos de camada anticorrupção.
+- **Estoque → Atendimento e execução.** O `GerarOrcamentoUseCase` usa direto o `ProdutoEstoqueRepository`: busca a peça, reserva a quantidade e salva, dentro da mesma transação do orçamento. Não tem porta nem tradução no meio.
+- **Catálogo → Atendimento e execução.** O mesmo caso de uso lê o `ServicoRepository` e copia nome e valor de mão de obra para o `ItemServico`. Depois disso o orçamento não depende mais do catálogo, então mudar o preço não altera orçamento já gerado.
+- **Autenticação → demais contextos.** Os outros módulos não chamam a autenticação. O `SegurancaConfig` exige JWT em todas as rotas, menos login, rotas públicas, Swagger e health.
+- **Atendimento e execução → E-mail ao cliente.** Os casos de uso publicam eventos de domínio e os adapters de notificação (`NotificadorOrdemServicoAdapter`, `NotificadorEmailAdapter`) escutam com `@TransactionalEventListener(AFTER_COMMIT)`, ou seja, o e-mail (simulado no log) só sai depois do commit.
 
 O módulo `compartilhado` é só utilitário técnico (paginação, exceções, publicação de eventos e padrão de erros). Não é um shared kernel: nenhum modelo de domínio é compartilhado entre os contextos.
 

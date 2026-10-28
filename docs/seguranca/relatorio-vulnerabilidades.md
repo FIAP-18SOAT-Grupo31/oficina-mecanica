@@ -6,7 +6,7 @@
 | Execução de referência | CI da branch `dev` no commit `079272e` em 28/10/2026 ([run 40682335666](https://github.com/FIAP-18SOAT-Grupo31/oficina-mecanica/actions/runs/40682335666)) |
 | Escopo | dependências Maven (`pom.xml`), `Dockerfile` e segredos no código |
 | Fora do escopo | `target/` e o `.env` local, que não vai para o git |
-| Resultado | 0 vulnerabilidades nas dependências, 0 problemas de configuração no `Dockerfile` e nenhum segredo encontrado ([saída completa](trivy-resultado.txt)) |
+| Resultado | 0 vulnerabilidades nas dependências e 0 problemas de configuração no `Dockerfile` ([saída completa](trivy-resultado.txt)). O scanner de segredos está ligado no CI (`scanners: vuln,secret,misconfig`), mas na tabela do anexo a coluna `Secrets` está como `-` (não verificado) nas duas linhas, então não dá para tirar conclusão sobre segredos só por ela |
 
 A saída é o artefato `relatorio-vulnerabilidades` dessa execução, copiado para [`trivy-resultado.txt`](trivy-resultado.txt).
 
