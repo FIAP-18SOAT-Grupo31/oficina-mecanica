@@ -18,7 +18,7 @@ Deixamos no banco as regras que ele consegue segurar: FK entre as tabelas e `UNI
 
 - MySQL: também atenderia. Ficamos com o PostgreSQL porque o grupo já conhecia melhor.
 - MongoDB: o domínio é relacional e precisamos de transação envolvendo vários registros. Em documento isso dá mais trabalho e perde as FKs.
-- H2 em memória como banco da aplicação: serve para teste, não para rodar de verdade.
+- H2 em memória como banco da aplicação: os dados precisam continuar salvos entre reinicializações, então o H2 ficou só nos testes.
 
 ## Consequências
 
