@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Diagramas DDD - Oficina Mecânica (Grupo 31)</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #1d1d1f; }
+  .pagina { width: 297mm; height: 210mm; padding: 11mm 13mm 9mm; page-break-after: always; display: flex; flex-direction: column; overflow: hidden; }
+  .pagina:last-child { page-break-after: auto; }
+  h1 { font-size: 21px; margin: 0 0 2mm; }
+  h2 { font-size: 13px; margin: 3mm 0 1.5mm; }
+  .sub { font-size: 11px; color: #555; margin: 0 0 3mm; }
+  .rodape { font-size: 9px; color: #888; margin-top: auto; padding-top: 2mm; border-top: 1px solid #ddd; display: flex; justify-content: space-between; }
+  .historia { flex: 1; display: flex; gap: 6mm; min-height: 0; }
+  .historia .fig { flex: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #e3e3e3; border-radius: 4px; padding: 3mm; min-height: 0; }
+  .historia .fig img { max-width: 100%; max-height: 100%; }
+  .historia .notas { width: 78mm; font-size: 10.5px; line-height: 1.38; }
+  .notas ol, .notas ul { padding-left: 4.5mm; margin: 1mm 0; }
+  .codigo { background: #f4f6f8; border-left: 3px solid #4a76c9; padding: 2mm 3mm; margin-top: 2mm; }
+  code { font-family: Consolas, monospace; font-size: 9.5px; background: #eef1f4; padding: 0 2px; border-radius: 2px; }
+  table { border-collapse: collapse; width: 100%; font-size: 10px; }
+  th, td { border: 1px solid #d5d9de; padding: 1.4mm 2mm; text-align: left; vertical-align: top; }
+  th { background: #f0f2f5; }
+  .capa { justify-content: center; }
+  .capa h1 { font-size: 30px; }
+  .capa p { font-size: 13px; }
+  .grade { display: grid; gap: 4mm; }
+  .caixa { border: 1.5px solid #555; border-radius: 6px; padding: 2.5mm 3mm; font-size: 10px; line-height: 1.35; }
+  .caixa h3 { font-size: 12px; margin: 0 0 1.5mm; }
+  .core { background: #fff4c2; border-color: #c9a400; }
+  .suporte { background: #e7f0ff; border-color: #4a76c9; }
+  .generico { background: #eeeeee; border-color: #888; }
+  .externo { background: #ffe0ef; border-color: #d0508a; }
+  .estado { display: inline-block; border: 1.5px solid #333; border-radius: 14px; padding: 1.2mm 3mm; font-size: 10.5px; font-weight: 600; background: #fff; white-space: nowrap; }
+  .final { background: #333; color: #fff; }
+  .seta { font-size: 9.5px; color: #333; text-align: center; padding: 0 1.5mm; white-space: nowrap; }
+  .linha { display: flex; align-items: center; flex-wrap: nowrap; margin: 2mm 0; }
+  .seta span { display: block; font-size: 15px; line-height: 1; }
+  .nota { font-size: 10px; color: #444; }
+</style>
+</head>
+<body>
+
+<section class="pagina capa">
+  <h1>Diagramas de domínio: Oficina Mecânica</h1>
+  <p>Tech Challenge SOAT, fase 1, grupo 31</p>
+  <p class="sub">Domain Storytelling feito pelo grupo no egon.io (25/09/2026) e diagramas complementares de DDD
+    (agregados, entidades, objetos de valor, contextos delimitados e máquinas de estado) montados a partir do
+    board de Event Storming no Miro e conferidos com o código.</p>
+  <h2>Conteúdo</h2>
+  <table style="width: 70%">
+    <tr><th>Página</th><th>Diagrama</th><th>Origem</th></tr>
+    <tr><td>2</td><td>1. Criação da OS com serviço</td><td>egon.io (<code>docs/ddd/egon/1-criacao-os-com-servico.egn.svg</code>)</td></tr>
+    <tr><td>3</td><td>2. Criação da OS com diagnóstico</td><td>egon.io</td></tr>
+    <tr><td>4</td><td>3. Acompanhamento com aprovação total</td><td>egon.io</td></tr>
+    <tr><td>5</td><td>4. Acompanhamento com aprovação parcial</td><td>egon.io</td></tr>
+    <tr><td>6</td><td>5. Acompanhamento com reprovação</td><td>egon.io</td></tr>
+    <tr><td>7</td><td>6. Gerenciamento de peças e insumos</td><td>egon.io</td></tr>
+    <tr><td>8</td><td>Agregados, entidades e objetos de valor</td><td>Miro (agregados) + código</td></tr>
+    <tr><td>9</td><td>Contextos delimitados e mapa de contextos</td><td>Miro + código</td></tr>
+    <tr><td>10</td><td>Máquinas de estado da OS e do orçamento</td><td>código</td></tr>
+  </table>
+  <p class="nota" style="margin-top:5mm">Cada história traz, ao lado, como o código atual implementa o fluxo. Onde a história
+    e o código divergem, a divergência está indicada e também listada em <code>docs/ddd/linguagem-ubiqua.md</code>
+    (seção "Relação com o código"). O board do Miro: https://miro.com/app/board/uXjVHnerRBQ=/</p>
+  <div class="rodape"><span>Grupo 31 · SOAT fase 1</span><span>1</span></div>
+</section>
+
+<section class="pagina">
+  <h1>1. Criação da OS com serviço</h1>
+  <p class="sub">Fluxo quando o cliente já sabe quais serviços quer (ex.: troca de óleo).</p>
+  <div class="historia">
+    <div class="fig"><img src="../egon/1-criacao-os-com-servico.egn.svg"></div>
+    <div class="notas">
+      <b>História</b>
+      <ol>
+        <li>O atendente cria a OS com os dados do cliente, do veículo e os serviços pedidos.</li>
+        <li>O sistema define o status Recebida.</li>
+        <li>O atendente define serviços, peças e insumos; o sistema gera o orçamento.</li>
+        <li>O atendente revisa e o sistema envia o orçamento por e-mail; status Aguardando aprovação.</li>
+      </ol>
+      <div class="codigo">
+        <b>No código</b>
+        <ul>
+          <li><code>POST /api/ordens-servico</code> abre a OS em <code>RECEBIDA</code> com cliente, veículo e relato; publica <code>OrdemServicoCriada</code> e o cliente recebe o código de acesso por e-mail (simulado em log).</li>
+          <li><code>POST /api/orcamentos</code> recebe serviços do catálogo e peças do estoque, reserva as peças e calcula o total. A OS passa por <code>EM_DIAGNOSTICO</code> e vai para <code>AGUARDANDO_APROVACAO</code> na mesma operação.</li>
+          <li>Não existe etapa separada de "revisar"; o orçamento é enviado ao ser gerado (<code>OrcamentoGerado</code>).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span>Fonte: egon.io, grupo 31 (25/09/2026)</span><span>2</span></div>
+</section>
+
+<section class="pagina">
+  <h1>2. Criação da OS com diagnóstico</h1>
+  <p class="sub">Fluxo quando o problema precisa ser identificado antes do orçamento.</p>
+  <div class="historia">
+    <div class="fig"><img src="../egon/2-criacao-os-com-diagnostico.egn.svg"></div>
+    <div class="notas">
+      <b>História</b>
+      <ol>
+        <li>O atendente cria a OS com cliente e veículo; o sistema não encontra serviços e define Recebida.</li>
+        <li>A OS segue para o mecânico, que identifica os serviços (Em diagnóstico).</li>
+        <li>Os serviços, peças e insumos entram na OS e o sistema gera o orçamento.</li>
+        <li>O atendente revisa e envia por e-mail; status Aguardando aprovação.</li>
+      </ol>
+      <div class="codigo">
+        <b>No código</b>
+        <ul>
+          <li>O mecânico não opera o sistema (papel removido na migration V6). Ele faz o diagnóstico fora do sistema e o <b>atendente</b> registra o resultado ao gerar o orçamento.</li>
+          <li>O status <code>EM_DIAGNOSTICO</code> é marcado automaticamente pelo <code>GerarOrcamentoUseCase</code> quando a OS ainda está <code>RECEBIDA</code>.</li>
+          <li>Papéis do sistema: <code>ADMIN</code> e <code>ATENDENTE</code> (<code>Papel</code>).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span>Fonte: egon.io, grupo 31 (25/09/2026)</span><span>3</span></div>
+</section>
+
+<section class="pagina">
+  <h1>3. Acompanhamento de OS com aprovação total</h1>
+  <p class="sub">Todos os serviços e peças do orçamento são aprovados.</p>
+  <div class="historia">
+    <div class="fig"><img src="../egon/3-acompanhamento-aprovacao-total.egn.svg"></div>
+    <div class="notas">
+      <b>História</b>
+      <ol>
+        <li>O cliente envia a aprovação do orçamento; status Aprovada e baixa de peças no estoque.</li>
+        <li>O mecânico executa (Em execução) e finaliza (Finalizada); o cliente é notificado.</li>
+        <li>O cliente retira o veículo; status Entregue.</li>
+      </ol>
+      <div class="codigo">
+        <b>No código</b>
+        <ul>
+          <li>Aprovação pelo cliente: <code>POST /api/publico/orcamentos/{id}/aprovar</code> com CPF/CNPJ e código de acesso; ou pelo atendente: <code>PATCH /api/orcamentos/{id}/aprovar</code>.</li>
+          <li>Orçamento <code>APROVADO</code>, OS <code>APROVADA</code>, reservas viram baixa (<code>confirmarBaixa</code>), evento <code>OrdemServicoAprovada</code> com e-mail simulado.</li>
+          <li>Execução e entrega são registradas pelo atendente: <code>PATCH /api/ordens-servico/{id}/iniciar-execucao</code>, <code>/finalizar</code> (e-mail "veículo pronto") e <code>/entregar</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span>Fonte: egon.io, grupo 31 (25/09/2026)</span><span>4</span></div>
+</section>
+
+<section class="pagina">
+  <h1>4. Acompanhamento de OS com aprovação parcial</h1>
+  <p class="sub">O cliente aprova só parte dos serviços e peças.</p>
+  <div class="historia">
+    <div class="fig"><img src="../egon/4-acompanhamento-aprovacao-parcial.egn.svg"></div>
+    <div class="notas">
+      <b>História</b>
+      <ol>
+        <li>O cliente envia a aprovação parcial; a OS é atualizada só com os itens aprovados.</li>
+        <li>Baixa no estoque apenas das peças aprovadas; status Aprovada.</li>
+        <li>Execução, finalização com notificação e entrega como no fluxo 3.</li>
+      </ol>
+      <div class="codigo">
+        <b>No código</b>
+        <ul>
+          <li>Mesmo endpoint de aprovação, informando <code>servicosAprovados</code> e <code>pecasAprovadas</code>.</li>
+          <li><code>Orcamento.aprovar</code> remove os itens não aprovados, recalcula o total e marca <code>APROVADO_PARCIALMENTE</code>.</li>
+          <li>Peças recusadas têm a reserva devolvida (<code>cancelarReserva</code>); as aprovadas recebem baixa.</li>
+          <li>Se nenhum item for aprovado, o orçamento fica <code>REJEITADO</code> e a OS <code>RECUSADA</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span>Fonte: egon.io, grupo 31 (25/09/2026)</span><span>5</span></div>
+</section>
+
+<section class="pagina">
+  <h1>5. Acompanhamento de OS com reprovação</h1>
+  <p class="sub">O cliente reprova o orçamento.</p>
+  <div class="historia">
+    <div class="fig"><img src="../egon/5-acompanhamento-reprovacao.egn.svg"></div>
+    <div class="notas">
+      <b>História</b>
+      <ol>
+        <li>O cliente envia a reprovação; status Finalizada e notificação por e-mail.</li>
+        <li>O cliente retira o veículo; status Entregue.</li>
+      </ol>
+      <div class="codigo">
+        <b>No código (divergência)</b>
+        <ul>
+          <li>Reprovação: <code>POST /api/publico/orcamentos/{id}/rejeitar</code> (cliente) ou <code>PATCH /api/orcamentos/{id}/rejeitar</code> (atendente).</li>
+          <li>O orçamento fica <code>REJEITADO</code>, as reservas voltam ao estoque e a OS vai para <code>RECUSADA</code>, que é <b>estado final</b>: não passa por Finalizada nem Entregue. O cliente recebe o e-mail "orçamento não aprovado".</li>
+          <li>Assim, OS recusadas não entram no tempo de execução. A retirada do veículo, nesse caso, não é registrada no sistema.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span>Fonte: egon.io, grupo 31 (25/09/2026)</span><span>6</span></div>
+</section>
+
+<section class="pagina">
+  <h1>6. Gerenciamento de peças e insumos</h1>
+  <p class="sub">Na história do grupo: com a OS Aprovada, o sistema atualiza o estoque de peças e insumos.</p>
+  <div class="historia" style="flex-direction: column">
+    <div class="fig" style="flex: 0 0 52mm"><img src="../egon/6-gerenciamento-pecas-insumos.egn.svg"></div>
+    <div class="notas" style="width: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 6mm">
+      <div class="codigo">
+        <b>Estoque dentro do fluxo da OS</b>
+        <ul>
+          <li>Orçamento gerado: <code>ProdutoEstoque.reservar</code> tira do disponível e soma no reservado (falha se faltar saldo).</li>
+          <li>Orçamento aprovado: <code>confirmarBaixa</code> das peças aprovadas.</li>
+          <li>Rejeição, aprovação parcial, expiração ou cancelamento da OS: <code>cancelarReserva</code> devolve ao disponível.</li>
+        </ul>
+      </div>
+      <div class="codigo">
+        <b>Gestão administrativa (<code>/api/estoque</code>)</b>
+        <ul>
+          <li>Cadastro, consulta, listagem, atualização e exclusão de peças e insumos.</li>
+          <li>Entrada e saída manual de quantidade: <code>POST /{id}/adicionar</code> e <code>POST /{id}/remover</code>, que mexem só no disponível; reservas ficam com o orçamento.</li>
+          <li>Nome da peça é único (restrição no banco).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="rodape"><span>Fonte: egon.io, grupo 31 (25/09/2026)</span><span>7</span></div>
+</section>
+
+<section class="pagina">
+  <h1>Agregados, entidades e objetos de valor</h1>
+  <p class="sub">No Miro o grupo separou os agregados Cadastro, Relatório, Orçamento, Estoque e Ordem de Serviço. No código, "Cadastro" virou dois agregados (Cliente e Veículo), o "Relatório" foi absorvido pelo Orçamento (o diagnóstico vira os itens) e o catálogo de serviços ganhou o seu.</p>
+  <div class="grade" style="grid-template-columns: repeat(3, 1fr); align-content: start">
+    <div class="caixa core"><h3>Ordem de Serviço (raiz: <code>OrdemServico</code>)</h3>
+      Entidade raiz com <code>id</code>, cliente e veículo (por id), relato do problema, status, data de abertura e conclusão e código de acesso.<br>
+      <b>Entidades/VOs:</b> <code>TransicaoStatus</code> (histórico de status, gravado em <code>historico_status_ordem_servico</code>), <code>StatusOrdemServico</code> (enum).<br>
+      <b>Regras:</b> transições só pelas operações do agregado (<code>iniciarDiagnostico</code>, <code>anexarOrcamento</code>, <code>aprovarOrcamento</code>, <code>recusarOrcamento</code>, <code>iniciarExecucao</code>, <code>finalizar</code>, <code>entregar</code>, <code>cancelar</code>); relato entre 10 e 500 caracteres.<br>
+      <b>Eventos:</b> <code>OrdemServicoCriada</code>, <code>OrdemServicoAprovada</code>, <code>OrdemServicoRecusada</code>, <code>OrdemServicoCancelada</code>, <code>OrdemServicoFinalizada</code>.</div>
+    <div class="caixa core"><h3>Orçamento (raiz: <code>Orcamento</code>)</h3>
+      Vinculado à OS por <code>ordemServicoId</code>; tem data de criação, validade e status.<br>
+      <b>VOs:</b> <code>ItemServico</code> (serviço do catálogo, descrição, valor da mão de obra), <code>ItemPeca</code> (peça do estoque, nome, quantidade, valor unitário), <code>StatusOrcamento</code>.<br>
+      <b>Regras:</b> só é alterado enquanto <code>PENDENTE</code>; total = mão de obra + peças; validade no futuro; expira se decidido depois da validade; aprovação total, parcial ou rejeição.<br>
+      <b>Evento:</b> <code>OrcamentoGerado</code>.</div>
+    <div class="caixa suporte"><h3>Estoque (raiz: <code>ProdutoEstoque</code>)</h3>
+      Peça ou insumo com nome único, valor unitário, quantidade disponível e reservada.<br>
+      <b>Regras:</b> reservar só com saldo disponível; baixa e cancelamento só sobre o reservado; entrada e saída manual só no disponível; valor unitário maior que zero.</div>
+    <div class="caixa suporte"><h3>Cliente (raiz: <code>Cliente</code>)</h3>
+      Nome, documento, e-mail, telefone.<br>
+      <b>VOs:</b> <code>Endereco</code>, <code>Estado</code> (UF); documento validado como CPF ou CNPJ com dígitos verificadores.<br>
+      <b>Regras:</b> documento único; não pode ser excluído com veículos vinculados.</div>
+    <div class="caixa suporte"><h3>Veículo (raiz: <code>Veiculo</code>)</h3>
+      Placa, marca, modelo, ano de fabricação e cliente dono (por id).<br>
+      <b>Regras:</b> placa no padrão antigo ou Mercosul e única; não pode ser excluído com ordens de serviço vinculadas.</div>
+    <div class="caixa suporte"><h3>Catálogo de serviços</h3>
+      Serviço oferecido pela oficina (ex.: troca de óleo, alinhamento) com descrição e valor de mão de obra, mantido em <code>/api/servicos</code>. O orçamento referencia o serviço por <code>catalogoServicoId</code> e guarda uma cópia da descrição e do valor do momento.</div>
+  </div>
+  <p class="nota">Agregados se referenciam só por id. Usuário (<code>Usuario</code>, <code>Papel</code>) fica no contexto genérico de autenticação.</p>
+  <div class="rodape"><span>Fonte: Miro (agregados do Event Storming) e código (pacotes <code>*/domain</code>)</span><span>8</span></div>
+</section>
+
+<section class="pagina">
+  <h1>Contextos delimitados e mapa de contextos</h1>
+  <p class="sub">Cada contexto é um módulo do monólito (<code>br.com.fiap.oficina_mecanica.*</code>), dividido em <code>domain</code>, <code>application</code> e <code>infrastructure</code>.</p>
+  <div style="display: flex; gap: 6mm; flex: 1; min-height: 0">
+  <svg viewBox="0 0 760 470" style="flex: 1.7; height: 100%" font-family="Segoe UI, Arial, sans-serif">
+    <defs><marker id="pt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+    <g font-size="11" fill="#333">
+      <line x1="245" y1="235" x2="132" y2="112" stroke="#333" stroke-width="1.4" marker-end="url(#pt)"/>
+      <text x="120" y="160">ACL: VerificadorCliente,</text><text x="120" y="173">ConsultorClientes</text>
+      <line x1="245" y1="250" x2="132" y2="250" stroke="#333" stroke-width="1.4" marker-end="url(#pt)"/>
+      <text x="136" y="230" font-size="9.5">ACL: VerificadorVeiculo,</text><text x="136" y="243" font-size="9.5">ConsultorVeiculos</text>
+      <line x1="245" y1="270" x2="132" y2="388" stroke="#333" stroke-width="1.4" marker-end="url(#pt)"/>
+      <text x="130" y="345">referência por</text><text x="130" y="358">catalogoServicoId</text>
+      <line x1="515" y1="235" x2="628" y2="112" stroke="#333" stroke-width="1.4" marker-end="url(#pt)"/>
+      <text x="595" y="165">cliente-fornecedor:</text><text x="595" y="178">reservar, baixar,</text><text x="595" y="191">devolver</text>
+      <line x1="515" y1="270" x2="628" y2="388" stroke="#d0508a" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#pt)"/>
+      <text x="560" y="345">eventos de domínio</text><text x="560" y="358">após o commit</text>
+      <line x1="380" y1="315" x2="380" y2="380" stroke="#888" stroke-width="1.4" stroke-dasharray="3 3"/>
+    </g>
+    <g font-size="12">
+      <rect x="5" y="70" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
+      <text x="67" y="96" text-anchor="middle" font-weight="700">Clientes</text><text x="67" y="114" text-anchor="middle" font-size="10">cliente · /api/clientes</text>
+      <rect x="5" y="220" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
+      <text x="67" y="246" text-anchor="middle" font-weight="700">Veículos</text><text x="67" y="264" text-anchor="middle" font-size="10">veiculo · /api/veiculos</text>
+      <rect x="5" y="370" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
+      <text x="67" y="396" text-anchor="middle" font-weight="700">Catálogo de serviços</text><text x="67" y="414" text-anchor="middle" font-size="10">/api/servicos</text>
+      <rect x="245" y="185" width="270" height="130" rx="9" fill="#fff4c2" stroke="#c9a400" stroke-width="2"/>
+      <text x="380" y="212" text-anchor="middle" font-weight="700" font-size="14">Atendimento e execução</text>
+      <text x="380" y="230" text-anchor="middle" font-size="10.5">núcleo · módulo ordemservico</text>
+      <text x="380" y="254" text-anchor="middle" font-size="10.5">Ordem de Serviço + Orçamento</text>
+      <text x="380" y="272" text-anchor="middle" font-size="10">/api/ordens-servico · /api/orcamentos</text>
+      <text x="380" y="290" text-anchor="middle" font-size="10">/api/publico/** (cliente, CPF/CNPJ + código)</text>
+      <rect x="630" y="70" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
+      <text x="692" y="96" text-anchor="middle" font-weight="700">Estoque</text><text x="692" y="114" text-anchor="middle" font-size="10">estoque · /api/estoque</text>
+      <rect x="630" y="370" width="125" height="62" rx="7" fill="#ffe0ef" stroke="#d0508a" stroke-width="1.5"/>
+      <text x="692" y="394" text-anchor="middle" font-weight="700">E-mail ao cliente</text><text x="692" y="412" text-anchor="middle" font-size="10">externo, simulado em log</text>
+      <rect x="290" y="380" width="180" height="52" rx="7" fill="#eeeeee" stroke="#888" stroke-width="1.5"/>
+      <text x="380" y="402" text-anchor="middle" font-weight="700">Compartilhado</text><text x="380" y="419" text-anchor="middle" font-size="10">shared kernel · compartilhado</text>
+      <rect x="290" y="20" width="180" height="52" rx="7" fill="#eeeeee" stroke="#888" stroke-width="1.5"/>
+      <text x="380" y="42" text-anchor="middle" font-weight="700">Autenticação</text><text x="380" y="59" text-anchor="middle" font-size="10">genérico · /api/auth/login</text>
+      <line x1="380" y1="72" x2="380" y2="185" stroke="#888" stroke-width="1.4" stroke-dasharray="3 3"/>
+      <text x="388" y="135" font-size="10" fill="#555">JWT protege as rotas administrativas</text>
+    </g>
+  </svg>
+  <div style="flex: 1; font-size: 10.5px; line-height: 1.4">
+    <div class="caixa" style="margin-bottom: 3mm"><b>Legenda</b><br>
+      <span style="background:#fff4c2;padding:0 2mm">amarelo</span> subdomínio núcleo ·
+      <span style="background:#e7f0ff;padding:0 2mm">azul</span> suporte ·
+      <span style="background:#eeeeee;padding:0 2mm">cinza</span> genérico/compartilhado ·
+      <span style="background:#ffe0ef;padding:0 2mm">rosa</span> externo</div>
+    <b>Relações</b>
+    <ul style="padding-left: 4mm; margin-top: 1mm">
+      <li><b>Clientes e Veículos → núcleo:</b> o núcleo depende de portas próprias (<code>VerificadorCliente</code>, <code>VerificadorVeiculo</code>, <code>ConsultorClientes</code>, <code>ConsultorVeiculos</code>) implementadas por adaptadores, que funcionam como camada anticorrupção.</li>
+      <li><b>Estoque:</b> o núcleo é cliente do estoque e usa o repositório de <code>ProdutoEstoque</code> na mesma transação para reservar, baixar e devolver peças.</li>
+      <li><b>Catálogo:</b> o orçamento guarda o <code>catalogoServicoId</code> e uma cópia da descrição e do valor.</li>
+      <li><b>Notificação:</b> eventos de domínio (<code>OrdemServicoCriada</code>, <code>OrcamentoGerado</code>, <code>OrdemServicoAprovada</code>, <code>OrdemServicoRecusada</code>, <code>OrdemServicoCancelada</code>, <code>OrdemServicoFinalizada</code>) são publicados depois do commit e viram e-mail simulado. Não há WhatsApp nem PDF.</li>
+      <li><b>Compartilhado:</b> paginação, exceções de domínio, publicação de eventos e padrão de erros, usados por todos os módulos.</li>
+    </ul>
+  </div>
+  </div>
+  <div class="rodape"><span>Fonte: Miro (agregados) e código (módulos e portas)</span><span>9</span></div>
+</section>
+
+<section class="pagina">
+  <h1>Máquinas de estado</h1>
+  <h2>Ordem de Serviço (<code>StatusOrdemServico</code>)</h2>
+  <svg viewBox="0 0 1000 215" style="width: 100%; height: 72mm" font-family="Segoe UI, Arial, sans-serif" font-size="11">
+    <defs><marker id="pe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+    <g stroke="#333" stroke-width="1.4" fill="none" marker-end="url(#pe)">
+      <line x1="100" y1="35" x2="163" y2="35"/><line x1="290" y1="35" x2="353" y2="35"/>
+      <line x1="527" y1="35" x2="590" y2="35"/><line x1="702" y1="35" x2="765" y2="35"/>
+      <line x1="824" y1="50" x2="824" y2="113"/><line x1="824" y1="145" x2="824" y2="168"/>
+      <line x1="440" y1="50" x2="440" y2="113"/>
+      <path d="M52,50 L52,185 L193,185"/><path d="M227,50 L227,170"/><path d="M400,50 L400,80 L300,80 L300,170"/>
+    </g>
+    <g fill="#fff" stroke="#333" stroke-width="1.5">
+      <rect x="5" y="20" width="95" height="30" rx="15"/><rect x="165" y="20" width="125" height="30" rx="15"/>
+      <rect x="355" y="20" width="172" height="30" rx="15"/><rect x="592" y="20" width="110" height="30" rx="15"/>
+      <rect x="767" y="20" width="115" height="30" rx="15"/><rect x="767" y="115" width="115" height="30" rx="15"/>
+    </g>
+    <g fill="#333"><rect x="767" y="170" width="115" height="30" rx="15"/><rect x="380" y="115" width="120" height="30" rx="15"/><rect x="195" y="170" width="125" height="30" rx="15"/></g>
+    <g font-weight="700" text-anchor="middle" font-size="11.5">
+      <text x="52" y="39">RECEBIDA</text><text x="227" y="39">EM_DIAGNOSTICO</text><text x="441" y="39">AGUARDANDO_APROVACAO</text>
+      <text x="647" y="39">APROVADA</text><text x="824" y="39">EM_EXECUCAO</text><text x="824" y="134">FINALIZADA</text>
+      <text x="824" y="189" fill="#fff">ENTREGUE</text><text x="440" y="134" fill="#fff">RECUSADA</text><text x="257" y="189" fill="#fff">CANCELADA</text>
+    </g>
+    <g fill="#333">
+      <text x="104" y="14">gerar orçamento</text><text x="294" y="14">orçamento anexado</text>
+      <text x="530" y="14">aprovação total</text><text x="537" y="27">ou parcial</text><text x="707" y="14">iniciar execução</text>
+      <text x="832" y="88">finalizar</text><text x="832" y="162">entregar</text>
+      <text x="448" y="72">rejeição, aprovação sem itens</text><text x="448" y="85">ou tentativa de aprovar</text><text x="448" y="98">orçamento expirado</text>
+      <text x="330" y="190">cancelar (de RECEBIDA, EM_DIAGNOSTICO ou AGUARDANDO_APROVACAO):</text>
+      <text x="330" y="204">o orçamento pendente é rejeitado e as reservas voltam ao estoque</text>
+    </g>
+  </svg>
+  <p class="nota">Estados em preto são finais. O cliente é avisado por e-mail na criação, no orçamento gerado, na aprovação, na recusa, no cancelamento e na finalização.</p>
+  <p class="nota">Cada mudança gera uma <code>TransicaoStatus</code> (status anterior, novo e horário) no histórico. É a base do acompanhamento pelo cliente e do cálculo do tempo médio de execução (intervalo entre <code>EM_EXECUCAO</code> e <code>FINALIZADA</code>).</p>
+
+  <h2 style="margin-top:6mm">Orçamento (<code>StatusOrcamento</code>)</h2>
+  <div class="grade" style="grid-template-columns: auto 1fr; align-items: center; gap: 2mm 4mm">
+    <span class="estado">PENDENTE</span>
+    <div>
+      <div class="linha"><span class="seta"><span>→</span>todos os itens aprovados</span><span class="estado final">APROVADO</span></div>
+      <div class="linha"><span class="seta"><span>→</span>parte dos itens aprovada</span><span class="estado final">APROVADO_PARCIALMENTE</span></div>
+      <div class="linha"><span class="seta"><span>→</span>rejeitar, nenhum item aprovado ou OS cancelada</span><span class="estado final">REJEITADO</span></div>
+      <div class="linha"><span class="seta"><span>→</span>decisão depois da validade (verificado na aprovação e na consulta do cliente)</span><span class="estado final">EXPIRADO</span></div>
+    </div>
+  </div>
+  <p class="nota">Só o orçamento <code>PENDENTE</code> aceita itens ou decisão. A expiração não depende de agendamento: é verificada no momento da ação.</p>
+  <div class="rodape"><span>Fonte: código (<code>OrdemServico</code>, <code>Orcamento</code>)</span><span>10</span></div>
+</section>
+
+</body>
+</html>

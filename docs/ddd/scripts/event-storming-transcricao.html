@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Transcrição do Event Storming</title>
+<style>
+.tr h1 { font-size: 18px; margin: 0 0 1.5mm; }
+.tr .sub { font-size: 10.5px; color: #555; margin: 0 0 2.5mm; }
+.tr table { border-collapse: collapse; width: 100%; font-size: 9.6px; }
+.tr th, .tr td { border: 1px solid #d5d9de; padding: 1.1mm 1.6mm; text-align: left; vertical-align: top; }
+.tr th { background: #f0f2f5; }
+.chip { display: inline-block; padding: 0.3mm 1.6mm; border-radius: 2px; margin: 0.3mm 0; }
+.ev { background: #ffb36b; } .cmd { background: #8fb4ff; } .pol { background: #c9b8ff; }
+.ml { background: #7ddc8f; } .at { background: #8ee6df; } .se { background: #ff9ad5; }
+.ag { background: #ffe66b; } .pa { background: #ff8a8a; }
+.tr .nota { font-size: 9.5px; color: #444; margin-top: 2mm; }
+</style>
+</head>
+<body>
+
+<section class="pagina tr">
+  <h1>Transcrição 1/4: recepção, cadastro e criação da OS</h1>
+  <p class="sub">Texto das notas do board, na ordem da linha do tempo, para leitura sem zoom. A primeira coluna traz a nota de ator (at), sistema externo (se) ou modelo de leitura (ml) ligada ao comando; "—" quando o board não indica. Transcrição fiel ao Miro (inclusive termos que o código tratou de outro jeito; ver <code>docs/ddd/linguagem-ubiqua.md</code>, seção "Relação com o código").</p>
+  <table>
+    <tr><th style="width:16%">Ator / modelo de leitura</th><th style="width:28%">Comando</th><th style="width:28%">Evento</th><th>Política / observação</th></tr>
+    <tr><td><span class="chip at">cliente</span></td><td><span class="chip cmd">leva o carro</span></td><td><span class="chip ev">carro recebido na oficina</span></td><td></td></tr>
+    <tr><td><span class="chip at">atendente</span><br><span class="chip ml">cadastro de cliente</span></td><td><span class="chip cmd">cadastra dados de cliente</span></td><td><span class="chip ev">dados do cliente cadastrados</span></td><td>"aqui ele busca por cpf/cnpj ou placa do veículo"</td></tr>
+    <tr><td><span class="chip at">atendente</span><br><span class="chip ml">cadastro de veículo</span></td><td><span class="chip cmd">cadastra dados do veículo</span></td><td><span class="chip ev">dados do veiculo cadastrados</span></td><td></td></tr>
+    <tr><td><span class="chip at">atendente</span><br><span class="chip ml">criação de ordem de serviço</span></td><td><span class="chip cmd">cria ordem de serviço</span></td><td><span class="chip ev">ordem de serviço criada</span></td><td>"informações: serviços, peças e insumos necessários"<br><span class="chip pol">notificar mecanico de ordem de serviço criada</span><br><span class="chip pa">pa: como é feita essa notificação?</span></td></tr>
+  </table>
+  <p class="nota"><b>Notas em aberto do grupo (vermelhas no board):</b> "ajustar pra mandar o link pro cliente no momento que os for criada e que os for atualizada com orçamento"; "criar fluxo alternativo quando cliente ja sabe o que precisa ser feito, sem diagnostico".</p>
+  <div class="rodape"><span>Transcrição do board do Miro</span><span>T1</span></div>
+</section>
+
+<section class="pagina tr">
+  <h1>Transcrição 2/4: diagnóstico e orçamento</h1>
+  <table>
+    <tr><th style="width:16%">Ator / modelo de leitura</th><th style="width:28%">Comando</th><th style="width:28%">Evento</th><th>Política / observação</th></tr>
+    <tr><td><span class="chip at">atendente</span><br><span class="chip ml">lista de ordem de serviços</span></td><td><span class="chip cmd">envia ordem de serviço para mecanico e atualiza status</span></td><td><span class="chip ev">notificação para análise do veículo e status atualizado</span></td><td></td></tr>
+    <tr><td><span class="chip at">mecânico</span></td><td><span class="chip cmd">analisa veículo</span><br><span class="chip cmd">cria relatório</span></td><td><span class="chip ev">veículo analisado</span><br><span class="chip ev">relatório criado</span></td><td>"relatório do serviço"<br><span class="chip pol">notificar atendente de relatório criado</span></td></tr>
+    <tr><td>—</td><td><span class="chip cmd">notifica assistente</span></td><td><span class="chip ev">atendente notificado quanto a criacao de relatorio</span></td><td></td></tr>
+    <tr><td><span class="chip at">atendente</span></td><td><span class="chip cmd">atualiza ordem de serviço</span></td><td><span class="chip ev">ordem de serviço atualizada</span></td><td><span class="chip pol">gerar orçamento assim que ordem de serviço for atualizada</span></td></tr>
+    <tr><td>—</td><td><span class="chip cmd">gera orçamento</span></td><td><span class="chip ev">orçamento inicial gerado</span></td><td><span class="chip pol">analisa estoque disponivel antes de liberar</span></td></tr>
+    <tr><td><span class="chip se">estoque</span></td><td><span class="chip cmd">analisa o estoque</span></td><td><span class="chip ev">estoque disponivel</span></td><td><span class="chip pol">caso estoque seja insuficiente, adicionar observação a ordem de serviço</span><br><span class="chip pol">montar relatorio com peças que tem e o que não tem</span></td></tr>
+    <tr><td><span class="chip at">atendente</span></td><td><span class="chip cmd">identifica peças faltantes</span><br><span class="chip cmd">adiciona observação na ordem de serviço</span></td><td><span class="chip ev">peças faltantes identificadas</span><br><span class="chip ev">observação adiciona a ordem de serviço</span></td><td><span class="chip pol">adicionar observação ao orçamento</span></td></tr>
+    <tr><td><span class="chip at">atendente</span><br><span class="chip ml">ordem de serviço em questão</span></td><td><span class="chip cmd">atualiza ordem de serviço com orçamento</span><br><span class="chip cmd">baixa o pdf da ordem de serviço</span></td><td><span class="chip ev">ordem de serviço atualizada</span><br><span class="chip ev">pdf baixado</span></td><td></td></tr>
+    <tr><td><span class="chip at">atendente</span></td><td><span class="chip cmd">envia orçamento para cliente e atualiza status da ordem de serviço</span></td><td><span class="chip ev">orçamento enviado para cliente por whatsapp e status da ordem de serviço atualizado</span></td><td>"aqui o cliente sabe qual o valor do orçamento, quais peças e serviços devem ser feitos e quais peças temos em estoque..."<br><span class="chip pol">após 2 dias sem retorno, notificar cliente via whatsapp novamente</span></td></tr>
+  </table>
+  <div class="rodape"><span>Transcrição do board do Miro</span><span>T2</span></div>
+</section>
+
+<section class="pagina tr">
+  <h1>Transcrição 3/4: aprovação, execução e entrega</h1>
+  <table>
+    <tr><th style="width:16%">Ator / modelo de leitura</th><th style="width:28%">Comando</th><th style="width:28%">Evento</th><th>Política / observação</th></tr>
+    <tr><td><span class="chip at">cliente</span></td><td><span class="chip cmd">aprova orçamento</span></td><td><span class="chip ev">orçamento aprovado com todas as peças disponíveis</span></td><td></td></tr>
+    <tr><td><span class="chip at">cliente</span></td><td><span class="chip cmd">aprova parcialmente seja por querer retirar peça indisponivel ou por querer retirar algum serviço/peça disponivel</span></td><td><span class="chip ev">aprovação parcial</span></td><td></td></tr>
+    <tr><td><span class="chip at">cliente</span></td><td><span class="chip cmd">nega orçamento</span></td><td><span class="chip ev">orçamento negado</span></td><td></td></tr>
+    <tr><td>—</td><td><span class="chip cmd">atualizar estoque</span></td><td><span class="chip ev">estoque atualizado</span></td><td><span class="chip pol">uma vez que as peças/insumos são retiradas do estoque, o atendente deve notificar o mecânico</span></td></tr>
+    <tr><td><span class="chip at">atendente</span></td><td><span class="chip cmd">notifica mecanico e atualiza status da ordem de serviço</span></td><td><span class="chip ev">mecânico notificado e status ordem de serviço atualizada no sistema</span></td><td></td></tr>
+    <tr><td><span class="chip at">mecânico</span></td><td><span class="chip cmd">executa serviços descritos na ordem de serviço</span><br><span class="chip cmd">notifica atendente que veículo está pronto</span></td><td><span class="chip ev">serviços executados</span><br><span class="chip ev">atendente notificado que veículo está pronto</span></td><td></td></tr>
+    <tr><td><span class="chip at">atendente</span></td><td><span class="chip cmd">notifica cliente</span><br><span class="chip cmd">envia notificação</span></td><td><span class="chip ev">cliente é notificado via whatsapp que veiculo está pronto para retirada</span><br><span class="chip ev">notificação enviada</span></td><td></td></tr>
+  </table>
+  <div class="rodape"><span>Transcrição do board do Miro</span><span>T3</span></div>
+</section>
+
+<section class="pagina tr">
+  <h1>Transcrição 4/4: gestão de estoque e agregados</h1>
+  <table>
+    <tr><th style="width:16%">Ator / sistema</th><th style="width:28%">Comando</th><th style="width:28%">Evento</th><th>Política / observação</th></tr>
+    <tr><td><span class="chip se">sistema de ordem de serviço</span></td><td><span class="chip cmd">analisar estoque</span></td><td><span class="chip ev">estoque analisado</span></td><td><span class="chip pol">se estoque indisponivel total ou parcialmente, emitir ordem de compra</span></td></tr>
+    <tr><td><span class="chip se">sistema de compras</span></td><td><span class="chip cmd">gerar ordem de compra</span></td><td></td><td>"caso estoque continue insuficiente, ele emite ordem de compra e só segue o pedido após receber"</td></tr>
+    <tr><td><span class="chip at">fornecedor</span></td><td><span class="chip cmd">envia peças / insumos</span></td><td><span class="chip ev">peças/insumos chegam a mecanica</span></td><td></td></tr>
+    <tr><td><span class="chip at">atendente</span><br><span class="chip ml">cadastro de peças e insumos</span></td><td><span class="chip cmd">cadastra peças e insumos</span></td><td><span class="chip ev">peças são cadastradas</span></td><td></td></tr>
+    <tr><td>—</td><td><span class="chip cmd">retorna informação de saldo</span></td><td><span class="chip ev">informação retornada</span></td><td></td></tr>
+  </table>
+  <p class="sub" style="margin-top:4mm"><b>Agregados do board</b> (blocos amarelos, com os comandos e eventos agrupados):</p>
+  <table>
+    <tr><th>Agregado</th><th>Conteúdo no board</th></tr>
+    <tr><td><span class="chip ag">Cadastro</span></td><td>cadastro de cliente e de veículo (modelos de leitura e comandos de cadastro)</td></tr>
+    <tr><td><span class="chip ag">Ordem de Serviço</span></td><td>criação da OS, envio ao mecânico, relatório, notificações, atualização de status</td></tr>
+    <tr><td><span class="chip ag">Relatório</span></td><td>análise do veículo pelo mecânico, criação do relatório e aviso ao atendente</td></tr>
+    <tr><td><span class="chip ag">Orçamento</span></td><td>geração do orçamento, análise de estoque, peças faltantes, observação, envio ao cliente</td></tr>
+    <tr><td><span class="chip ag">Estoque</span></td><td>análise de saldo, ordem de compra, cadastro de peças e insumos, retorno de saldo</td></tr>
+  </table>
+  <div class="rodape"><span>Transcrição do board do Miro</span><span>T4</span></div>
+</section>
+
+</body>
+</html>
