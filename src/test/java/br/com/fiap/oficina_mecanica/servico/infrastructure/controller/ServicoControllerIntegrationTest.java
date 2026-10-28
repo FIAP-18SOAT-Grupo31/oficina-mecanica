@@ -140,6 +140,12 @@ class ServicoControllerIntegrationTest {
     }
 
     @Test
+    void listagemComTamanhoInvalidoRetorna400() throws Exception {
+        mvc.perform(get("/api/servicos").param("tamanho", "101").with(jwtAtendente()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void atualizaServico() throws Exception {
         String id = cadastrar("Alinhamento", "80.00");
 

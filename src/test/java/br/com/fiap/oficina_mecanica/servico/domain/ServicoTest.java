@@ -104,6 +104,15 @@ class ServicoTest {
     }
 
     @Test
+    void reconstituiServicoComOIdInformado() {
+        UUID id = UUID.randomUUID();
+
+        Servico servico = Servico.reconstituir(id, "Alinhamento", null, BigDecimal.TEN);
+
+        assertThat(servico.getId()).isEqualTo(id);
+    }
+
+    @Test
     void idEhObrigatorioAoReconstituir() {
         assertThatThrownBy(() -> Servico.reconstituir(null, "Alinhamento", null, BigDecimal.TEN))
                 .isInstanceOf(IllegalArgumentException.class)

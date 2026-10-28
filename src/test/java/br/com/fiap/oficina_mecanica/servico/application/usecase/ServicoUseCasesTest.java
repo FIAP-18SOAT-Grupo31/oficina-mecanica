@@ -23,6 +23,7 @@ class ServicoUseCasesTest {
     private final Set<UUID> servicosUsadosEmOrcamento = new HashSet<>();
 
     private final CriarServicoUseCase criar = new CriarServicoUseCase(repository);
+    private final BuscarServicoUseCase buscar = new BuscarServicoUseCase(repository);
     private final ListarServicosUseCase listar = new ListarServicosUseCase(repository);
     private final AtualizarServicoUseCase atualizar = new AtualizarServicoUseCase(repository);
     private final ExcluirServicoUseCase excluir =
@@ -59,6 +60,20 @@ class ServicoUseCasesTest {
         assertThatThrownBy(() -> criar.execute(new CriarServicoInput("Alinhamento", null, BigDecimal.ZERO)))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessage("O valor da mão de obra deve ser maior que zero");
+    }
+
+    @Test
+    void buscaServicoPeloId() {
+        Servico servico = cadastrado("Alinhamento");
+
+        assertThat(buscar.execute(servico.getId()).nome()).isEqualTo("Alinhamento");
+    }
+
+    @Test
+    void buscarServicoInexistenteLancaNaoEncontrado() {
+        assertThatThrownBy(() -> buscar.execute(UUID.randomUUID()))
+                .isInstanceOf(ServicoNaoEncontradoException.class)
+                .hasMessage("Serviço não encontrado.");
     }
 
     @Test
@@ -112,6 +127,13 @@ class ServicoUseCasesTest {
     }
 
     @Test
+    void atualizarServicoInexistenteLancaNaoEncontrado() {
+        assertThatThrownBy(() -> atualizar.execute(UUID.randomUUID(),
+                new AtualizarServicoInput("Alinhamento", null, BigDecimal.TEN)))
+                .isInstanceOf(ServicoNaoEncontradoException.class);
+    }
+
+    @Test
     void atualizacaoInvalidaViraRegraDeNegocio() {
         Servico servico = cadastrado("Alinhamento");
 
@@ -141,4 +163,9 @@ class ServicoUseCasesTest {
         assertThat(repository.servicos).hasSize(1);
     }
 
+    @Test
+    void excluirServicoInexistenteLancaNaoEncontrado() {
+        assertThatThrownBy(() -> excluir.execute(UUID.randomUUID()))
+                .isInstanceOf(ServicoNaoEncontradoException.class);
+    }
 }
