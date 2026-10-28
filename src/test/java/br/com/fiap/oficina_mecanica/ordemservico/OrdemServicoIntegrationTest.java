@@ -173,6 +173,15 @@ class OrdemServicoIntegrationTest {
     }
 
     @Test
+    void placaSemVeiculoVolta404() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPorDocumentoEPlaca(documento, "ZZZ9Z99")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.mensagem").value("Veículo não encontrado para a placa informada."));
+    }
+
+    @Test
     void veiculoDeOutroClienteVolta422() throws Exception {
         UUID outroCliente = UUID.randomUUID();
         jdbc.update("INSERT INTO clientes (id, nome, documento, email, telefone, rua, numero, bairro, cidade, cep, estado) "
