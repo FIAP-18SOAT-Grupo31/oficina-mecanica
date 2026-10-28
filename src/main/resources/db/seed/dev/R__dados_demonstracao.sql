@@ -31,3 +31,9 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO servicos (id, nome, descricao, valor_mao_de_obra)
 VALUES ('0192f0a0-0000-7000-8000-0000000000b1', 'Troca de óleo', 'Troca do óleo do motor e do filtro de óleo', 200.00)
 ON CONFLICT (id) DO NOTHING;
+
+-- Peça usada no orçamento de demonstração: as 4 unidades do orçamento pendente estão reservadas,
+-- para que aprovar, rejeitar ou cancelar a OS DEMO12 funcione (baixa ou devolução da reserva).
+INSERT INTO produtos_estoque (id, nome_peca, quantidade_disponivel, quantidade_reservada, valor_unitario)
+VALUES ('0192f0a0-0000-7000-8000-0000000000c1', 'ÓLEO 5W30 (LITRO)', 20, 4, 40.00)
+ON CONFLICT (id) DO NOTHING;
