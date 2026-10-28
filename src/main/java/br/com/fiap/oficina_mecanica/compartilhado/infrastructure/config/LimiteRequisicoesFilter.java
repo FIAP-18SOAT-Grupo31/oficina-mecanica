@@ -49,9 +49,7 @@ public class LimiteRequisicoesFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String caminho = request.getRequestURI();
-        return !(caminho.equals("/api/auth/login")
-                || caminho.startsWith("/api/publico/")
-                || caminho.matches("/api/orcamentos/[^/]+/cliente/.*"));
+        return !(caminho.equals("/api/auth/login") || caminho.startsWith("/api/publico/"));
     }
 
     @Override

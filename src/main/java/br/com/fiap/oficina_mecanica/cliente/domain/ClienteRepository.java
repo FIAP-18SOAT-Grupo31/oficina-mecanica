@@ -2,6 +2,8 @@ package br.com.fiap.oficina_mecanica.cliente.domain;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,4 +16,6 @@ public interface ClienteRepository {
     boolean existeOutroComDocumento(String documento, UUID idIgnorado);
     void excluirPorId(UUID id);
     Optional<String> buscarDocumentoPorId(UUID id);
+    List<ClienteResumo> buscarResumosPorIds(Collection<UUID> ids);
+    Optional<ClienteDetalhe> buscarDetalhePorId(UUID id);
 }

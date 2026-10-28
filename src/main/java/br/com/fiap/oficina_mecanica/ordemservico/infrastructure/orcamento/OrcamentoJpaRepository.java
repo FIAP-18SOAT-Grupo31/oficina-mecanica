@@ -4,11 +4,11 @@ import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface OrcamentoJpaRepository extends JpaRepository<OrcamentoEntity, UUID> {
 
-    Optional<OrcamentoEntity> findByOrdemServicoId(UUID ordemServicoId);
+    List<OrcamentoEntity> findByOrdemServicoIdOrderByDataCriacao(UUID ordemServicoId);
 }

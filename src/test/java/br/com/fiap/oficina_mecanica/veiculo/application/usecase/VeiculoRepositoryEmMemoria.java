@@ -2,8 +2,11 @@ package br.com.fiap.oficina_mecanica.veiculo.application.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
 import br.com.fiap.oficina_mecanica.veiculo.domain.Veiculo;
+import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoDetalhe;
 import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoRepository;
+import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoResumo;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,5 +58,20 @@ class VeiculoRepositoryEmMemoria implements VeiculoRepository {
     @Override
     public void excluirPorId(UUID id) {
         veiculos.remove(id);
+    }
+
+    @Override
+    public List<VeiculoResumo> buscarResumosPorIds(Collection<UUID> ids) {
+        return ids.stream()
+                .map(veiculos::get)
+                .filter(veiculo -> veiculo != null)
+                .map(v -> new VeiculoResumo(v.getId(), v.getPlaca(), v.getMarca(), v.getModelo()))
+                .toList();
+    }
+
+    @Override
+    public Optional<VeiculoDetalhe> buscarDetalhePorId(UUID id) {
+        return buscarPorId(id).map(v -> new VeiculoDetalhe(v.getId(), v.getPlaca(), v.getMarca(), v.getModelo(),
+                v.getAnoFabricacao()));
     }
 }

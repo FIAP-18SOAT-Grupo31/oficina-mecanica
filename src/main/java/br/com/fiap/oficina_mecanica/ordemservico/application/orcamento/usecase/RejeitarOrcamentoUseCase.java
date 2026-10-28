@@ -1,10 +1,12 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoMapper;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoRecusada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
@@ -20,11 +22,15 @@ public class RejeitarOrcamentoUseCase {
     private final OrcamentoRepository repository;
     private final OrdemServicoRepository ordemServicoRepository;
     private final ProdutoEstoqueRepository estoqueRepository;
+    private final PublicadorEventos publicador;
 
-    public RejeitarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository, ProdutoEstoqueRepository estoqueRepository) {
+    public RejeitarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository,
+                                    ProdutoEstoqueRepository estoqueRepository,
+                                    PublicadorEventos publicador) {
         this.repository = repository;
         this.ordemServicoRepository = ordemServicoRepository;
         this.estoqueRepository = estoqueRepository;
+        this.publicador = publicador;
     }
 
     @Transactional
@@ -47,6 +53,7 @@ public class RejeitarOrcamentoUseCase {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
         os.recusarOrcamento();
         ordemServicoRepository.salvar(os);
+        publicador.publicar(new OrdemServicoRecusada(os.getId()));
 
         return OrcamentoMapper.toOutput(orcamentoSalvo);
     }

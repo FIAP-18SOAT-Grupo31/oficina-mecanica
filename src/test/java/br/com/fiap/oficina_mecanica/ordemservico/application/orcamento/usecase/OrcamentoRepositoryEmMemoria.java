@@ -4,6 +4,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,9 +25,9 @@ class OrcamentoRepositoryEmMemoria implements OrcamentoRepository {
     }
 
     @Override
-    public Optional<Orcamento> buscarPorOrdemServicoId(UUID ordemServicoId) {
+    public List<Orcamento> buscarPorOrdemServicoId(UUID ordemServicoId) {
         return orcamentos.values().stream()
                 .filter(orcamento -> orcamento.getOrdemServicoId().equals(ordemServicoId))
-                .findFirst();
+                .toList();
     }
 }

@@ -2,11 +2,14 @@ package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico;
 
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.TransicaoStatus;
+import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.entity.HistoricoStatusOrdemServicoEntity;
 import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.entity.OrdemServicoEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class OrdemServicoMapper {
@@ -36,5 +39,10 @@ public class OrdemServicoMapper {
                 .codigoAcesso(entity.getCodigoAcesso())
                 .orcamentos(new ArrayList<>(orcamentos))
                 .build();
+    }
+
+    public HistoricoStatusOrdemServicoEntity toEntity(UUID ordemServicoId, TransicaoStatus transicao) {
+        return new HistoricoStatusOrdemServicoEntity(transicao.id(), ordemServicoId, transicao.statusAnterior(),
+                transicao.statusNovo(), transicao.dataTransicao());
     }
 }
