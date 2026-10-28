@@ -12,4 +12,6 @@ import java.util.UUID;
 @Repository
 public interface OrdemServicoJpaRepository extends JpaRepository<OrdemServicoEntity, UUID> {
     Page<OrdemServicoEntity> findByStatus(StatusOrdemServico status, Pageable pageable);
+
+    boolean existsByVeiculoId(UUID veiculoId);
 }

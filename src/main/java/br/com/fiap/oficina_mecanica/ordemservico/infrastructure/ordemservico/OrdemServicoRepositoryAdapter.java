@@ -73,6 +73,11 @@ public class OrdemServicoRepositoryAdapter implements OrdemServicoRepository {
                 .toList());
     }
 
+    @Override
+    public boolean existePorVeiculoId(UUID veiculoId) {
+        return jpaRepository.existsByVeiculoId(veiculoId);
+    }
+
     private List<Orcamento> orcamentosDa(UUID ordemServicoId) {
         return orcamentoRepository.buscarPorOrdemServicoId(ordemServicoId);
     }

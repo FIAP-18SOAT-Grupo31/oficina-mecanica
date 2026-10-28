@@ -43,6 +43,11 @@ class CriarOrdemServicoUseCaseTest {
         public Pagina<OrdemServico> listar(StatusOrdemServico status, Paginacao paginacao) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public boolean existePorVeiculoId(UUID veiculoId) {
+            return ordens.values().stream().anyMatch(ordem -> ordem.getVeiculoId().equals(veiculoId));
+        }
     }
 
     private final OrdemServicoRepositoryEmMemoria repository = new OrdemServicoRepositoryEmMemoria();

@@ -52,6 +52,11 @@ class ListarOrdensServicoUseCaseTest {
             int fim = Math.min(inicio + paginacao.tamanho(), filtradas.size());
             return Pagina.de(filtradas.subList(inicio, fim), paginacao, filtradas.size());
         }
+
+        @Override
+        public boolean existePorVeiculoId(UUID veiculoId) {
+            return ordens.stream().anyMatch(o -> o.getVeiculoId().equals(veiculoId));
+        }
     }
 
     private static final class ConsultorClientesEmMemoria implements ConsultorClientes {

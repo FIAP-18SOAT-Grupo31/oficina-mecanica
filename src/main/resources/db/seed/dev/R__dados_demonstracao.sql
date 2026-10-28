@@ -1,5 +1,6 @@
-INSERT INTO clientes (id, nome, documento, email, telefone)
-VALUES ('0192f0a0-0000-7000-8000-0000000000d1', 'Maria da Silva', '52998224725', 'maria@exemplo.com', '11999990000')
+INSERT INTO clientes (id, nome, documento, email, telefone, rua, numero, complemento, bairro, cidade, cep, estado)
+VALUES ('0192f0a0-0000-7000-8000-0000000000d1', 'Maria da Silva', '52998224725', 'maria@exemplo.com', '11999990000',
+        'Rua das Flores', '123', NULL, 'Centro', 'São Paulo', '01001000', 'SP')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO veiculos (id, cliente_id, placa, marca, modelo, ano)
