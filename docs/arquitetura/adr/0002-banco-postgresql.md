@@ -2,7 +2,7 @@
 
 - **Data:** 25/09/2026
 - **Status:** Aceita
-- **Responsável:** Ruan Pablo (PostgreSQL no `docker-compose.yml`, commit `0890f41`) e Henrique Melo (migrations Flyway, commit `85b0b08`, 07/10/2026)
+- **Responsável:** Ruan Pablo e Henrique Melo
 
 ## Contexto
 

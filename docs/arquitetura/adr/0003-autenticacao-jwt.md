@@ -2,7 +2,7 @@
 
 - **Data:** 07/10/2026
 - **Status:** Aceita
-- **Responsável:** Henrique Melo (commit `13ba670`)
+- **Responsável:** Henrique Melo
 
 ## Contexto
 
@@ -14,13 +14,13 @@ A equipe faz login em `POST /api/auth/login`, e o sistema guarda a senha em BCry
 
 A API valida o token com o Resource Server do Spring Security (`SegurancaConfig`). Não guardamos sessão (`STATELESS`) e desligamos `httpBasic` e `formLogin`. Existem dois papéis, `ADMIN` e `ATENDENTE`. Os endpoints de negócio aceitam os dois via `@PreAuthorize`, e o Actuator, fora `health` e `prometheus`, só aceita `ADMIN`. Removemos o papel `MECANICO` na migration `V6`.
 
-Desabilitamos o CSRF. A API não usa cookie nem sessão e o token vai no cabeçalho `Authorization`, então o navegador não manda credencial sozinho e o ataque não se aplica.
+Desabilitamos o CSRF porque o token vai no cabeçalho `Authorization`, não em cookie.
 
-Para o cliente, o sistema gera um código de acesso de 6 caracteres ao abrir a OS. Com o CPF/CNPJ e esse código, o cliente usa as rotas `/api/publico/**` sem login, e o `VerificadorAcessoClienteAdapter` confere os dois. O `LimiteRequisicoesFilter` limita `/api/auth/login` e `/api/publico/**` por IP e por minuto (padrão 30, ajustável por `LIMITE_REQUISICOES_POR_MINUTO`).
+Para o cliente, o sistema gera um código de acesso de 6 caracteres ao abrir a OS. Com o CPF/CNPJ e esse código, o cliente usa as rotas `/api/publico/**` sem login, e o `VerificadorAcessoClienteAdapter` confere os dois. O `LimiteRequisicoesFilter` limita as requisições por IP e por minuto: um contador para o login e outro para as rotas `/api/publico/**` (padrão 30, `LIMITE_REQUISICOES_POR_MINUTO`).
 
 ## Alternativas consideradas
 
-- Sessão com cookie: exigiria CSRF e estado no servidor; não combina com uma API REST consumida por outros clientes.
+- Sessão com cookie: escolhemos Bearer JWT para a API não precisar guardar sessão no servidor.
 - Servidor de identidade externo (Keycloak, por exemplo): mais um container e mais configuração para dois papéis.
 - Login para o cliente: mais cadastro e senha para quem só quer ver uma OS. O código de acesso por OS resolve com menos atrito.
 

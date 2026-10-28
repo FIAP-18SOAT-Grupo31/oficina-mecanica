@@ -2,7 +2,7 @@
 
 - **Data:** 13/10/2026
 - **Status:** Aceita
-- **Responsável:** Ruan Pablo (commits `ef972e2` e `05a6f8e`)
+- **Responsável:** Ruan Pablo
 
 ## Contexto
 

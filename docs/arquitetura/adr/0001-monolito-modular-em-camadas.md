@@ -1,20 +1,24 @@
 # ADR 0001: Monólito modular em camadas
 
-- **Data:** 25/09/2026
+- **Data:** 25/09/2026 (atualizado em 28/10/2026)
 - **Status:** Aceita
-- **Responsável:** Ruan Pablo (commit `0890f41`, setup inicial da arquitetura)
+- **Responsável:** Ruan Pablo
 
 ## Contexto
 
-O enunciado pede um back-end monolítico e sugere arquitetura em camadas para o MVP. Ao mesmo tempo, o Event Storming mostrou contextos bem separados (atendimento e OS, cadastro de cliente e veículo, estoque, catálogo de serviços) e o grupo trabalha em paralelo, cada um em um pedaço do domínio. Queríamos que um PR de estoque não precisasse mexer em arquivos de OS.
+O enunciado pede um back-end monolítico e sugere arquitetura em camadas para o MVP. Ao mesmo tempo, o Event Storming mostrou contextos bem separados (atendimento e OS, cadastro de cliente e veículo, estoque, catálogo de serviços) e o grupo trabalha em paralelo, cada um em um pedaço do domínio.
 
 ## Decisão
 
-Montamos um único projeto Spring Boot e o dividimos em módulos por contexto: `ordemservico`, `cliente`, `veiculo`, `estoque`, `servico`, `autenticacao` e `compartilhado`. O `compartilhado` guarda só utilitários técnicos (paginação, exceções, publicação de eventos e padrão de erros), não um modelo de domínio comum.
+Montamos um único projeto Spring Boot dividido em módulos por contexto. Cada módulo tem três camadas. A `domain` tem entidades, objetos de valor, regras e interfaces de repositório, sem Spring nem JPA. A `application` tem os casos de uso (`*UseCase`), os DTOs e o `@Transactional`. A `infrastructure` tem controllers, entidades JPA, adaptadores e configuração.
 
-Cada módulo tem três camadas. A `domain` concentra entidades, objetos de valor, regras e interfaces de repositório, sem Spring nem JPA. A `application` guarda os casos de uso (`*UseCase`) e os DTOs, e é nela que fica o `@Transactional`. A `infrastructure` reúne controllers, entidades JPA, adaptadores e configuração.
+## Atualizado em 28/10/2026
 
-O `ordemservico` acessa cliente e veículo por portas próprias (`VerificadorCliente`, `VerificadorVeiculo`, `ConsultorClientes`, `ConsultorVeiculos`), que os adaptadores implementam. Os avisos ao cliente saem de eventos de domínio (`OrdemServicoCriada`, `OrcamentoGerado`, `OrdemServicoAprovada` etc.), que o `PublicadorEventos` publica e listeners com `@TransactionalEventListener(AFTER_COMMIT)` tratam.
+O que entrou depois do setup inicial:
+
+- Os módulos hoje são `ordemservico`, `cliente`, `veiculo`, `estoque`, `servico`, `autenticacao` e `compartilhado`. O `compartilhado` só tem utilitários técnicos (paginação, exceções, eventos e padrão de erros).
+- O `ordemservico` acessa cliente e veículo por portas próprias (`VerificadorCliente`, `VerificadorVeiculo`, `ConsultorClientes`, `ConsultorVeiculos`).
+- Os avisos ao cliente saem de eventos de domínio (`OrdemServicoCriada`, `OrcamentoGerado` etc.), tratados por listeners com `@TransactionalEventListener(AFTER_COMMIT)`.
 
 ## Alternativas consideradas
 
@@ -26,7 +30,7 @@ O `ordemservico` acessa cliente e veículo por portas próprias (`VerificadorCli
 
 Positivas:
 
-- Cada contexto fica numa pasta, e os PRs do grupo quase não se cruzam.
+- Cada contexto fica numa pasta. A divisão ajuda no trabalho em paralelo, mas OS e orçamento exigiram integração entre módulos.
 - Um único deploy, um único banco e transações locais (ver [ADR 0004](0004-baixa-de-estoque-na-transacao-do-orcamento.md)).
 
 Negativas:

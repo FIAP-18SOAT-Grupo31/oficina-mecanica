@@ -32,9 +32,18 @@ Monólito modular em camadas, organizado por contexto de domínio (DDD). Cada m�
 | `autenticacao` | Login, emissão do JWT e usuários |
 | `compartilhado` | Paginação, exceções, publicação de eventos e padrão de erros |
 
-O núcleo (`ordemservico`) fala com `cliente` e `veiculo` por portas próprias (`VerificadorCliente`, `VerificadorVeiculo`, `ConsultorClientes`, `ConsultorVeiculos`) com adaptadores. Já o estoque e o catálogo são lidos direto pelos repositórios de domínio (`ProdutoEstoqueRepository`, `ServicoRepository`), na mesma transação do orçamento, porque reservar peças e calcular o total precisam ser atômicos. Temos testes ArchUnit que conferem o padrão de erros da API (um único tratador global e exceções de domínio sem dependência de framework). Eventos de domínio, como `OrdemServicoCriada` e `OrcamentoGerado`, são publicados depois do commit e disparam as notificações ao cliente.
+O `ordemservico` fala com `cliente` e `veiculo` por portas próprias, como `VerificadorCliente` e `VerificadorVeiculo`.
 
-Os diagramas C4 (contexto, containers e componentes) estão em [`docs/arquitetura/c4.md`](docs/arquitetura/c4.md), as decisões de arquitetura (ADRs) em [`docs/arquitetura/adr`](docs/arquitetura/adr) e os requisitos funcionais e não funcionais em [`docs/arquitetura/requisitos.md`](docs/arquitetura/requisitos.md). A modelagem de domínio (Event Storming, Domain Storytelling, agregados, contextos e linguagem ubíqua) está em [`docs/ddd`](docs/ddd).
+Estoque e catálogo são lidos direto pelos repositórios (`ProdutoEstoqueRepository`, `ServicoRepository`). Assim a reserva das peças fica na mesma transação do orçamento.
+
+Os avisos ao cliente saem de eventos de domínio, como `OrdemServicoCriada` e `OrcamentoGerado`, tratados depois do commit.
+
+Os testes ArchUnit conferem o padrão de erros da API.
+
+- Diagramas C4: [`docs/arquitetura/c4.md`](docs/arquitetura/c4.md)
+- ADRs: [`docs/arquitetura/adr`](docs/arquitetura/adr)
+- Requisitos: [`docs/arquitetura/requisitos.md`](docs/arquitetura/requisitos.md)
+- DDD: [`docs/ddd`](docs/ddd)
 
 ## Tecnologias
 
@@ -48,8 +57,8 @@ Os diagramas C4 (contexto, containers e componentes) estão em [`docs/arquitetur
 ## Pré-requisitos
 
 - Docker e Docker Compose.
-- Para rodar fora do container ou executar os testes: JDK 21. O Maven não precisa ser instalado, o projeto usa o wrapper `./mvnw`.
-- Porta 5432 livre para o PostgreSQL. Se já houver um PostgreSQL instalado na máquina, pare o serviço ou troque a porta publicada no `docker-compose.yml`. Para apontar a aplicação para outro banco fora do container, defina `DB_URL` (veja a tabela abaixo).
+- JDK 21 para rodar fora do container ou rodar os testes (o projeto usa o `./mvnw`).
+- Porta 5432 livre. Se já tiver um PostgreSQL na máquina, pare o serviço ou troque a porta no `docker-compose.yml`.
 
 ## Como executar
 
@@ -98,9 +107,9 @@ Também há atalhos no `Makefile`: `make up`, `make down`, `make logs` e `make r
 ./mvnw verify
 ```
 
-Esse comando roda os testes unitários e de integração, os testes de arquitetura (ArchUnit) e a verificação de cobertura do JaCoCo. O build falha se a cobertura de linhas do projeto inteiro (todas as classes, exceto a classe `main`) ficar abaixo de 80%. O relatório fica em `target/site/jacoco/index.html`.
+Roda os testes unitários, de integração e ArchUnit, e o JaCoCo. O build falha com cobertura de linhas abaixo de 80%. O relatório fica em `target/site/jacoco/index.html`.
 
-Os testes de integração usam H2 em modo PostgreSQL. O teste contra um PostgreSQL real (`PostgresRealIntegrationTest`) usa Testcontainers e é pulado automaticamente quando não há Docker. No GitHub Actions, o mesmo comando roda em todo PR e o relatório de cobertura fica disponível como artefato.
+Os testes de integração usam H2 em modo PostgreSQL. O `PostgresRealIntegrationTest` usa Testcontainers e é pulado quando não há Docker. O CI roda o mesmo comando em todo PR.
 
 ## Documentação da API (Swagger)
 
@@ -127,7 +136,7 @@ O cliente vai em `clienteId` **ou** `documentoCliente` (CPF/CNPJ, com ou sem pon
 
 ## Banco de dados
 
-Usamos PostgreSQL 16 porque aprovar um orçamento mexe no orçamento, na OS e no saldo de várias peças de uma vez, e precisamos de transação ACID. Também usamos FK e `UNIQUE` (documento, placa, nome da peça) para o próprio banco segurar a consistência dos cadastros, e os tipos `UUID` e `NUMERIC` para ids e valores. E a gente já conhecia o PostgreSQL, que funciona bem com Spring Data JPA e Flyway. A decisão está no [ADR 0002](docs/arquitetura/adr/0002-banco-postgresql.md).
+PostgreSQL 16. Aprovar um orçamento mexe no orçamento, na OS e no estoque de uma vez, então precisamos de transação. FK e `UNIQUE` (documento, placa, nome da peça) ajudam a manter os cadastros consistentes. Detalhes no [ADR 0002](docs/arquitetura/adr/0002-banco-postgresql.md).
 
 O esquema é versionado por migrations Flyway em `src/main/resources/db/migration`.
 
@@ -135,7 +144,7 @@ O esquema é versionado por migrations Flyway em `src/main/resources/db/migratio
 
 As rotas administrativas exigem `Authorization: Bearer <token>`. A aplicação cria dois usuários de demonstração com a senha de `DEMO_PASSWORD`:
 
-Rodando fora do container no perfil `dev` (`./mvnw spring-boot:run`), o padrão é `dev123` (`application-dev.properties`), então os usuários existem mesmo sem `.env`. No container, o compose repassa o valor do `.env` (o `.env.example` traz `dev123`). Se a senha estiver vazia, por exemplo no perfil `prd` sem a variável, os usuários não são criados.
+No perfil `dev` o padrão é `dev123`. Se a senha estiver vazia (por exemplo no `prd` sem a variável), os usuários não são criados.
 
 | Login | Papel |
 |---|---|
@@ -158,7 +167,7 @@ No perfil `dev`, a aplicação também carrega dados de demonstração:
 - o serviço "Troca de óleo" no catálogo e a peça "ÓLEO 5W30 (LITRO)" no estoque;
 - uma OS aguardando aprovação, com código de acesso `DEMO12` e um orçamento pendente com 4 unidades da peça reservadas.
 
-Com isso dá para aprovar, rejeitar ou cancelar a OS de demonstração e ver a baixa ou a devolução da reserva. Para testar a área do cliente sem login:
+Para testar a área do cliente sem login:
 
 ```bash
 curl -X POST http://localhost:8080/api/publico/ordens-servico/0192f0a0-0000-7000-8000-0000000000a1/consultar \
@@ -172,9 +181,9 @@ Rotas abertas sem token (`SegurancaConfig`):
 - `/`, `/index.html` e `/logo.svg` (página inicial);
 - `/error`;
 - Swagger: `/swagger-ui.html`, `/swagger-ui/**` e `/v3/api-docs/**`;
-- `/actuator/health/**` e `/actuator/prometheus`. O endpoint Prometheus só responde se for exposto em `ACTUATOR_EXPOSICAO`; por padrão são expostos `health`, `info` e `metrics`.
+- `/actuator/health/**` e `/actuator/prometheus` (este só se estiver em `ACTUATOR_EXPOSICAO`).
 
-O restante do Actuator exige `ADMIN`. O login e as rotas públicas têm limite de requisições por minuto por IP (`LIMITE_REQUISICOES_POR_MINUTO`, padrão 30).
+O resto do Actuator exige `ADMIN`. Login e rotas públicas têm limite de 30 requisições por minuto por IP (`LIMITE_REQUISICOES_POR_MINUTO`).
 
 ## Estrutura de diretórios
 
@@ -210,11 +219,9 @@ O restante do Actuator exige `ADMIN`. O login e as rotas públicas têm limite d
 - Histórias originais do egon.io: [`docs/ddd/egon`](docs/ddd/egon)
 - Linguagem ubíqua e relação com o código: [`docs/ddd/linguagem-ubiqua.md`](docs/ddd/linguagem-ubiqua.md)
 
-Em [`docs/ddd/scripts`](docs/ddd/scripts) ficam os scripts que geram os PDFs. Usamos Playwright para exportar o board do Miro em imagens porque o export nativo saía ilegível.
-
 ## Segurança
 
-O relatório da análise de vulnerabilidades está em [`docs/seguranca/relatorio-vulnerabilidades.md`](docs/seguranca/relatorio-vulnerabilidades.md).
+Relatório de vulnerabilidades: [`docs/seguranca/relatorio-vulnerabilidades.md`](docs/seguranca/relatorio-vulnerabilidades.md).
 
 ## Vídeo da entrega
 

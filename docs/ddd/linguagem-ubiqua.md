@@ -1,6 +1,6 @@
 # Linguagem ubíqua
 
-Vocabulário usado pelo grupo no Event Storming (Miro), nas histórias do egon.io e no código. Cada termo aponta onde ele aparece no código: classe, enum, evento ou endpoint.
+Vocabulário usado no Event Storming (Miro), nas histórias do egon.io e no código.
 
 Fontes:
 - Event Storming: https://miro.com/app/board/uXjVHnerRBQ=/?share_link_id=849086151688 (exportado em [`event-storming.pdf`](event-storming.pdf))
@@ -95,25 +95,16 @@ O módulo `compartilhado` é só utilitário técnico (paginação, exceções, 
 
 ## Relação com o código
 
-Itens do Miro e do egon.io que o código trata de outro jeito, e o que vale no sistema.
+Principais pontos em que o código ficou diferente do Miro e do egon.io.
 
 | No Miro / egon.io | No código | Por quê |
 |---|---|---|
-| Ator Mecânico recebe a OS, analisa o veículo, cria o relatório e executa (Miro; egon 2, 3 e 4) | O mecânico não usa o sistema. O atendente registra diagnóstico (no orçamento), início da execução e finalização. Papéis: `ADMIN` e `ATENDENTE`. | O papel `MECANICO` foi removido na migration `V6__remove_papel_mecanico.sql`; quem opera o sistema é o atendente. |
-| Relatório do mecânico (agregado "Relatorio" no Miro) e "notificar atendente de relatório criado" | Não existe relatório separado. O resultado do diagnóstico vira os itens do orçamento. | O orçamento já documenta serviços e peças identificados. |
-| "Notificar mecânico de OS criada" e ponto de atenção "como é feita essa notificação?" | Notificação só para o cliente, por e-mail simulado, a partir de eventos de domínio publicados depois do commit. | Resolve o ponto de atenção do board: o canal é e-mail, disparado pelos eventos. |
-| Notificação por WhatsApp | E-mail simulado (log). | Escopo do MVP; não há integração com WhatsApp. |
-| Baixar o PDF da OS | Não existe. O cliente consulta a OS e o orçamento pela API pública. | O enunciado pede consulta via API. |
-| Ordem de compra, sistema de compras e fornecedor quando falta estoque | Não existem. Falta de saldo impede reservar a peça; a reposição é registrada como entrada manual (`/adicionar`). | Fora do escopo do MVP. |
-| "Caso estoque seja insuficiente, adicionar observação à OS" | Não há observação: o orçamento não é gerado com peça sem saldo. | A reserva acontece na geração do orçamento e é atômica. |
-| "Após 2 dias sem retorno, notificar cliente novamente" | Não há reenvio. O orçamento tem validade; tentar aprovar depois dela deixa o orçamento `EXPIRADO` e a OS Recusada. | Sem agendador no MVP; a expiração é verificada no momento da ação. |
-| Nota "criar fluxo alternativo quando o cliente já sabe o que precisa, sem diagnóstico" | Não há fluxo separado. O atendente gera o orçamento direto (história 1 do egon) e a OS passa por `EM_DIAGNOSTICO` automaticamente em `GerarOrcamentoUseCase`. | Mantém uma só máquina de estados para a OS. |
-| egon 5: reprovação leva a OS para Finalizada e depois Entregue | Reprovação leva a OS para `RECUSADA`, estado final. | Separa OS sem execução das executadas. |
-| egon 6: gerenciamento de peças com um único passo ("sistema atualiza estoque da OS aprovada") | O estoque tem reserva na geração, baixa na aprovação, devolução na rejeição/cancelamento, cadastro de peça e entrada e saída manual. | O código é mais completo que a história; ver página 7 do `diagramas.pdf`. |
-| Status Cancelada e Recusada | Existem no código e não aparecem no Miro nem no egon. | Fluxos de exceção do código. |
-| "Revisar orçamento" pelo atendente antes de enviar (egon 1 e 2) | O orçamento é enviado ao ser gerado; não há etapa de revisão. | O atendente já monta o orçamento. |
-| Agregado Cadastro (Miro) | Dois agregados: `Cliente` e `Veiculo`, em módulos separados. | Ciclos de vida e regras próprias (documento único, placa única). |
-| "Aqui ele busca por cpf/cnpj ou placa do veículo" (nota do Miro junto à lista de ordens de serviço) | A abertura da OS (`POST /api/ordens-servico`) aceita `documentoCliente` e `placaVeiculo` no lugar dos ids e confere se o veículo é do cliente. A listagem de OS filtra só por status. | O atendente identifica cliente e veículo pelo documento e pela placa; buscar OS por esses campos não foi implementado. |
+| Mecânico recebe a OS, analisa o veículo e executa (Miro; egon 2, 3 e 4) | O mecânico não usa o sistema. O atendente registra orçamento, início da execução e finalização. | O papel `MECANICO` saiu na `V6__remove_papel_mecanico.sql`. |
+| Relatório do mecânico (agregado "Relatorio") | Não existe. O diagnóstico vira os itens do orçamento. | O orçamento já lista serviços e peças. |
+| "Notificar mecânico de OS criada" e o ponto de atenção "como é feita essa notificação?" | Só o cliente é avisado, por e-mail simulado, depois do commit. | O aviso ao mecânico ficou fora do sistema; implementamos avisos ao cliente. |
+| WhatsApp e PDF da OS | E-mail simulado no log; o cliente consulta pela API pública. | Fora do escopo do MVP. |
+| Ordem de compra e fornecedor quando falta estoque | Sem saldo, o orçamento não é gerado; a reposição é entrada manual (`/adicionar`). | Fora do escopo do MVP. |
+| egon 5: reprovação leva a OS para Finalizada e Entregue | Reprovação deixa a OS `RECUSADA`, estado final. | Separa OS sem execução das executadas. |
 
 ## Termos evitados
 
