@@ -7,16 +7,16 @@
   @page { size: A4 landscape; margin: 0; }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; color: #1d1d1f; }
-  .pagina { width: 297mm; height: 210mm; padding: 11mm 13mm 9mm; page-break-after: always; display: flex; flex-direction: column; overflow: hidden; }
+  .pagina { width: 297mm; height: 210mm; padding: 8mm 9mm 6mm; page-break-after: always; display: flex; flex-direction: column; overflow: hidden; }
   .pagina:last-child { page-break-after: auto; }
-  h1 { font-size: 21px; margin: 0 0 2mm; }
+  h1 { font-size: 19px; margin: 0 0 1mm; }
   h2 { font-size: 13px; margin: 3mm 0 1.5mm; }
-  .sub { font-size: 11px; color: #555; margin: 0 0 3mm; }
+  .sub { font-size: 10.5px; color: #555; margin: 0 0 2mm; }
   .rodape { font-size: 9px; color: #888; margin-top: auto; padding-top: 2mm; border-top: 1px solid #ddd; display: flex; justify-content: space-between; }
-  .historia { flex: 1; display: flex; gap: 6mm; min-height: 0; }
-  .historia .fig { flex: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #e3e3e3; border-radius: 4px; padding: 3mm; min-height: 0; }
-  .historia .fig img { max-width: 100%; max-height: 100%; }
-  .historia .notas { width: 78mm; font-size: 10.5px; line-height: 1.38; }
+  .historia { flex: 1; display: flex; gap: 4mm; min-height: 0; }
+  .historia .fig { flex: 1; display: flex; align-items: center; justify-content: center; border: 1px solid #e3e3e3; border-radius: 4px; padding: 0; min-height: 0; overflow: hidden; }
+  .historia .fig img { width: 100%; height: 100%; object-fit: contain; }
+  .historia .notas { width: 64mm; font-size: 9.6px; line-height: 1.35; }
   .notas ol, .notas ul { padding-left: 4.5mm; margin: 1mm 0; }
   .codigo { background: #f4f6f8; border-left: 3px solid #4a76c9; padding: 2mm 3mm; margin-top: 2mm; }
   code { font-family: Consolas, monospace; font-size: 9.5px; background: #eef1f4; padding: 0 2px; border-radius: 2px; }
@@ -84,8 +84,9 @@
       <div class="codigo">
         <b>No código</b>
         <ul>
-          <li><code>POST /api/ordens-servico</code> abre a OS em <code>RECEBIDA</code> com cliente, veículo e relato; publica <code>OrdemServicoCriada</code> e o cliente recebe o código de acesso por e-mail (simulado em log).</li>
-          <li><code>POST /api/orcamentos</code> recebe serviços do catálogo e peças do estoque, reserva as peças e calcula o total. A OS passa por <code>EM_DIAGNOSTICO</code> e vai para <code>AGUARDANDO_APROVACAO</code> na mesma operação.</li>
+          <li><code>POST /api/ordens-servico</code> abre a OS em <code>RECEBIDA</code>. O cliente é informado por <code>clienteId</code> <b>ou</b> <code>documentoCliente</code> (CPF/CNPJ, com ou sem pontuação) e o veículo por <code>veiculoId</code> <b>ou</b> <code>placaVeiculo</code>, um de cada par (400 se vierem os dois ou nenhum). Documento ou placa sem cadastro: 404; veículo de outro cliente: 422. Isso corresponde à nota do Miro "aqui ele busca por cpf/cnpj ou placa do veículo" (no board, junto à lista de ordens de serviço).</li>
+          <li>Publica <code>OrdemServicoCriada</code>; o cliente recebe o código de acesso por e-mail (simulado em log).</li>
+          <li><code>POST /api/orcamentos</code> recebe os ids dos serviços do catálogo (nome e valor vêm de <code>ServicoRepository</code>) e as peças do estoque, reserva as peças e calcula o total. A OS passa por <code>EM_DIAGNOSTICO</code> e vai para <code>AGUARDANDO_APROVACAO</code> na mesma operação.</li>
           <li>Não existe etapa separada de "revisar"; o orçamento é enviado ao ser gerado (<code>OrcamentoGerado</code>).</li>
         </ul>
       </div>
@@ -199,8 +200,8 @@
   <h1>6. Gerenciamento de peças e insumos</h1>
   <p class="sub">Na história do grupo: com a OS Aprovada, o sistema atualiza o estoque de peças e insumos.</p>
   <div class="historia" style="flex-direction: column">
-    <div class="fig" style="flex: 0 0 52mm"><img src="../egon/6-gerenciamento-pecas-insumos.egn.svg"></div>
-    <div class="notas" style="width: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 6mm">
+    <div class="fig" style="flex: 0 0 85mm"><img src="../egon/6-gerenciamento-pecas-insumos.egn.svg"></div>
+    <div class="notas" style="width: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; font-size: 11px">
       <div class="codigo">
         <b>Estoque dentro do fluxo da OS</b>
         <ul>
@@ -212,8 +213,9 @@
       <div class="codigo">
         <b>Gestão administrativa (<code>/api/estoque</code>)</b>
         <ul>
-          <li>Cadastro, consulta, listagem, atualização e exclusão de peças e insumos.</li>
-          <li>Entrada e saída manual de quantidade: <code>POST /{id}/adicionar</code> e <code>POST /{id}/remover</code>, que mexem só no disponível; reservas ficam com o orçamento.</li>
+          <li>Cadastro e consulta de peças e insumos, com saldo disponível e reservado.</li>
+          <li>Listagem, atualização e exclusão de peças: em desenvolvimento no #43.</li>
+          <li>Entrada e saída manual de quantidade, que mexem só no disponível; reservas ficam com o orçamento.</li>
           <li>Nome da peça é único (restrição no banco).</li>
         </ul>
       </div>
@@ -224,109 +226,104 @@
 
 <section class="pagina">
   <h1>Agregados, entidades e objetos de valor</h1>
-  <p class="sub">No Miro o grupo separou os agregados Cadastro, Relatório, Orçamento, Estoque e Ordem de Serviço. No código, "Cadastro" virou dois agregados (Cliente e Veículo), o "Relatório" foi absorvido pelo Orçamento (o diagnóstico vira os itens) e o catálogo de serviços ganhou o seu.</p>
-  <div class="grade" style="grid-template-columns: repeat(3, 1fr); align-content: start">
-    <div class="caixa core"><h3>Ordem de Serviço (raiz: <code>OrdemServico</code>)</h3>
-      Entidade raiz com <code>id</code>, cliente e veículo (por id), relato do problema, status, data de abertura e conclusão e código de acesso.<br>
-      <b>Entidades/VOs:</b> <code>TransicaoStatus</code> (histórico de status, gravado em <code>historico_status_ordem_servico</code>), <code>StatusOrdemServico</code> (enum).<br>
-      <b>Regras:</b> transições só pelas operações do agregado (<code>iniciarDiagnostico</code>, <code>anexarOrcamento</code>, <code>aprovarOrcamento</code>, <code>recusarOrcamento</code>, <code>iniciarExecucao</code>, <code>finalizar</code>, <code>entregar</code>, <code>cancelar</code>); relato entre 10 e 500 caracteres.<br>
-      <b>Eventos:</b> <code>OrdemServicoCriada</code>, <code>OrdemServicoAprovada</code>, <code>OrdemServicoRecusada</code>, <code>OrdemServicoCancelada</code>, <code>OrdemServicoFinalizada</code>.</div>
-    <div class="caixa core"><h3>Orçamento (raiz: <code>Orcamento</code>)</h3>
-      Vinculado à OS por <code>ordemServicoId</code>; tem data de criação, validade e status.<br>
-      <b>VOs:</b> <code>ItemServico</code> (serviço do catálogo, descrição, valor da mão de obra), <code>ItemPeca</code> (peça do estoque, nome, quantidade, valor unitário), <code>StatusOrcamento</code>.<br>
-      <b>Regras:</b> só é alterado enquanto <code>PENDENTE</code>; total = mão de obra + peças; validade no futuro; expira se decidido depois da validade; aprovação total, parcial ou rejeição.<br>
-      <b>Evento:</b> <code>OrcamentoGerado</code>.</div>
-    <div class="caixa suporte"><h3>Estoque (raiz: <code>ProdutoEstoque</code>)</h3>
-      Peça ou insumo com nome único, valor unitário, quantidade disponível e reservada.<br>
-      <b>Regras:</b> reservar só com saldo disponível; baixa e cancelamento só sobre o reservado; entrada e saída manual só no disponível; valor unitário maior que zero.</div>
-    <div class="caixa suporte"><h3>Cliente (raiz: <code>Cliente</code>)</h3>
-      Nome, documento, e-mail, telefone.<br>
-      <b>VOs:</b> <code>Endereco</code>, <code>Estado</code> (UF); documento validado como CPF ou CNPJ com dígitos verificadores.<br>
-      <b>Regras:</b> documento único; não pode ser excluído com veículos vinculados.</div>
-    <div class="caixa suporte"><h3>Veículo (raiz: <code>Veiculo</code>)</h3>
-      Placa, marca, modelo, ano de fabricação e cliente dono (por id).<br>
-      <b>Regras:</b> placa no padrão antigo ou Mercosul e única; não pode ser excluído com ordens de serviço vinculadas.</div>
-    <div class="caixa suporte"><h3>Catálogo de serviços</h3>
-      Serviço oferecido pela oficina (ex.: troca de óleo, alinhamento) com descrição e valor de mão de obra, mantido em <code>/api/servicos</code>. O orçamento referencia o serviço por <code>catalogoServicoId</code> e guarda uma cópia da descrição e do valor do momento.</div>
-  </div>
-  <p class="nota">Agregados se referenciam só por id. Usuário (<code>Usuario</code>, <code>Papel</code>) fica no contexto genérico de autenticação.</p>
+  <p class="sub">No Miro o grupo separou os agregados Cadastro, Relatório, Orçamento, Estoque e Ordem de Serviço. No código, Cadastro virou dois agregados (<code>Cliente</code> e <code>Veiculo</code>), o Relatório foi absorvido pelo Orçamento (o diagnóstico vira os itens) e o catálogo de serviços virou o agregado <code>Servico</code>.</p>
+  <table>
+    <tr><th style="width:13%">Agregado</th><th style="width:15%">Raiz (entidade)</th><th style="width:15%">Outras entidades<br><span style="font-weight:400">(têm identidade própria)</span></th><th style="width:22%">Objetos de valor<br><span style="font-weight:400">(definidos só pelos valores)</span></th><th>Regras principais</th></tr>
+    <tr style="background:#fffbe6"><td><b>Ordem de Serviço</b></td><td><code>OrdemServico</code></td><td><code>TransicaoStatus</code> (id, status anterior, novo e horário; tabela <code>historico_status_ordem_servico</code>)</td><td><code>StatusOrdemServico</code> (enum); código de acesso</td><td>transições só pelas operações do agregado; cancelamento só antes da aprovação; relato de 10 a 500 caracteres. Eventos: <code>OrdemServicoCriada</code>, <code>OrdemServicoAprovada</code>, <code>OrdemServicoRecusada</code>, <code>OrdemServicoCancelada</code>, <code>OrdemServicoFinalizada</code></td></tr>
+    <tr style="background:#fffbe6"><td><b>Orçamento</b></td><td><code>Orcamento</code></td><td>-</td><td><code>ItemServico</code> (serviço do catálogo, nome e valor da mão de obra copiados), <code>ItemPeca</code> (peça, quantidade, valor unitário), <code>StatusOrcamento</code> (enum)</td><td>só muda enquanto <code>PENDENTE</code>; total = mão de obra + peças; validade no futuro; aprovação total, parcial ou rejeição; aprovar depois da validade expira. Evento: <code>OrcamentoGerado</code></td></tr>
+    <tr><td><b>Estoque</b></td><td><code>ProdutoEstoque</code></td><td>-</td><td>valor unitário, quantidades disponível e reservada</td><td>nome único; reservar só com saldo; baixa e devolução só sobre o reservado; entrada e saída manual só no disponível</td></tr>
+    <tr><td><b>Cliente</b></td><td><code>Cliente</code></td><td>-</td><td><code>Endereco</code>, <code>Estado</code> (UF, enum); documento CPF/CNPJ</td><td>CPF/CNPJ com dígitos verificadores e único; não excluir com veículos</td></tr>
+    <tr><td><b>Veículo</b></td><td><code>Veiculo</code></td><td>-</td><td>placa (antiga ou Mercosul)</td><td>placa válida e única; não excluir com OS vinculada</td></tr>
+    <tr><td><b>Catálogo</b></td><td><code>Servico</code></td><td>-</td><td>valor da mão de obra (até 2 casas)</td><td>nome único; valor maior que zero; não excluir serviço já usado em orçamento</td></tr>
+    <tr style="background:#f4f4f4"><td><b>Autenticação</b></td><td><code>Usuario</code></td><td>-</td><td><code>Papel</code> (enum: <code>ADMIN</code>, <code>ATENDENTE</code>)</td><td>senha guardada com BCrypt</td></tr>
+  </table>
+  <p class="nota" style="margin-top:2.5mm">Os agregados se referenciam só por id: a OS guarda <code>clienteId</code> e <code>veiculoId</code>, o orçamento guarda <code>ordemServicoId</code>, <code>catalogoServicoId</code> e <code>produtoEstoqueId</code>. Itens de orçamento são objetos de valor (records Java) porque copiam o preço do momento e não mudam depois.</p>
   <div class="rodape"><span>Fonte: Miro (agregados do Event Storming) e código (pacotes <code>*/domain</code>)</span><span>8</span></div>
 </section>
 
 <section class="pagina">
   <h1>Contextos delimitados e mapa de contextos</h1>
   <p class="sub">Cada contexto é um módulo do monólito (<code>br.com.fiap.oficina_mecanica.*</code>), dividido em <code>domain</code>, <code>application</code> e <code>infrastructure</code>.</p>
-  <div style="display: flex; gap: 6mm; flex: 1; min-height: 0">
-  <svg viewBox="0 0 760 470" style="flex: 1.7; height: 100%" font-family="Segoe UI, Arial, sans-serif">
+  <div style="display: flex; gap: 5mm; flex: 1; min-height: 0">
+  <svg viewBox="0 0 900 470" style="flex: 1.75; height: 100%" font-family="Segoe UI, Arial, sans-serif">
     <defs><marker id="pt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
-    <g font-size="11" fill="#333">
-      <line x1="245" y1="235" x2="132" y2="112" stroke="#333" stroke-width="1.4" marker-end="url(#pt)"/>
-      <text x="120" y="160">ACL: VerificadorCliente,</text><text x="120" y="173">ConsultorClientes</text>
-      <line x1="245" y1="250" x2="132" y2="250" stroke="#333" stroke-width="1.4" marker-end="url(#pt)"/>
-      <text x="136" y="230" font-size="9.5">ACL: VerificadorVeiculo,</text><text x="136" y="243" font-size="9.5">ConsultorVeiculos</text>
-      <line x1="245" y1="270" x2="132" y2="388" stroke="#333" stroke-width="1.4" marker-end="url(#pt)"/>
-      <text x="130" y="345">referência por</text><text x="130" y="358">catalogoServicoId</text>
-      <line x1="515" y1="235" x2="628" y2="112" stroke="#333" stroke-width="1.4" marker-end="url(#pt)"/>
-      <text x="595" y="165">cliente-fornecedor:</text><text x="595" y="178">reservar, baixar,</text><text x="595" y="191">devolver</text>
-      <line x1="515" y1="270" x2="628" y2="388" stroke="#d0508a" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#pt)"/>
-      <text x="560" y="345">eventos de domínio</text><text x="560" y="358">após o commit</text>
-      <line x1="380" y1="315" x2="380" y2="380" stroke="#888" stroke-width="1.4" stroke-dasharray="3 3"/>
+    <g stroke="#333" stroke-width="1.4" fill="none">
+      <path d="M345,185 L345,120 L132,120" marker-end="url(#pt)"/>
+      <line x1="330" y1="250" x2="132" y2="250" marker-end="url(#pt)"/>
+      <path d="M345,315 L345,380 L132,380" marker-end="url(#pt)"/>
+      <path d="M555,185 L555,120 L768,120" marker-end="url(#pt)"/>
+      <path d="M555,315 L555,380 L768,380" stroke="#d0508a" stroke-dasharray="5 3" marker-end="url(#pt)"/>
+      <line x1="450" y1="80" x2="450" y2="183" stroke="#888" stroke-dasharray="3 3"/>
+      <line x1="450" y1="317" x2="450" y2="388" stroke="#888" stroke-dasharray="3 3"/>
+    </g>
+    <g font-size="12" fill="#333">
+      <text x="142" y="112">porta + adaptador (ACL)</text>
+      <text x="142" y="136" font-size="11">VerificadorCliente,</text><text x="142" y="147" font-size="11">ConsultorClientes</text>
+      <text x="142" y="242">porta + adaptador (ACL)</text>
+      <text x="142" y="266" font-size="11">VerificadorVeiculo,</text><text x="142" y="277" font-size="11">ConsultorVeiculos</text>
+      <text x="142" y="372">orçamento lê ServicoRepository</text>
+      <text x="142" y="396" font-size="11">mesma transação</text>
+      <text x="565" y="112">orçamento usa</text>
+      <text x="565" y="136" font-size="11">ProdutoEstoqueRepository</text>
+      <text x="565" y="147" font-size="11">(reservar, baixar, devolver)</text>
+      <text x="565" y="372">eventos de domínio</text>
+      <text x="565" y="396" font-size="11">após o commit</text>
+      <text x="458" y="140" font-size="11" fill="#555">JWT nas rotas</text>
+      <text x="458" y="152" font-size="11" fill="#555">administrativas</text>
     </g>
     <g font-size="12">
-      <rect x="5" y="70" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
-      <text x="67" y="96" text-anchor="middle" font-weight="700">Clientes</text><text x="67" y="114" text-anchor="middle" font-size="10">cliente · /api/clientes</text>
+      <rect x="5" y="90" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
+      <text x="67" y="116" text-anchor="middle" font-weight="700">Clientes</text><text x="67" y="134" text-anchor="middle" font-size="9.5">cliente · /api/clientes</text>
       <rect x="5" y="220" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
-      <text x="67" y="246" text-anchor="middle" font-weight="700">Veículos</text><text x="67" y="264" text-anchor="middle" font-size="10">veiculo · /api/veiculos</text>
-      <rect x="5" y="370" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
-      <text x="67" y="396" text-anchor="middle" font-weight="700">Catálogo de serviços</text><text x="67" y="414" text-anchor="middle" font-size="10">/api/servicos</text>
-      <rect x="245" y="185" width="270" height="130" rx="9" fill="#fff4c2" stroke="#c9a400" stroke-width="2"/>
-      <text x="380" y="212" text-anchor="middle" font-weight="700" font-size="14">Atendimento e execução</text>
-      <text x="380" y="230" text-anchor="middle" font-size="10.5">núcleo · módulo ordemservico</text>
-      <text x="380" y="254" text-anchor="middle" font-size="10.5">Ordem de Serviço + Orçamento</text>
-      <text x="380" y="272" text-anchor="middle" font-size="10">/api/ordens-servico · /api/orcamentos</text>
-      <text x="380" y="290" text-anchor="middle" font-size="10">/api/publico/** (cliente, CPF/CNPJ + código)</text>
-      <rect x="630" y="70" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
-      <text x="692" y="96" text-anchor="middle" font-weight="700">Estoque</text><text x="692" y="114" text-anchor="middle" font-size="10">estoque · /api/estoque</text>
-      <rect x="630" y="370" width="125" height="62" rx="7" fill="#ffe0ef" stroke="#d0508a" stroke-width="1.5"/>
-      <text x="692" y="394" text-anchor="middle" font-weight="700">E-mail ao cliente</text><text x="692" y="412" text-anchor="middle" font-size="10">externo, simulado em log</text>
-      <rect x="290" y="380" width="180" height="52" rx="7" fill="#eeeeee" stroke="#888" stroke-width="1.5"/>
-      <text x="380" y="402" text-anchor="middle" font-weight="700">Compartilhado</text><text x="380" y="419" text-anchor="middle" font-size="10">shared kernel · compartilhado</text>
-      <rect x="290" y="20" width="180" height="52" rx="7" fill="#eeeeee" stroke="#888" stroke-width="1.5"/>
-      <text x="380" y="42" text-anchor="middle" font-weight="700">Autenticação</text><text x="380" y="59" text-anchor="middle" font-size="10">genérico · /api/auth/login</text>
-      <line x1="380" y1="72" x2="380" y2="185" stroke="#888" stroke-width="1.4" stroke-dasharray="3 3"/>
-      <text x="388" y="135" font-size="10" fill="#555">JWT protege as rotas administrativas</text>
+      <text x="67" y="246" text-anchor="middle" font-weight="700">Veículos</text><text x="67" y="264" text-anchor="middle" font-size="9.5">veiculo · /api/veiculos</text>
+      <rect x="5" y="350" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
+      <text x="67" y="376" text-anchor="middle" font-weight="700">Catálogo</text><text x="67" y="394" text-anchor="middle" font-size="9.5">servico · /api/servicos</text>
+      <rect x="330" y="185" width="240" height="130" rx="9" fill="#fff4c2" stroke="#c9a400" stroke-width="2"/>
+      <text x="450" y="212" text-anchor="middle" font-weight="700" font-size="14">Atendimento e execução</text>
+      <text x="450" y="230" text-anchor="middle" font-size="10.5">núcleo · módulo ordemservico</text>
+      <text x="450" y="254" text-anchor="middle" font-size="10.5">Ordem de Serviço + Orçamento</text>
+      <text x="450" y="272" text-anchor="middle" font-size="9.5">/api/ordens-servico · /api/orcamentos</text>
+      <text x="450" y="290" text-anchor="middle" font-size="9.5">/api/publico/** (CPF/CNPJ + código)</text>
+      <rect x="770" y="90" width="125" height="62" rx="7" fill="#e7f0ff" stroke="#4a76c9" stroke-width="1.5"/>
+      <text x="832" y="116" text-anchor="middle" font-weight="700">Estoque</text><text x="832" y="134" text-anchor="middle" font-size="9.5">estoque · /api/estoque</text>
+      <rect x="770" y="350" width="125" height="62" rx="7" fill="#ffe0ef" stroke="#d0508a" stroke-width="1.5"/>
+      <text x="832" y="374" text-anchor="middle" font-weight="700">E-mail ao cliente</text><text x="832" y="392" text-anchor="middle" font-size="9.5">externo, simulado em log</text>
+      <rect x="360" y="388" width="180" height="52" rx="7" fill="#eeeeee" stroke="#888" stroke-width="1.5"/>
+      <text x="450" y="410" text-anchor="middle" font-weight="700">Compartilhado</text><text x="450" y="427" text-anchor="middle" font-size="10">shared kernel · compartilhado</text>
+      <rect x="360" y="28" width="180" height="52" rx="7" fill="#eeeeee" stroke="#888" stroke-width="1.5"/>
+      <text x="450" y="50" text-anchor="middle" font-weight="700">Autenticação</text><text x="450" y="67" text-anchor="middle" font-size="10">genérico · /api/auth/login</text>
     </g>
   </svg>
-  <div style="flex: 1; font-size: 10.5px; line-height: 1.4">
+  <div style="flex: 0.9; font-size: 10px; line-height: 1.4">
     <div class="caixa" style="margin-bottom: 3mm"><b>Legenda</b><br>
-      <span style="background:#fff4c2;padding:0 2mm">amarelo</span> subdomínio núcleo ·
+      <span style="background:#fff4c2;padding:0 2mm">amarelo</span> núcleo ·
       <span style="background:#e7f0ff;padding:0 2mm">azul</span> suporte ·
       <span style="background:#eeeeee;padding:0 2mm">cinza</span> genérico/compartilhado ·
       <span style="background:#ffe0ef;padding:0 2mm">rosa</span> externo</div>
     <b>Relações</b>
     <ul style="padding-left: 4mm; margin-top: 1mm">
-      <li><b>Clientes e Veículos → núcleo:</b> o núcleo depende de portas próprias (<code>VerificadorCliente</code>, <code>VerificadorVeiculo</code>, <code>ConsultorClientes</code>, <code>ConsultorVeiculos</code>) implementadas por adaptadores, que funcionam como camada anticorrupção.</li>
-      <li><b>Estoque:</b> o núcleo é cliente do estoque e usa o repositório de <code>ProdutoEstoque</code> na mesma transação para reservar, baixar e devolver peças.</li>
-      <li><b>Catálogo:</b> o orçamento guarda o <code>catalogoServicoId</code> e uma cópia da descrição e do valor.</li>
-      <li><b>Notificação:</b> eventos de domínio (<code>OrdemServicoCriada</code>, <code>OrcamentoGerado</code>, <code>OrdemServicoAprovada</code>, <code>OrdemServicoRecusada</code>, <code>OrdemServicoCancelada</code>, <code>OrdemServicoFinalizada</code>) são publicados depois do commit e viram e-mail simulado. Não há WhatsApp nem PDF.</li>
-      <li><b>Compartilhado:</b> paginação, exceções de domínio, publicação de eventos e padrão de erros, usados por todos os módulos.</li>
+      <li><b>Clientes e Veículos:</b> o núcleo define portas próprias (<code>VerificadorCliente</code>, <code>VerificadorVeiculo</code>, <code>ConsultorClientes</code>, <code>ConsultorVeiculos</code>) implementadas por adaptadores, que funcionam como camada anticorrupção.</li>
+      <li><b>Estoque:</b> sem porta intermediária. Os casos de uso do orçamento e da OS usam o repositório de domínio <code>ProdutoEstoqueRepository</code> na mesma transação para reservar, baixar e devolver peças (cliente-fornecedor).</li>
+      <li><b>Catálogo:</b> também sem porta. O <code>GerarOrcamentoUseCase</code> lê <code>ServicoRepository</code> na mesma transação e copia nome e valor para o <code>ItemServico</code>.</li>
+      <li><b>Notificação:</b> eventos de domínio publicados depois do commit viram e-mail simulado. Não há WhatsApp nem PDF.</li>
+      <li><b>Compartilhado:</b> paginação, exceções de domínio, publicação de eventos e padrão de erros.</li>
     </ul>
   </div>
   </div>
-  <div class="rodape"><span>Fonte: Miro (agregados) e código (módulos e portas)</span><span>9</span></div>
+  <div class="rodape"><span>Fonte: Miro (agregados) e código (módulos, portas e repositórios)</span><span>9</span></div>
 </section>
 
 <section class="pagina">
   <h1>Máquinas de estado</h1>
   <h2>Ordem de Serviço (<code>StatusOrdemServico</code>)</h2>
-  <svg viewBox="0 0 1000 215" style="width: 100%; height: 72mm" font-family="Segoe UI, Arial, sans-serif" font-size="11">
+  <svg viewBox="0 0 1000 215" style="width: 100%; height: 68mm" font-family="Segoe UI, Arial, sans-serif" font-size="11">
     <defs><marker id="pe" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
     <g stroke="#333" stroke-width="1.4" fill="none" marker-end="url(#pe)">
       <line x1="100" y1="35" x2="163" y2="35"/><line x1="290" y1="35" x2="353" y2="35"/>
       <line x1="527" y1="35" x2="590" y2="35"/><line x1="702" y1="35" x2="765" y2="35"/>
       <line x1="824" y1="50" x2="824" y2="113"/><line x1="824" y1="145" x2="824" y2="168"/>
       <line x1="440" y1="50" x2="440" y2="113"/>
-      <path d="M52,50 L52,185 L193,185"/><path d="M227,50 L227,170"/><path d="M400,50 L400,80 L300,80 L300,170"/>
+      <path d="M52,50 L52,185 L193,185"/><path d="M227,50 L227,168"/><path d="M400,50 L400,80 L300,80 L300,168"/>
     </g>
     <g fill="#fff" stroke="#333" stroke-width="1.5">
       <rect x="5" y="20" width="95" height="30" rx="15"/><rect x="165" y="20" width="125" height="30" rx="15"/>
@@ -343,26 +340,38 @@
       <text x="104" y="14">gerar orçamento</text><text x="294" y="14">orçamento anexado</text>
       <text x="530" y="14">aprovação total</text><text x="537" y="27">ou parcial</text><text x="707" y="14">iniciar execução</text>
       <text x="832" y="88">finalizar</text><text x="832" y="162">entregar</text>
-      <text x="448" y="72">rejeição, aprovação sem itens</text><text x="448" y="85">ou tentativa de aprovar</text><text x="448" y="98">orçamento expirado</text>
+      <text x="448" y="72">rejeição, aprovação sem itens</text><text x="448" y="85">ou tentativa de aprovar</text><text x="448" y="98">orçamento vencido</text>
       <text x="330" y="190">cancelar (de RECEBIDA, EM_DIAGNOSTICO ou AGUARDANDO_APROVACAO):</text>
       <text x="330" y="204">o orçamento pendente é rejeitado e as reservas voltam ao estoque</text>
     </g>
   </svg>
-  <p class="nota">Estados em preto são finais. O cliente é avisado por e-mail na criação, no orçamento gerado, na aprovação, na recusa, no cancelamento e na finalização.</p>
-  <p class="nota">Cada mudança gera uma <code>TransicaoStatus</code> (status anterior, novo e horário) no histórico. É a base do acompanhamento pelo cliente e do cálculo do tempo médio de execução (intervalo entre <code>EM_EXECUCAO</code> e <code>FINALIZADA</code>).</p>
+  <p class="nota">Estados em preto são finais. Cada mudança gera uma <code>TransicaoStatus</code> no histórico, base do acompanhamento e do tempo médio de execução (intervalo entre <code>EM_EXECUCAO</code> e <code>FINALIZADA</code>).</p>
 
-  <h2 style="margin-top:6mm">Orçamento (<code>StatusOrcamento</code>)</h2>
-  <div class="grade" style="grid-template-columns: auto 1fr; align-items: center; gap: 2mm 4mm">
-    <span class="estado">PENDENTE</span>
-    <div>
-      <div class="linha"><span class="seta"><span>→</span>todos os itens aprovados</span><span class="estado final">APROVADO</span></div>
-      <div class="linha"><span class="seta"><span>→</span>parte dos itens aprovada</span><span class="estado final">APROVADO_PARCIALMENTE</span></div>
-      <div class="linha"><span class="seta"><span>→</span>rejeitar, nenhum item aprovado ou OS cancelada</span><span class="estado final">REJEITADO</span></div>
-      <div class="linha"><span class="seta"><span>→</span>decisão depois da validade (verificado na aprovação e na consulta do cliente)</span><span class="estado final">EXPIRADO</span></div>
-    </div>
-  </div>
-  <p class="nota">Só o orçamento <code>PENDENTE</code> aceita itens ou decisão. A expiração não depende de agendamento: é verificada no momento da ação.</p>
-  <div class="rodape"><span>Fonte: código (<code>OrdemServico</code>, <code>Orcamento</code>)</span><span>10</span></div>
+  <h2 style="margin-top:4mm">Orçamento (<code>StatusOrcamento</code>)</h2>
+  <svg viewBox="0 0 1000 175" style="width: 100%; height: 56mm" font-family="Segoe UI, Arial, sans-serif" font-size="11">
+    <defs><marker id="po" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker></defs>
+    <g stroke="#333" stroke-width="1.4" fill="none" marker-end="url(#po)">
+      <path d="M115,80 L180,80 L180,20 L600,20"/>
+      <path d="M115,80 L180,80 L180,63 L600,63"/>
+      <path d="M115,80 L180,80 L180,106 L600,106"/>
+      <path d="M115,80 L180,80 L180,149 L600,149"/>
+    </g>
+    <rect x="5" y="65" width="110" height="30" rx="15" fill="#fff" stroke="#333" stroke-width="1.5"/>
+    <g fill="#333"><rect x="602" y="5" width="200" height="30" rx="15"/><rect x="602" y="48" width="200" height="30" rx="15"/><rect x="602" y="91" width="200" height="30" rx="15"/><rect x="602" y="134" width="200" height="30" rx="15"/></g>
+    <g font-weight="700" text-anchor="middle" font-size="11.5">
+      <text x="60" y="84">PENDENTE</text>
+      <text x="702" y="24" fill="#fff">APROVADO</text><text x="702" y="67" fill="#fff">APROVADO_PARCIALMENTE</text>
+      <text x="702" y="110" fill="#fff">REJEITADO</text><text x="702" y="153" fill="#fff">EXPIRADO</text>
+    </g>
+    <g fill="#333">
+      <text x="192" y="15">aprovar com todos os itens (ou sem lista de itens)</text>
+      <text x="192" y="58">aprovar parte dos itens; os demais saem e o total é recalculado</text>
+      <text x="192" y="101">rejeitar (mesmo vencido), aprovar sem itens ou OS cancelada</text>
+      <text x="192" y="144">tentar aprovar depois da validade (gravado; OS vai para RECUSADA)</text>
+    </g>
+  </svg>
+  <p class="nota">Todos os estados finais são em preto. A expiração só é gravada na tentativa de aprovação (<code>AprovarOrcamentoUseCase</code> chama <code>Orcamento.verificarExpiracao</code> e salva). Rejeitar um orçamento vencido resulta em <code>REJEITADO</code>, porque <code>Orcamento.rejeitar</code> não olha a validade. Na consulta do cliente a expiração aparece na resposta, mas a transação é somente leitura e não grava nada.</p>
+  <div class="rodape"><span>Fonte: código (<code>OrdemServico</code>, <code>Orcamento</code>, casos de uso de aprovação, rejeição e consulta)</span><span>10</span></div>
 </section>
 
 </body>

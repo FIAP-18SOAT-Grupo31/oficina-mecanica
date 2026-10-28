@@ -3,12 +3,14 @@
 | Item | Valor |
 |---|---|
 | Ferramenta | Trivy, via `aquasecurity/trivy-action@v0.36.0` no GitHub Actions (`trivy fs --scanners vuln,secret,misconfig`) |
-| Execução de referência | CI da branch `dev` no commit `079272e` em 28/10/2026 ([run 40682335666](https://github.com/FIAP-18SOAT-Grupo31/oficina-mecanica/actions/runs/40682335666)) |
+| Execução de referência | CI da branch `dev` no commit `079272e` em 28/10/2026 ([run 40682335666](https://github.com/FIAP-18SOAT-Grupo31/oficina-mecanica/actions/runs/40682335666)). Será atualizada para o commit final da entrega. |
 | Escopo | dependências Maven (`pom.xml`), `Dockerfile` e segredos no código |
 | Fora do escopo | `target/` e o `.env` local, que não vai para o git |
-| Resultado | 0 vulnerabilidades, 0 segredos e 0 problemas de configuração ([saída completa](trivy-resultado.txt)) |
+| Resultado | 0 vulnerabilidades nas dependências, 0 problemas de configuração no `Dockerfile` e nenhum segredo encontrado ([saída completa](trivy-resultado.txt); ver a nota sobre segredos abaixo) |
 
 O resultado acima é o artefato `relatorio-vulnerabilidades` publicado por essa execução do CI, copiado sem alteração para [`trivy-resultado.txt`](trivy-resultado.txt).
+
+**Sobre os segredos:** na tabela do Trivy, a coluna `Secrets` aparece como `-` ("não escaneado") nas linhas `pom.xml` e `Dockerfile`. Isso acontece porque essas linhas representam os alvos dos scanners de dependência e de configuração, não os arquivos verificados pelo scanner de segredos. O scanner de segredos percorre todos os arquivos do repositório (exceto `target/`), mas só acrescenta uma linha à tabela quando encontra algum segredo. Por isso, a ausência de linhas de segredo significa que nada foi encontrado. Há também uma evidência indireta: o segundo passo do job roda com `scanners: vuln,secret,misconfig` e `exit-code: 1` e passou, então não houve segredo de severidade crítica ou alta. O limite dessa evidência: o Trivy não lista os arquivos verificados sem achado, então o relatório mostra só que não houve ocorrência, não quais arquivos foram lidos.
 
 ## O que é verificado
 
@@ -40,11 +42,21 @@ Nenhum achado foi ignorado ou suprimido. CVE de dependência é corrigida subind
 - **CodeQL** (GitHub code scanning) analisa o código Java e os workflows em todo PR. Existe um único alerta, `java/spring-disabled-csrf-protection`, fechado como "won't fix". A API é stateless, não usa sessão nem cookie, e o token vai no cabeçalho `Authorization`, então o ataque de CSRF não se aplica.
 - **Spotless** padroniza os imports nos arquivos alterados em cada PR.
 
+## Pontos de atenção conhecidos
+
+- **Código de acesso no log:** no envio de e-mail simulado (`NotificadorOrdemServicoAdapter`), a mensagem com o código de acesso da OS é registrada em log no nível INFO. Junto com o CPF/CNPJ, esse código dá acesso à área pública do cliente. O Natan vai mascarar o código e mover a URL fixa `http://localhost:8080` para uma propriedade no #42, antes do merge.
+
 ## Controles da aplicação
 
 - **Autenticação:** APIs administrativas protegidas por JWT HS256, com validade de 1 hora e emissor validado. A chave vem da variável `JWT_SECRET` e deve ter 32 caracteres ou mais.
 - **Papéis:** `ADMIN` e `ATENDENTE`. O Actuator, fora o health check, exige `ADMIN`.
-- **Rotas abertas:** sem token ficam só o login, as rotas `/api/publico/**`, o Swagger e o health check. Nas rotas públicas, o cliente se identifica com CPF/CNPJ e o código de acesso da OS.
+- **Rotas abertas** (`SegurancaConfig`):
+  - `/api/auth/**` e `/api/publico/**`;
+  - `/`, `/index.html`, `/logo.svg` e `/error`;
+  - o Swagger;
+  - `/actuator/health/**` e `/actuator/prometheus`.
+
+  Nas rotas públicas, o cliente se identifica com CPF/CNPJ e o código de acesso da OS.
 - **Limite de requisições:** por minuto e por IP no login e nas rotas públicas.
 - **Senhas:** guardadas com BCrypt. Os usuários de demonstração só são criados quando `DEMO_PASSWORD` está definida.
 - **Erros:** respostas no formato `ErroResposta`, sem stack trace e sem mensagem interna.

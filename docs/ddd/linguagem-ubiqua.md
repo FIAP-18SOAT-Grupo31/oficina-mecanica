@@ -14,7 +14,7 @@ Fontes:
 |---|---|---|
 | Ordem de Serviço (OS) | Registro do atendimento de um veículo, da recepção à entrega. Agregado principal. | `OrdemServico`, `/api/ordens-servico` |
 | Relato do problema | O que o cliente conta na recepção (10 a 500 caracteres). | `OrdemServico.relatoProblema` |
-| Criar OS | Abrir a OS para um cliente e um veículo já cadastrados. | `CriarOrdemServicoUseCase`, `POST /api/ordens-servico` |
+| Criar OS | Abrir a OS para um cliente e um veículo já cadastrados. O cliente é identificado pelo id ou pelo CPF/CNPJ (com ou sem pontuação), e o veículo pelo id ou pela placa. O veículo precisa ser do cliente. | `CriarOrdemServicoUseCase`, `POST /api/ordens-servico` (`clienteId` ou `documentoCliente`; `veiculoId` ou `placaVeiculo`) |
 | OS criada | Fato que dispara o aviso ao cliente com o código de acesso. | evento `OrdemServicoCriada` |
 | Código de acesso | Código curto e aleatório enviado ao cliente. Junto com o CPF/CNPJ, dá acesso à área pública. | `OrdemServico.codigoAcesso` |
 | Status da OS | Etapa do atendimento. Só muda pelas operações do agregado. | enum `StatusOrdemServico` |
@@ -28,7 +28,7 @@ Fontes:
 | Entregue | Veículo retirado pelo cliente. Estado final. | `ENTREGUE`, `PATCH .../entregar` |
 | Cancelada | OS encerrada antes da aprovação; o orçamento pendente é rejeitado e as peças voltam ao estoque. | `CANCELADA`, evento `OrdemServicoCancelada`, `PATCH .../cancelar` |
 | Histórico de status | Registro de cada mudança de status com data e hora. | `TransicaoStatus`, tabela `historico_status_ordem_servico` |
-| Tempo médio de execução | Média do tempo entre o início da execução e a finalização das OS. | calculado a partir do histórico de status |
+| Tempo médio de execução | Média do tempo entre o início da execução e a finalização das OS. | calculado a partir do histórico de status; consulta em desenvolvimento no #42 |
 | Listagem / detalhe da OS | Consulta administrativa das OS, com filtro por status. | `GET /api/ordens-servico`, `GET /api/ordens-servico/{id}` |
 | Acompanhamento pelo cliente | Consulta do andamento sem login. | `POST /api/publico/ordens-servico/{id}/consultar` |
 
@@ -37,15 +37,15 @@ Fontes:
 | Termo | Significado | No código |
 |---|---|---|
 | Orçamento | Proposta de valor da OS: mão de obra dos serviços + peças e insumos. | `Orcamento`, `/api/orcamentos` |
-| Gerar orçamento | Montar o orçamento com serviços do catálogo e peças do estoque; reserva as peças e envia ao cliente. | `GerarOrcamentoUseCase`, `POST /api/orcamentos`, evento `OrcamentoGerado` |
-| Item de serviço | Serviço do catálogo dentro do orçamento, com descrição e valor do momento. | `ItemServico` |
-| Item de peça | Peça do estoque dentro do orçamento, com quantidade e valor unitário do momento. | `ItemPeca` |
+| Gerar orçamento | Montar o orçamento com serviços do catálogo e peças do estoque; reserva as peças e envia ao cliente. | `GerarOrcamentoUseCase` (lê `ServicoRepository` e `ProdutoEstoqueRepository`), `POST /api/orcamentos`, evento `OrcamentoGerado` |
+| Item de serviço | Serviço do catálogo dentro do orçamento, com o nome e o valor da mão de obra copiados do catálogo no momento. | objeto de valor `ItemServico` |
+| Item de peça | Peça do estoque dentro do orçamento, com quantidade e valor unitário do momento. | objeto de valor `ItemPeca` |
 | Validade | Data limite para o cliente decidir. | `Orcamento.dataValidade` |
 | Situação do orçamento | Pendente, aprovado, aprovado parcialmente, rejeitado ou expirado. | enum `StatusOrcamento` |
 | Aprovação total | O cliente aceita todos os itens. | `APROVADO` |
 | Aprovação parcial | O cliente aceita só parte dos itens; os demais saem e o total é recalculado. | `APROVADO_PARCIALMENTE`, campos `servicosAprovados` e `pecasAprovadas` |
-| Reprovação / rejeição | O cliente recusa o orçamento inteiro. | `REJEITADO`, `.../rejeitar` |
-| Orçamento expirado | Decisão tentada depois da validade. | `EXPIRADO`, `Orcamento.verificarExpiracao` |
+| Reprovação / rejeição | O cliente recusa o orçamento inteiro (mesmo depois da validade, a rejeição resulta em `REJEITADO`). | `REJEITADO`, `.../rejeitar` |
+| Orçamento expirado | Tentativa de aprovar depois da validade: o orçamento fica `EXPIRADO` (gravado) e a OS, Recusada. Na consulta do cliente, a expiração só aparece na resposta. | `EXPIRADO`, `Orcamento.verificarExpiracao` |
 | Decisão do cliente | Aprovar ou rejeitar pela área pública, com CPF/CNPJ e código de acesso. | `POST /api/publico/orcamentos/{id}/aprovar` e `/rejeitar` |
 | Decisão registrada pelo atendente | Quando o cliente decide fora do sistema (telefone, balcão). | `PATCH /api/orcamentos/{id}/aprovar` e `/rejeitar` |
 
@@ -53,14 +53,15 @@ Fontes:
 
 | Termo | Significado | No código |
 |---|---|---|
-| Serviço | Serviço oferecido pela oficina (ex.: troca de óleo, alinhamento) com valor de mão de obra. | catálogo de serviços, `/api/servicos`; referenciado no orçamento por `catalogoServicoId` |
-| Peça / insumo | Item físico (filtro, pastilha) ou consumível (óleo, fluido). No código, os dois são tratados igualmente. | `ProdutoEstoque`, `/api/estoque` |
+| Serviço | Serviço oferecido pela oficina (ex.: troca de óleo, alinhamento) com nome único, descrição e valor de mão de obra. Não pode ser excluído depois de usado em orçamento. | agregado `Servico`, `ServicoRepository`, `/api/servicos`; referenciado no orçamento por `catalogoServicoId` |
+| Peça / insumo | Item físico (filtro, pastilha) ou consumível (óleo, fluido). No código, os dois são tratados igualmente; o nome é único. | agregado `ProdutoEstoque`, `/api/estoque` |
 | Saldo disponível | Quantidade livre para novos orçamentos. | `ProdutoEstoque.quantidadeDisponivel` |
 | Saldo reservado | Quantidade separada para orçamentos pendentes. | `ProdutoEstoque.quantidadeReservada` |
 | Reservar | Separar peças ao gerar o orçamento; falha se não houver saldo. | `ProdutoEstoque.reservar` |
 | Baixa de estoque | Consumir a reserva quando o orçamento é aprovado. | `ProdutoEstoque.confirmarBaixa` |
 | Devolver reserva | Voltar a reserva ao disponível (rejeição, item recusado, expiração, cancelamento). | `ProdutoEstoque.cancelarReserva` |
-| Entrada / saída manual | Ajuste administrativo de quantidade (compra recebida, perda, inventário). | `POST /api/estoque/{id}/adicionar` e `/remover` |
+| Entrada / saída manual | Ajuste administrativo de quantidade (compra recebida, perda, inventário). Mexe só no saldo disponível. | `ProdutoEstoque.adicionarEstoque` e `removerEstoque` (endpoints no #43) |
+| Manutenção do cadastro de peças | Listar, atualizar e excluir peças e insumos. | em desenvolvimento no #43 |
 | Estoque insuficiente | Saldo menor que o pedido no orçamento; impede gerar o orçamento com aquela peça. | `RegraNegocioException` em `reservar` |
 
 ### Pessoas e acesso
@@ -90,7 +91,7 @@ Itens do Miro e do egon.io que o código trata de outro jeito, e o que vale no s
 | **Baixar o PDF** da OS | Não existe. O cliente consulta a OS e o orçamento pela API pública. | O enunciado pede consulta via API. |
 | **Ordem de compra**, sistema de compras e fornecedor quando falta estoque | Não existem. Falta de saldo impede reservar a peça; a reposição é registrada como entrada manual (`/adicionar`). | Fora do escopo do MVP. |
 | "Caso estoque seja insuficiente, adicionar observação à OS" | Não há observação: o orçamento não é gerado com peça sem saldo. | A reserva acontece na geração do orçamento e é atômica. |
-| "Após 2 dias sem retorno, notificar cliente novamente" | Não há reenvio. O orçamento tem validade; depois dela, a decisão é recusada e o orçamento fica `EXPIRADO`. | Sem agendador no MVP; a expiração é verificada no momento da ação. |
+| "Após 2 dias sem retorno, notificar cliente novamente" | Não há reenvio. O orçamento tem validade; tentar aprovar depois dela deixa o orçamento `EXPIRADO` e a OS Recusada. | Sem agendador no MVP; a expiração é verificada no momento da ação. |
 | Nota "ajustar para mandar o link ao cliente quando a OS for criada e quando receber orçamento" | Implementado: o e-mail de OS criada leva o link de consulta e o código de acesso; o de orçamento gerado avisa o cliente. | Nota em aberto no board já atendida pelo código. |
 | Nota "criar fluxo alternativo quando o cliente já sabe o que precisa, sem diagnóstico" | Implementado pela história 1 do egon: o atendente gera o orçamento direto; o status passa por `EM_DIAGNOSTICO` automaticamente. | Nota em aberto no board já atendida. |
 | egon 5: reprovação leva a OS para **Finalizada** e depois **Entregue** | Reprovação leva a OS para `RECUSADA`, estado final. | Separa OS sem execução das executadas, inclusive no tempo médio. |
@@ -99,6 +100,7 @@ Itens do Miro e do egon.io que o código trata de outro jeito, e o que vale no s
 | Status Cancelada e Recusada | Existem no código e não aparecem no Miro nem no egon. | Fluxos de exceção do código. |
 | "Revisar orçamento" pelo atendente antes de enviar (egon 1 e 2) | O orçamento é enviado ao ser gerado; não há etapa de revisão. | O atendente já monta o orçamento. |
 | Agregado **Cadastro** (Miro) | Dois agregados: `Cliente` e `Veiculo`, em módulos separados. | Ciclos de vida e regras próprias (documento único, placa única). |
+| "Aqui ele busca por cpf/cnpj ou placa do veículo" (nota do Miro junto à lista de ordens de serviço) | A abertura da OS (`POST /api/ordens-servico`) aceita `documentoCliente` e `placaVeiculo` no lugar dos ids e confere se o veículo é do cliente. A listagem de OS filtra só por status. | O atendente identifica cliente e veículo pelo documento e pela placa; buscar OS por esses campos não foi implementado. |
 
 ## Termos evitados
 

@@ -8,10 +8,10 @@ A oficina controla atendimentos, diagnósticos, orçamentos e estoque em planilh
 
 ## Descrição da solução
 
-- **Ordem de serviço (OS):** aberta para um cliente e um veículo cadastrados. O status muda conforme as ações no sistema: Recebida, Em diagnóstico, Aguardando aprovação, Aprovada, Em execução, Finalizada e Entregue. Também pode terminar como Recusada ou Cancelada. Cada mudança fica no histórico da OS.
+- **Ordem de serviço (OS):** aberta para um cliente e um veículo cadastrados, identificados pelo id ou pelo CPF/CNPJ do cliente e pela placa do veículo. O status muda conforme as ações no sistema: Recebida, Em diagnóstico, Aguardando aprovação, Aprovada, Em execução, Finalizada e Entregue. Também pode terminar como Recusada ou Cancelada. Cada mudança fica no histórico da OS.
 - **Orçamento:** montado com serviços do catálogo e peças do estoque. O total é calculado automaticamente e as peças ficam reservadas até a decisão. O cliente aprova tudo, aprova só parte dos itens ou rejeita. A aprovação dá baixa no estoque, e a rejeição devolve as peças reservadas.
 - **Acompanhamento pelo cliente:** ao abrir a OS, o cliente recebe por e-mail um código de acesso. Com o CPF/CNPJ e esse código, ele consulta a OS e decide o orçamento nas rotas públicas `/api/publico/**`, sem login. No MVP, o envio de e-mail é simulado e a mensagem aparece no log da aplicação.
-- **Gestão administrativa:** CRUD de clientes, veículos, serviços e peças/insumos com controle de estoque, listagem e detalhe de OS e tempo médio de execução dos serviços.
+- **Gestão administrativa:** CRUD de clientes, veículos, serviços do catálogo e peças/insumos com controle de estoque, listagem e detalhe de OS e acompanhamento do tempo médio de execução dos serviços, calculado a partir do histórico de status.
 - **Segurança:** as APIs administrativas exigem JWT. Os papéis são `ADMIN` e `ATENDENTE`. CPF/CNPJ é validado pelos dígitos verificadores e a placa no padrão antigo ou Mercosul.
 
 ## Arquitetura
@@ -28,11 +28,11 @@ Monólito modular em camadas, organizado por contexto de domínio (DDD). Cada m�
 | `cliente` | Cadastro de clientes |
 | `veiculo` | Cadastro de veículos |
 | `estoque` | Peças e insumos: saldo disponível e reservado |
-| catálogo de serviços | Serviços oferecidos e valor da mão de obra |
+| `servico` | Catálogo de serviços: nome, descrição e valor da mão de obra |
 | `autenticacao` | Login, emissão do JWT e usuários |
 | `compartilhado` | Paginação, exceções, publicação de eventos e padrão de erros |
 
-Os módulos conversam por portas (por exemplo, `VerificadorCliente` e `ConsultorVeiculos`). Testes ArchUnit garantem o padrão de erros da API (um único tratador global e exceções de domínio sem dependência de framework). Eventos de domínio, como `OrdemServicoCriada` e `OrcamentoGerado`, são publicados depois do commit e disparam as notificações ao cliente.
+O núcleo (`ordemservico`) fala com `cliente` e `veiculo` por portas próprias (`VerificadorCliente`, `VerificadorVeiculo`, `ConsultorClientes`, `ConsultorVeiculos`) com adaptadores. Já o estoque e o catálogo são lidos direto pelos repositórios de domínio (`ProdutoEstoqueRepository`, `ServicoRepository`), na mesma transação do orçamento, porque reservar peças e calcular o total precisam ser atômicos. Testes ArchUnit garantem o padrão de erros da API (um único tratador global e exceções de domínio sem dependência de framework). Eventos de domínio, como `OrdemServicoCriada` e `OrcamentoGerado`, são publicados depois do commit e disparam as notificações ao cliente.
 
 A modelagem de domínio (Event Storming, Domain Storytelling, agregados, contextos e linguagem ubíqua) está em [`docs/ddd`](docs/ddd).
 
@@ -49,7 +49,7 @@ A modelagem de domínio (Event Storming, Domain Storytelling, agregados, context
 
 - Docker e Docker Compose. É o suficiente para subir tudo em containers.
 - Para rodar fora do container ou executar os testes: JDK 21. O Maven não precisa ser instalado, o projeto usa o wrapper `./mvnw`.
-- Porta 5432 livre para o PostgreSQL. Se já houver um PostgreSQL instalado na máquina, pare o serviço ou troque a porta no `docker-compose.yml` e ajuste `DB_URL` no `.env`.
+- Porta 5432 livre para o PostgreSQL. Se já houver um PostgreSQL instalado na máquina, pare o serviço ou troque a porta publicada no `docker-compose.yml`. Para apontar a aplicação para outro banco fora do container, defina `DB_URL` (veja a tabela abaixo).
 
 ## Como executar
 
@@ -63,9 +63,10 @@ A modelagem de domínio (Event Storming, Domain Storytelling, agregados, context
    |---|---|
    | `POSTGRES_USER`, `POSTGRES_PASSWORD` | Usuário e senha do banco |
    | `JWT_SECRET` | Chave de assinatura do JWT, com 32 caracteres ou mais |
-   | `DEMO_PASSWORD` | Senha dos usuários de demonstração. Sem ela, os usuários não são criados |
+   | `DEMO_PASSWORD` | Senha dos usuários de demonstração (ver [Usuários e autenticação](#usuários-e-autenticação)) |
    | `APP_PROFILES` | Perfil do Spring. `dev` carrega os dados de demonstração |
    | `PGADMIN_EMAIL`, `PGADMIN_PASSWORD` | Acesso ao pgAdmin |
+   | `DB_URL` (opcional, fora do `.env.example`) | URL JDBC usada ao rodar fora do container. Padrão no perfil `dev`: `jdbc:postgresql://localhost:5432/oficina_mecanica`. No perfil `prd`, também `DB_USER` e `DB_PASSWORD` |
 
 2. Suba o banco e a aplicação:
 
@@ -83,7 +84,13 @@ A modelagem de domínio (Event Storming, Domain Storytelling, agregados, context
 
    No perfil `dev`, o Spring Boot sobe o `docker-compose.yml` sozinho.
 
-Também há atalhos no `Makefile`: `make up`, `make down`, `make logs`, `make run` e `make smoke`. O último faz um teste rápido dos endpoints com a aplicação no ar.
+Também há atalhos no `Makefile`: `make up`, `make down`, `make logs` e `make run`. Com a aplicação no ar, `make smoke` roda `scripts/smoke-test.sh`, que confere:
+
+- o OpenAPI e o Swagger UI respondem;
+- o health check é público e o resto do Actuator pede token (401);
+- o login recusa senha errada (401) e corpo incompleto (400);
+- `admin` e `atendente` conseguem logar;
+- o Actuator devolve 403 para `ATENDENTE`, 200 para `ADMIN` e 401 para token inválido.
 
 ## Como executar os testes
 
@@ -91,7 +98,7 @@ Também há atalhos no `Makefile`: `make up`, `make down`, `make logs`, `make ru
 ./mvnw verify
 ```
 
-Esse comando roda os testes unitários e de integração, os testes de arquitetura (ArchUnit) e a verificação de cobertura do JaCoCo. O build falha se a cobertura de linhas ficar abaixo de 80%. O relatório fica em `target/site/jacoco/index.html`.
+Esse comando roda os testes unitários e de integração, os testes de arquitetura (ArchUnit) e a verificação de cobertura do JaCoCo. O build falha se a cobertura de linhas do projeto inteiro (todas as classes, exceto a classe `main`) ficar abaixo de 80%. O relatório fica em `target/site/jacoco/index.html`.
 
 Os testes de integração usam H2 em modo PostgreSQL. O teste contra um PostgreSQL real (`PostgresRealIntegrationTest`) usa Testcontainers e é pulado automaticamente quando não há Docker. No GitHub Actions, o mesmo comando roda em todo PR e o relatório de cobertura fica disponível como artefato.
 
@@ -103,6 +110,18 @@ Com a aplicação no ar:
 - OpenAPI (JSON): `http://localhost:8080/v3/api-docs`
 
 Para chamar as rotas protegidas no Swagger, faça o login (abaixo), clique em **Authorize** e cole o `accessToken`.
+
+Exemplo: abrir uma OS pelo CPF da cliente e pela placa do veículo, sem precisar dos ids:
+
+```bash
+curl -X POST http://localhost:8080/api/ordens-servico \n  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \n  -d '{"documentoCliente":"529.982.247-25","placaVeiculo":"ABC1D23","relatoProblema":"Barulho ao frear na descida"}'
+```
+
+O cliente vai em `clienteId` **ou** `documentoCliente` (CPF/CNPJ, com ou sem pontuação), e o veículo em `veiculoId` **ou** `placaVeiculo`, um campo de cada par:
+
+- se vierem os dois campos do par, ou nenhum, a resposta é 400;
+- se o documento ou a placa não estiverem cadastrados, 404;
+- se o veículo não for do cliente, 422.
 
 ## Banco de dados: PostgreSQL
 
@@ -116,7 +135,11 @@ O esquema é versionado por migrations Flyway em `src/main/resources/db/migratio
 
 ## Usuários e autenticação
 
-As rotas administrativas exigem `Authorization: Bearer <token>`. Quando `DEMO_PASSWORD` está definida, a aplicação cria dois usuários de demonstração, ambos com a senha de `DEMO_PASSWORD` (no `.env.example` é `dev123`):
+As rotas administrativas exigem `Authorization: Bearer <token>`. A aplicação cria dois usuários de demonstração com a senha de `DEMO_PASSWORD`:
+
+- **Fora do container no perfil `dev`** (`./mvnw spring-boot:run`): o padrão é `dev123` (`application-dev.properties`), então os usuários existem mesmo sem `.env`.
+- **No container:** o compose repassa o valor do `.env` (o `.env.example` traz `dev123`).
+- **Senha vazia**, por exemplo no perfil `prd` sem a variável: os usuários não são criados.
 
 | Login | Papel |
 |---|---|
@@ -133,7 +156,13 @@ curl -X POST http://localhost:8080/api/auth/login \
 
 A resposta traz `accessToken`, `tokenType` e `expiresIn`. O token vale 1 hora.
 
-No perfil `dev`, a aplicação também carrega dados de demonstração: a cliente Maria da Silva (CPF `52998224725`), um veículo `ABC1D23` e uma OS aguardando aprovação com o código de acesso `DEMO12`. Com esses dados dá para testar a área do cliente sem login:
+No perfil `dev`, a aplicação também carrega dados de demonstração:
+
+- a cliente Maria da Silva (CPF `52998224725`) e o veículo `ABC1D23`;
+- o serviço "Troca de óleo" no catálogo e a peça "ÓLEO 5W30 (LITRO)" no estoque;
+- uma OS aguardando aprovação, com código de acesso `DEMO12` e um orçamento pendente com 4 unidades da peça reservadas.
+
+Com isso dá para aprovar, rejeitar ou cancelar a OS de demonstração e ver a baixa ou a devolução da reserva. Para testar a área do cliente sem login:
 
 ```bash
 curl -X POST http://localhost:8080/api/publico/ordens-servico/0192f0a0-0000-7000-8000-0000000000a1/consultar \
@@ -141,7 +170,15 @@ curl -X POST http://localhost:8080/api/publico/ordens-servico/0192f0a0-0000-7000
   -d '{"cpf":"52998224725","codigoAcesso":"DEMO12"}'
 ```
 
-Abertos sem token ficam só o login, as rotas `/api/publico/**`, o Swagger e o health check. O login e as rotas públicas têm limite de requisições por minuto por IP.
+Rotas abertas sem token (`SegurancaConfig`):
+
+- `/api/auth/**` (login) e `/api/publico/**` (área do cliente);
+- `/`, `/index.html` e `/logo.svg` (página inicial);
+- `/error`;
+- Swagger: `/swagger-ui.html`, `/swagger-ui/**` e `/v3/api-docs/**`;
+- `/actuator/health/**` e `/actuator/prometheus`. O endpoint Prometheus só responde se for exposto em `ACTUATOR_EXPOSICAO`; por padrão são expostos `health`, `info` e `metrics`.
+
+O restante do Actuator exige `ADMIN`. O login e as rotas públicas têm limite de requisições por minuto por IP (`LIMITE_REQUISICOES_POR_MINUTO`, padrão 30).
 
 ## Estrutura de diretórios
 
@@ -152,6 +189,7 @@ Abertos sem token ficam só o login, as rotas `/api/publico/**`, o Swagger e o h
 │   ├── cliente/
 │   ├── veiculo/
 │   ├── estoque/
+│   ├── servico/           # catálogo de serviços
 │   ├── autenticacao/
 │   └── compartilhado/
 ├── src/main/resources

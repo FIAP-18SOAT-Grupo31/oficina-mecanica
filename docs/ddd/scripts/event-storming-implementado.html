@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Event Storming do sistema implementado</title>
+<style>
+.imp h1 { font-size: 18px; margin: 0 0 1mm; }
+.imp .sub { font-size: 10px; color: #555; margin: 0 0 2.5mm; }
+.fluxo { display: flex; gap: 3.5mm; align-items: flex-start; flex: 1; min-height: 0; }
+.passo { flex: 1; display: flex; flex-direction: column; gap: 2.2mm; min-width: 0; }
+.passo .n { font-size: 10px; color: #666; font-weight: 700; border-bottom: 2px solid #999; padding-bottom: 1mm; }
+.post { border-radius: 2px; padding: 1.8mm 2.2mm; font-size: 11px; line-height: 1.32; box-shadow: 0 0.4mm 0.8mm rgba(0,0,0,.15); }
+.post b { display: block; font-size: 8.8px; text-transform: uppercase; letter-spacing: .3px; opacity: .75; margin-bottom: .4mm; }
+.post code { font-family: Consolas, monospace; font-size: 10px; background: rgba(255,255,255,.55); padding: 0 1px; }
+.at { background: #fff2a8; } .cmd { background: #9cc0ff; } .ag { background: #ffe66b; }
+.ev { background: #ffb36b; } .pol { background: #d3c4ff; } .ml { background: #8fe0a0; } .se { background: #ff9ad5; }
+.fato { background: #fff; border: 1.4px dashed #e08a2e; box-shadow: none; }
+.seta { align-self: center; font-size: 16px; color: #555; margin-top: 18mm; }
+.leg { display: flex; flex-wrap: wrap; gap: 2mm; margin: 0 0 2.5mm; }
+.leg .post { font-size: 8.6px; padding: 0.8mm 1.8mm; }
+.imp .nota { font-size: 10px; color: #444; margin-top: 2mm; }
+.imp table { border-collapse: collapse; width: 100%; font-size: 10.5px; }
+.imp th, .imp td { border: 1px solid #d5d9de; padding: 1.2mm 1.8mm; text-align: left; vertical-align: top; }
+.imp th { background: #f0f2f5; }
+.imp code { font-family: Consolas, monospace; font-size: 8.8px; }
+</style>
+</head>
+<body>
+
+<section class="pagina imp">
+  <h1>B. Event Storming do sistema implementado: legenda e visão geral</h1>
+  <p class="sub">Linhas do tempo pedidas no enunciado (criação da OS, acompanhamento da OS e gestão de peças e insumos), reconstruídas a partir do código. Os eventos são as classes de <code>ordemservico.domain.evento</code>; os comandos são os endpoints e casos de uso reais.</p>
+  <div class="leg">
+    <div class="post at"><b>Ator</b>quem dispara</div>
+    <div class="post cmd"><b>Comando</b>endpoint / caso de uso</div>
+    <div class="post ag"><b>Agregado</b>quem decide</div>
+    <div class="post ev"><b>Evento de domínio</b>classe publicada</div>
+    <div class="post fato"><b>Fato sem evento</b>muda o estado, sem classe de evento</div>
+    <div class="post pol"><b>Política</b>regra automática</div>
+    <div class="post ml"><b>Modelo de leitura</b>consulta</div>
+    <div class="post se"><b>Sistema externo</b>e-mail (simulado)</div>
+  </div>
+  <table>
+    <tr><th style="width:22%">Evento de domínio</th><th style="width:28%">Publicado por</th><th>Política que reage</th></tr>
+    <tr><td><code>OrdemServicoCriada</code></td><td><code>CriarOrdemServicoUseCase</code></td><td>Depois do commit, e-mail simulado ao cliente com o link de consulta e o código de acesso.</td></tr>
+    <tr><td><code>OrcamentoGerado</code></td><td><code>GerarOrcamentoUseCase</code></td><td>Depois do commit, e-mail simulado avisando que o orçamento está disponível.</td></tr>
+    <tr><td><code>OrdemServicoAprovada</code></td><td><code>AprovarOrcamentoUseCase</code></td><td>Depois do commit, e-mail simulado de aprovação (total ou parcial).</td></tr>
+    <tr><td><code>OrdemServicoRecusada</code></td><td><code>AprovarOrcamentoUseCase</code> (sem itens ou expirado), <code>RejeitarOrcamentoUseCase</code></td><td>Depois do commit, e-mail simulado "orçamento não aprovado".</td></tr>
+    <tr><td><code>OrdemServicoCancelada</code></td><td><code>CancelarOrdemServicoUseCase</code></td><td>Depois do commit, e-mail simulado de cancelamento.</td></tr>
+    <tr><td><code>OrdemServicoFinalizada</code></td><td><code>FinalizarOrdemServicoUseCase</code></td><td>Depois do commit, e-mail simulado "veículo pronto para retirada".</td></tr>
+  </table>
+  <p class="nota">Os eventos são publicados por <code>PublicadorEventos</code> e tratados com <code>@TransactionalEventListener(AFTER_COMMIT)</code> em <code>NotificadorOrdemServicoAdapter</code> e <code>NotificadorEmailAdapter</code>. Uma falha no aviso não desfaz a operação. Início da execução, entrega e as mudanças de estoque não publicam evento: ficam no histórico de status (<code>TransicaoStatus</code>) ou no saldo do <code>ProdutoEstoque</code>, na mesma transação.</p>
+  <div class="rodape"><span>Event Storming do sistema implementado</span><span class="num"></span></div>
+</section>
+
+<section class="pagina imp">
+  <h1>B. Linha do tempo 1: criação da OS e orçamento</h1>
+  <p class="sub">Do cadastro até o orçamento enviado ao cliente.</p>
+  <div class="fluxo">
+    <div class="passo"><span class="n">1. CADASTROS →</span>
+      <div class="post at"><b>Ator</b>Atendente / Admin</div>
+      <div class="post cmd"><b>Comandos</b><code>POST /api/clientes</code><br><code>POST /api/veiculos</code><br><code>POST /api/servicos</code></div>
+      <div class="post ag"><b>Agregados</b><code>Cliente</code>, <code>Veiculo</code>, <code>Servico</code></div>
+      <div class="post fato"><b>Fatos</b>cliente, veículo e serviço do catálogo cadastrados</div>
+      <div class="post pol"><b>Políticas</b>CPF/CNPJ com dígitos válidos e único; placa antiga ou Mercosul e única; nome de serviço único</div>
+    </div>
+    <div class="passo"><span class="n">2. ABRIR A OS →</span>
+      <div class="post at"><b>Ator</b>Atendente / Admin</div>
+      <div class="post ml"><b>Leitura</b>cliente pelo id ou CPF/CNPJ; veículo pelo id ou placa</div>
+      <div class="post cmd"><b>Comando</b><code>POST /api/ordens-servico</code><br><code>CriarOrdemServicoUseCase</code></div>
+      <div class="post ag"><b>Agregado</b><code>OrdemServico</code></div>
+      <div class="post ev"><b>Evento</b><code>OrdemServicoCriada</code><br>status <code>RECEBIDA</code></div>
+      <div class="post pol"><b>Política</b>o veículo precisa ser do cliente (senão 422)</div>
+    </div>
+    <div class="passo"><span class="n">3. AVISO AO CLIENTE →</span>
+      <div class="post pol"><b>Política</b>evento após o commit → e-mail simulado</div>
+      <div class="post se"><b>Sistema externo</b>e-mail com o link de consulta e o código de acesso (registrado em log)</div>
+    </div>
+    <div class="passo"><span class="n">4. GERAR O ORÇAMENTO →</span>
+      <div class="post at"><b>Ator</b>Atendente / Admin (registra o diagnóstico)</div>
+      <div class="post ml"><b>Leitura</b><code>ServicoRepository</code> (catálogo) e <code>ProdutoEstoqueRepository</code></div>
+      <div class="post cmd"><b>Comando</b><code>POST /api/orcamentos</code><br><code>GerarOrcamentoUseCase</code></div>
+      <div class="post ag"><b>Agregados</b><code>Orcamento</code>, <code>OrdemServico</code>, <code>ProdutoEstoque</code></div>
+      <div class="post ev"><b>Evento</b><code>OrcamentoGerado</code></div>
+    </div>
+    <div class="passo"><span class="n">POLÍTICAS DA GERAÇÃO</span>
+      <div class="post pol"><b>Política</b>geração do orçamento → OS <code>RECEBIDA</code> passa por <code>EM_DIAGNOSTICO</code> e vai para <code>AGUARDANDO_APROVACAO</code></div>
+      <div class="post pol"><b>Política</b>item de serviço copia nome e valor do catálogo; alterar o catálogo não muda orçamento antigo</div>
+      <div class="post pol"><b>Política</b>peças reservadas no estoque; sem saldo, o orçamento não é gerado</div>
+      <div class="post pol"><b>Política</b>evento após o commit → e-mail simulado ao cliente</div>
+    </div>
+  </div>
+  <div class="rodape"><span>Event Storming do sistema implementado</span><span class="num"></span></div>
+</section>
+
+<section class="pagina imp">
+  <h1>B. Linha do tempo 2: acompanhamento da OS</h1>
+  <p class="sub">Decisão do orçamento, execução, entrega e as saídas de exceção.</p>
+  <div class="fluxo">
+    <div class="passo"><span class="n">1. CONSULTAR →</span>
+      <div class="post at"><b>Ator</b>Cliente (sem login)</div>
+      <div class="post cmd"><b>Comando</b><code>POST /api/publico/ordens-servico/{id}/consultar</code> com CPF/CNPJ e código de acesso</div>
+      <div class="post ml"><b>Leitura</b>status da OS, veículo e resumo do último orçamento</div>
+      <div class="post ml"><b>Leitura (atendente)</b><code>GET /api/ordens-servico</code> e <code>/{id}</code></div>
+    </div>
+    <div class="passo"><span class="n">2. APROVAR →</span>
+      <div class="post at"><b>Ator</b>Cliente (<code>/api/publico/orcamentos/{id}/aprovar</code>) ou Atendente (<code>PATCH /api/orcamentos/{id}/aprovar</code>)</div>
+      <div class="post cmd"><b>Comando</b><code>AprovarOrcamentoUseCase</code>, total ou com itens aprovados</div>
+      <div class="post ag"><b>Agregados</b><code>Orcamento</code>, <code>OrdemServico</code>, <code>ProdutoEstoque</code></div>
+      <div class="post ev"><b>Evento</b><code>OrdemServicoAprovada</code><br>OS <code>APROVADA</code></div>
+      <div class="post pol"><b>Política</b>aprovação → baixa das reservas dos itens aprovados; itens recusados devolvem a reserva</div>
+      <div class="post pol"><b>Política</b>orçamento expirado ao aprovar → orçamento <code>EXPIRADO</code>, OS recusada e reservas devolvidas (<code>OrdemServicoRecusada</code>)</div>
+    </div>
+    <div class="passo"><span class="n">3. EXECUTAR →</span>
+      <div class="post at"><b>Ator</b>Atendente / Admin</div>
+      <div class="post cmd"><b>Comando</b><code>PATCH /api/ordens-servico/{id}/iniciar-execucao</code></div>
+      <div class="post fato"><b>Fato</b>OS <code>EM_EXECUCAO</code> (histórico)</div>
+      <div class="post cmd"><b>Comando</b><code>PATCH .../finalizar</code></div>
+      <div class="post ev"><b>Evento</b><code>OrdemServicoFinalizada</code></div>
+      <div class="post se"><b>Sistema externo</b>e-mail "veículo pronto"</div>
+    </div>
+    <div class="passo"><span class="n">4. ENTREGAR →</span>
+      <div class="post at"><b>Ator</b>Atendente / Admin</div>
+      <div class="post cmd"><b>Comando</b><code>PATCH .../entregar</code></div>
+      <div class="post fato"><b>Fato</b>OS <code>ENTREGUE</code> (histórico)</div>
+      <div class="post ml"><b>Leitura</b>histórico de status → tempo médio de execução (consulta em desenvolvimento no #42)</div>
+    </div>
+    <div class="passo" style="flex: 1.15; border-left: 1.5px dashed #bbb; padding-left: 2mm"><span class="n">EXCEÇÕES</span>
+      <div class="post cmd"><b>Comando</b>rejeitar: <code>/api/publico/orcamentos/{id}/rejeitar</code> ou <code>PATCH /api/orcamentos/{id}/rejeitar</code></div>
+      <div class="post ev"><b>Evento</b><code>OrdemServicoRecusada</code>; orçamento <code>REJEITADO</code></div>
+      <div class="post pol"><b>Política</b>aprovação sem nenhum item → <code>REJEITADO</code> e OS recusada</div>
+      <div class="post cmd"><b>Comando</b><code>PATCH /api/ordens-servico/{id}/cancelar</code> (antes da aprovação)</div>
+      <div class="post ev"><b>Evento</b><code>OrdemServicoCancelada</code></div>
+      <div class="post pol"><b>Política</b>rejeição/cancelamento → devolução das reservas</div>
+    </div>
+  </div>
+  <p class="nota">Aprovação, recusa, cancelamento e finalização avisam o cliente por e-mail simulado depois do commit. Início da execução e entrega ficam só no histórico de status.</p>
+  <div class="rodape"><span>Event Storming do sistema implementado</span><span class="num"></span></div>
+</section>
+
+<section class="pagina imp">
+  <h1>B. Linha do tempo 3: gestão de peças e insumos</h1>
+  <p class="sub">Cadastro e saldo do estoque, e como o fluxo da OS consome o estoque. O estoque não publica eventos de domínio: as mudanças são feitas na mesma transação de quem chama.</p>
+  <div class="fluxo">
+    <div class="passo"><span class="n">1. CADASTRAR →</span>
+      <div class="post at"><b>Ator</b>Atendente / Admin</div>
+      <div class="post cmd"><b>Comando</b>cadastrar peça ou insumo</div>
+      <div class="post ag"><b>Agregado</b><code>ProdutoEstoque</code></div>
+      <div class="post fato"><b>Fato</b>peça cadastrada com saldo disponível inicial</div>
+      <div class="post pol"><b>Política</b>nome da peça único; valor unitário maior que zero</div>
+    </div>
+    <div class="passo"><span class="n">2. AJUSTAR SALDO →</span>
+      <div class="post at"><b>Ator</b>Atendente / Admin</div>
+      <div class="post cmd"><b>Comandos</b>entrada e saída manual de quantidade</div>
+      <div class="post fato"><b>Fato</b>saldo disponível alterado</div>
+      <div class="post pol"><b>Política</b>a saída manual não mexe no reservado; reservas são só do orçamento</div>
+    </div>
+    <div class="passo"><span class="n">3. CONSULTAR / MANTER →</span>
+      <div class="post ml"><b>Leitura</b>consulta de peça com saldo disponível e reservado</div>
+      <div class="post cmd"><b>Comandos</b>listagem, atualização e exclusão de peças (em desenvolvimento no #43)</div>
+    </div>
+    <div class="passo"><span class="n">4. CONSUMO PELA OS</span>
+      <div class="post ev"><b>Gatilho</b>geração do orçamento (<code>OrcamentoGerado</code>)</div>
+      <div class="post fato"><b>Fato</b><code>reservar</code>: disponível → reservado</div>
+      <div class="post ev"><b>Gatilho</b><code>OrdemServicoAprovada</code></div>
+      <div class="post fato"><b>Fato</b><code>confirmarBaixa</code>: sai do reservado</div>
+      <div class="post ev"><b>Gatilho</b><code>OrdemServicoRecusada</code> / <code>OrdemServicoCancelada</code> / item recusado</div>
+      <div class="post fato"><b>Fato</b><code>cancelarReserva</code>: reservado → disponível</div>
+    </div>
+  </div>
+  <p class="nota">Os endpoints de estoque estão no #43 e podem mudar até o merge, por isso esta página usa nomes de ação. Os métodos <code>reservar</code>, <code>confirmarBaixa</code> e <code>cancelarReserva</code> já estão na <code>dev</code>.</p>
+  <div class="rodape"><span>Event Storming do sistema implementado</span><span class="num"></span></div>
+</section>
+
+<section class="pagina imp">
+  <h1>B. Agregados e onde cada evento nasce</h1>
+  <table>
+    <tr><th style="width:17%">Agregado (raiz)</th><th style="width:30%">Comandos que recebe</th><th style="width:25%">Eventos / fatos</th><th>Invariantes</th></tr>
+    <tr><td><code>OrdemServico</code></td><td>criar, iniciar diagnóstico (automático), anexar orçamento, aprovar, recusar, cancelar, iniciar execução, finalizar, entregar</td><td><code>OrdemServicoCriada</code>, <code>OrdemServicoAprovada</code>, <code>OrdemServicoRecusada</code>, <code>OrdemServicoCancelada</code>, <code>OrdemServicoFinalizada</code>; <code>TransicaoStatus</code> a cada mudança</td><td>só transições permitidas; cancelamento só antes da aprovação; relato de 10 a 500 caracteres</td></tr>
+    <tr><td><code>Orcamento</code></td><td>gerar, aprovar (total/parcial), rejeitar</td><td><code>OrcamentoGerado</code>; status <code>APROVADO</code>, <code>APROVADO_PARCIALMENTE</code>, <code>REJEITADO</code>, <code>EXPIRADO</code></td><td>só muda enquanto <code>PENDENTE</code>; validade no futuro; aprovar depois da validade expira</td></tr>
+    <tr><td><code>ProdutoEstoque</code></td><td>cadastrar, entrada, saída, reservar, confirmar baixa, cancelar reserva</td><td>fatos de saldo (sem evento)</td><td>reservar só com saldo; baixa e devolução só sobre o reservado</td></tr>
+    <tr><td><code>Cliente</code></td><td>CRUD</td><td>fatos de cadastro (sem evento)</td><td>CPF/CNPJ válido e único; não excluir com veículos</td></tr>
+    <tr><td><code>Veiculo</code></td><td>CRUD</td><td>fatos de cadastro (sem evento)</td><td>placa válida e única; não excluir com OS</td></tr>
+    <tr><td><code>Servico</code></td><td>CRUD</td><td>fatos de cadastro (sem evento)</td><td>nome único; valor maior que zero; não excluir se já usado em orçamento</td></tr>
+  </table>
+  <p class="nota">Comparação com o board exploratório: o Miro tinha os agregados Cadastro, Relatório, Orçamento, Estoque e Ordem de Serviço. No código, Cadastro virou <code>Cliente</code> e <code>Veiculo</code>, Relatório foi absorvido pelo orçamento e o catálogo virou <code>Servico</code>. As diferenças estão em <code>docs/ddd/linguagem-ubiqua.md</code>, seção "Relação com o código".</p>
+  <div class="rodape"><span>Event Storming do sistema implementado</span><span class="num"></span></div>
+</section>
+
+</body>
+</html>
