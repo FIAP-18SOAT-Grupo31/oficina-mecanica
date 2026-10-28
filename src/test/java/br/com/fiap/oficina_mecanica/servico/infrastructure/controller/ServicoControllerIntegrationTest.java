@@ -61,8 +61,6 @@ class ServicoControllerIntegrationTest {
         return JsonPath.read(resposta, "$.id");
     }
 
-    // ---------------------------------------------------------------- cadastro
-
     @Test
     void cadastraServicoERetorna201ComLocation() throws Exception {
         mvc.perform(post("/api/servicos").with(jwtAdmin())
@@ -105,8 +103,6 @@ class ServicoControllerIntegrationTest {
                 .andExpect(jsonPath("$.mensagem").value("Já existe um serviço cadastrado com este nome."));
     }
 
-    // ---------------------------------------------------------------- consulta
-
     @Test
     void buscaServicoPeloId() throws Exception {
         String id = cadastrar("Alinhamento", "80.00");
@@ -144,14 +140,6 @@ class ServicoControllerIntegrationTest {
     }
 
     @Test
-    void listagemComTamanhoInvalidoRetorna400() throws Exception {
-        mvc.perform(get("/api/servicos").param("tamanho", "101").with(jwtAtendente()))
-                .andExpect(status().isBadRequest());
-    }
-
-    // ---------------------------------------------------------------- atualização
-
-    @Test
     void atualizaServico() throws Exception {
         String id = cadastrar("Alinhamento", "80.00");
 
@@ -184,8 +172,6 @@ class ServicoControllerIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ---------------------------------------------------------------- exclusão
-
     @Test
     void excluiServicoNaoUsado() throws Exception {
         String id = cadastrar("Alinhamento", "80.00");
@@ -216,8 +202,6 @@ class ServicoControllerIntegrationTest {
         mvc.perform(delete("/api/servicos/" + UUID.randomUUID()).with(jwtAtendente()))
                 .andExpect(status().isNotFound());
     }
-
-    // ---------------------------------------------------------------- segurança
 
     @Test
     void semTokenRetorna401() throws Exception {

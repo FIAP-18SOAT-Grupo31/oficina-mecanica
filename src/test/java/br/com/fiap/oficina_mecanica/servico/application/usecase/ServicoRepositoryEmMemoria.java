@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Fake do catálogo, usado também pelos testes do orçamento. */
 public class ServicoRepositoryEmMemoria implements ServicoRepository {
 
     final Map<UUID, Servico> servicos = new LinkedHashMap<>();

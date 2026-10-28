@@ -3,10 +3,7 @@ package br.com.fiap.oficina_mecanica.servico.domain;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-/**
- * Serviço do catálogo da oficina (ex.: troca de óleo, alinhamento). O orçamento copia o nome e o valor da mão de obra
- * no momento em que é gerado, então alterar o catálogo não muda orçamentos antigos.
- */
+/** O orçamento copia nome e valor, então mudar o catálogo não altera orçamentos antigos. */
 public class Servico {
 
     private static final int TAMANHO_MAXIMO_NOME = 100;

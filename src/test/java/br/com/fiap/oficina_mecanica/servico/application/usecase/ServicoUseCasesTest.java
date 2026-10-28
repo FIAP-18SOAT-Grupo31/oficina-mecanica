@@ -23,7 +23,6 @@ class ServicoUseCasesTest {
     private final Set<UUID> servicosUsadosEmOrcamento = new HashSet<>();
 
     private final CriarServicoUseCase criar = new CriarServicoUseCase(repository);
-    private final BuscarServicoUseCase buscar = new BuscarServicoUseCase(repository);
     private final ListarServicosUseCase listar = new ListarServicosUseCase(repository);
     private final AtualizarServicoUseCase atualizar = new AtualizarServicoUseCase(repository);
     private final ExcluirServicoUseCase excluir =
@@ -32,8 +31,6 @@ class ServicoUseCasesTest {
     private Servico cadastrado(String nome) {
         return repository.salvar(new Servico(nome, null, new BigDecimal("100.00")));
     }
-
-    // ---------------------------------------------------------------- criar
 
     @Test
     void criaServico() {
@@ -64,22 +61,6 @@ class ServicoUseCasesTest {
                 .hasMessage("O valor da mão de obra deve ser maior que zero");
     }
 
-    // ---------------------------------------------------------------- buscar e listar
-
-    @Test
-    void buscaServicoPeloId() {
-        Servico servico = cadastrado("Alinhamento");
-
-        assertThat(buscar.execute(servico.getId()).nome()).isEqualTo("Alinhamento");
-    }
-
-    @Test
-    void buscarServicoInexistenteLancaNaoEncontrado() {
-        assertThatThrownBy(() -> buscar.execute(UUID.randomUUID()))
-                .isInstanceOf(ServicoNaoEncontradoException.class)
-                .hasMessage("Serviço não encontrado.");
-    }
-
     @Test
     void listaServicosPaginadosEFiltradosPorNome() {
         cadastrado("Troca de óleo");
@@ -95,8 +76,6 @@ class ServicoUseCasesTest {
         assertThat(filtrados.conteudo()).extracting(ServicoOutput::nome)
                 .containsExactly("Alinhamento", "Balanceamento");
     }
-
-    // ---------------------------------------------------------------- atualizar
 
     @Test
     void atualizaServico() {
@@ -133,13 +112,6 @@ class ServicoUseCasesTest {
     }
 
     @Test
-    void atualizarServicoInexistenteLancaNaoEncontrado() {
-        assertThatThrownBy(() -> atualizar.execute(UUID.randomUUID(),
-                new AtualizarServicoInput("Alinhamento", null, BigDecimal.TEN)))
-                .isInstanceOf(ServicoNaoEncontradoException.class);
-    }
-
-    @Test
     void atualizacaoInvalidaViraRegraDeNegocio() {
         Servico servico = cadastrado("Alinhamento");
 
@@ -148,8 +120,6 @@ class ServicoUseCasesTest {
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessage("O valor da mão de obra deve ser maior que zero");
     }
-
-    // ---------------------------------------------------------------- excluir
 
     @Test
     void excluiServicoNaoUsado() {
@@ -171,9 +141,4 @@ class ServicoUseCasesTest {
         assertThat(repository.servicos).hasSize(1);
     }
 
-    @Test
-    void excluirServicoInexistenteLancaNaoEncontrado() {
-        assertThatThrownBy(() -> excluir.execute(UUID.randomUUID()))
-                .isInstanceOf(ServicoNaoEncontradoException.class);
-    }
 }

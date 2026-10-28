@@ -6,10 +6,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-/**
- * Consulta direto a tabela de itens do orçamento para não acoplar o catálogo ao repositório de orçamentos: o orçamento
- * guarda só o id do serviço (sem chave estrangeira), junto com a cópia do nome e do valor.
- */
 @Component
 public class VerificadorUsoDoServicoAdapter implements VerificadorUsoDoServico {
 
