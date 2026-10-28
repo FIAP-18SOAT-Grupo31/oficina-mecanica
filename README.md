@@ -1,4 +1,4 @@
-# Oficina Mecânica: sistema de atendimento e execução de serviços
+# Oficina Mecânica
 
 Back-end do Tech Challenge da fase 1 da pós SOAT (FIAP), grupo 31.
 
@@ -11,7 +11,7 @@ A oficina controla atendimentos, diagnósticos, orçamentos e estoque em planilh
 - **Ordem de serviço (OS):** aberta para um cliente e um veículo cadastrados, identificados pelo id ou pelo CPF/CNPJ do cliente e pela placa do veículo. O status muda conforme as ações no sistema: Recebida, Em diagnóstico, Aguardando aprovação, Aprovada, Em execução, Finalizada e Entregue. Também pode terminar como Recusada ou Cancelada. Cada mudança fica no histórico da OS.
 - **Orçamento:** montado com serviços do catálogo e peças do estoque. O total é calculado automaticamente e as peças ficam reservadas até a decisão. O cliente aprova tudo, aprova só parte dos itens ou rejeita. A aprovação dá baixa no estoque, e a rejeição devolve as peças reservadas.
 - **Acompanhamento pelo cliente:** ao abrir a OS, o cliente recebe por e-mail um código de acesso. Com o CPF/CNPJ e esse código, ele consulta a OS e decide o orçamento nas rotas públicas `/api/publico/**`, sem login. No MVP, o envio de e-mail é simulado e a mensagem aparece no log da aplicação.
-- **Gestão administrativa:** CRUD de clientes, veículos, serviços do catálogo e peças/insumos com controle de estoque, listagem e detalhe de OS e acompanhamento do tempo médio de execução dos serviços, calculado a partir do histórico de status.
+- **Gestão administrativa:** CRUD de clientes, veículos e serviços do catálogo; cadastro e consulta de peças/insumos com entrada e saída de estoque; listagem e detalhe de OS. O histórico de status já grava a data de cada mudança, mas a consulta do tempo médio de execução ainda não foi implementada.
 - **Segurança:** as APIs administrativas exigem JWT. Os papéis são `ADMIN` e `ATENDENTE`. CPF/CNPJ é validado pelos dígitos verificadores e a placa no padrão antigo ou Mercosul.
 
 ## Arquitetura
@@ -32,9 +32,9 @@ Monólito modular em camadas, organizado por contexto de domínio (DDD). Cada m�
 | `autenticacao` | Login, emissão do JWT e usuários |
 | `compartilhado` | Paginação, exceções, publicação de eventos e padrão de erros |
 
-O núcleo (`ordemservico`) fala com `cliente` e `veiculo` por portas próprias (`VerificadorCliente`, `VerificadorVeiculo`, `ConsultorClientes`, `ConsultorVeiculos`) com adaptadores. Já o estoque e o catálogo são lidos direto pelos repositórios de domínio (`ProdutoEstoqueRepository`, `ServicoRepository`), na mesma transação do orçamento, porque reservar peças e calcular o total precisam ser atômicos. Testes ArchUnit garantem o padrão de erros da API (um único tratador global e exceções de domínio sem dependência de framework). Eventos de domínio, como `OrdemServicoCriada` e `OrcamentoGerado`, são publicados depois do commit e disparam as notificações ao cliente.
+O núcleo (`ordemservico`) fala com `cliente` e `veiculo` por portas próprias (`VerificadorCliente`, `VerificadorVeiculo`, `ConsultorClientes`, `ConsultorVeiculos`) com adaptadores. Já o estoque e o catálogo são lidos direto pelos repositórios de domínio (`ProdutoEstoqueRepository`, `ServicoRepository`), na mesma transação do orçamento, porque reservar peças e calcular o total precisam ser atômicos. Temos testes ArchUnit que conferem o padrão de erros da API (um único tratador global e exceções de domínio sem dependência de framework). Eventos de domínio, como `OrdemServicoCriada` e `OrcamentoGerado`, são publicados depois do commit e disparam as notificações ao cliente.
 
-A modelagem de domínio (Event Storming, Domain Storytelling, agregados, contextos e linguagem ubíqua) está em [`docs/ddd`](docs/ddd).
+Os diagramas C4 (contexto, containers e componentes) estão em [`docs/arquitetura/c4.md`](docs/arquitetura/c4.md), as decisões de arquitetura (ADRs) em [`docs/arquitetura/adr`](docs/arquitetura/adr) e os requisitos funcionais e não funcionais em [`docs/arquitetura/requisitos.md`](docs/arquitetura/requisitos.md). A modelagem de domínio (Event Storming, Domain Storytelling, agregados, contextos e linguagem ubíqua) está em [`docs/ddd`](docs/ddd).
 
 ## Tecnologias
 
@@ -47,7 +47,7 @@ A modelagem de domínio (Event Storming, Domain Storytelling, agregados, context
 
 ## Pré-requisitos
 
-- Docker e Docker Compose. É o suficiente para subir tudo em containers.
+- Docker e Docker Compose.
 - Para rodar fora do container ou executar os testes: JDK 21. O Maven não precisa ser instalado, o projeto usa o wrapper `./mvnw`.
 - Porta 5432 livre para o PostgreSQL. Se já houver um PostgreSQL instalado na máquina, pare o serviço ou troque a porta publicada no `docker-compose.yml`. Para apontar a aplicação para outro banco fora do container, defina `DB_URL` (veja a tabela abaixo).
 
@@ -114,7 +114,9 @@ Para chamar as rotas protegidas no Swagger, faça o login (abaixo), clique em **
 Exemplo: abrir uma OS pelo CPF da cliente e pela placa do veículo, sem precisar dos ids:
 
 ```bash
-curl -X POST http://localhost:8080/api/ordens-servico \n  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \n  -d '{"documentoCliente":"529.982.247-25","placaVeiculo":"ABC1D23","relatoProblema":"Barulho ao frear na descida"}'
+curl -X POST http://localhost:8080/api/ordens-servico \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"documentoCliente":"529.982.247-25","placaVeiculo":"ABC1D23","relatoProblema":"Barulho ao frear na descida"}'
 ```
 
 O cliente vai em `clienteId` **ou** `documentoCliente` (CPF/CNPJ, com ou sem pontuação), e o veículo em `veiculoId` **ou** `placaVeiculo`, um campo de cada par:
@@ -123,13 +125,9 @@ O cliente vai em `clienteId` **ou** `documentoCliente` (CPF/CNPJ, com ou sem pon
 - se o documento ou a placa não estiverem cadastrados, 404;
 - se o veículo não for do cliente, 422.
 
-## Banco de dados: PostgreSQL
+## Banco de dados
 
-Escolhemos o PostgreSQL porque o domínio é relacional e transacional:
-
-- **Transações:** aprovar um orçamento altera o orçamento, a OS e o saldo de várias peças de uma vez. Isso precisa ser atômico, e o PostgreSQL dá transações ACID.
-- **Integridade:** relações fortes entre cliente, veículo, OS, orçamento e itens. Chaves estrangeiras e restrições `UNIQUE` (documento, placa, nome da peça) garantem a consistência no próprio banco.
-- **Ecossistema:** consultas com filtros e paginação, tipos `UUID` e `NUMERIC` para valores, suporte maduro no Spring Data JPA e no Flyway, imagem Docker oficial e uso gratuito.
+Usamos PostgreSQL 16 porque aprovar um orçamento mexe no orçamento, na OS e no saldo de várias peças de uma vez, e precisamos de transação ACID. Também usamos FK e `UNIQUE` (documento, placa, nome da peça) para o próprio banco segurar a consistência dos cadastros, e os tipos `UUID` e `NUMERIC` para ids e valores. Além disso, já conhecíamos o PostgreSQL e ele funciona bem com Spring Data JPA e Flyway. A decisão está no [ADR 0002](docs/arquitetura/adr/0002-banco-postgresql.md).
 
 O esquema é versionado por migrations Flyway em `src/main/resources/db/migration`.
 
@@ -137,9 +135,7 @@ O esquema é versionado por migrations Flyway em `src/main/resources/db/migratio
 
 As rotas administrativas exigem `Authorization: Bearer <token>`. A aplicação cria dois usuários de demonstração com a senha de `DEMO_PASSWORD`:
 
-- **Fora do container no perfil `dev`** (`./mvnw spring-boot:run`): o padrão é `dev123` (`application-dev.properties`), então os usuários existem mesmo sem `.env`.
-- **No container:** o compose repassa o valor do `.env` (o `.env.example` traz `dev123`).
-- **Senha vazia**, por exemplo no perfil `prd` sem a variável: os usuários não são criados.
+Rodando fora do container no perfil `dev` (`./mvnw spring-boot:run`), o padrão é `dev123` (`application-dev.properties`), então os usuários existem mesmo sem `.env`. No container, o compose repassa o valor do `.env` (o `.env.example` traz `dev123`). Se a senha estiver vazia, por exemplo no perfil `prd` sem a variável, os usuários não são criados.
 
 | Login | Papel |
 |---|---|
@@ -197,6 +193,7 @@ O restante do Actuator exige `ADMIN`. O login e as rotas públicas têm limite d
 │   └── db/seed/dev/       # dados de demonstração (perfil dev)
 ├── src/test/java/...      # testes unitários, de integração e de arquitetura
 ├── docs
+│   ├── arquitetura/       # diagramas C4, ADRs e requisitos
 │   ├── ddd/               # Event Storming, diagramas, linguagem ubíqua e histórias do egon.io
 │   └── seguranca/         # relatório de vulnerabilidades
 ├── scripts/smoke-test.sh
@@ -212,6 +209,8 @@ O restante do Actuator exige `ADMIN`. O login e as rotas públicas têm limite d
 - Domain Storytelling, agregados, contextos e máquinas de estado: [`docs/ddd/diagramas.pdf`](docs/ddd/diagramas.pdf)
 - Histórias originais do egon.io: [`docs/ddd/egon`](docs/ddd/egon)
 - Linguagem ubíqua e relação com o código: [`docs/ddd/linguagem-ubiqua.md`](docs/ddd/linguagem-ubiqua.md)
+
+Em [`docs/ddd/scripts`](docs/ddd/scripts) ficam os scripts que geram os PDFs. Usamos Playwright para exportar o board do Miro em imagens porque o export nativo saía ilegível.
 
 ## Segurança
 

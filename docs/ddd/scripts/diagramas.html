@@ -44,7 +44,7 @@
 <body>
 
 <section class="pagina capa">
-  <h1>Diagramas de domínio: Oficina Mecânica</h1>
+  <h1>Diagramas de domínio</h1>
   <p>Tech Challenge SOAT, fase 1, grupo 31</p>
   <p class="sub">Domain Storytelling feito pelo grupo no egon.io (25/09/2026) e diagramas complementares de DDD
     (agregados, entidades, objetos de valor, contextos delimitados e máquinas de estado) montados a partir do
@@ -62,9 +62,8 @@
     <tr><td>9</td><td>Contextos delimitados e mapa de contextos</td><td>Miro + código</td></tr>
     <tr><td>10</td><td>Máquinas de estado da OS e do orçamento</td><td>código</td></tr>
   </table>
-  <p class="nota" style="margin-top:5mm">Cada história traz, ao lado, como o código atual implementa o fluxo. Onde a história
-    e o código divergem, a divergência está indicada e também listada em <code>docs/ddd/linguagem-ubiqua.md</code>
-    (seção "Relação com o código"). O board do Miro: https://miro.com/app/board/uXjVHnerRBQ=/</p>
+  <p class="nota" style="margin-top:5mm">Do lado de cada história colocamos como ficou no código. As diferenças também estão em
+    <code>docs/ddd/linguagem-ubiqua.md</code>. O board do Miro: https://miro.com/app/board/uXjVHnerRBQ=/</p>
   <div class="rodape"><span>Grupo 31 · SOAT fase 1</span><span>1</span></div>
 </section>
 
@@ -214,7 +213,7 @@
         <b>Gestão administrativa (<code>/api/estoque</code>)</b>
         <ul>
           <li>Cadastro e consulta de peças e insumos, com saldo disponível e reservado.</li>
-          <li>Listagem, atualização e exclusão de peças: em desenvolvimento no #43.</li>
+          <li>Listagem, atualização e exclusão de peças ainda não foram implementadas.</li>
           <li>Entrada e saída manual de quantidade, que mexem só no disponível; reservas ficam com o orçamento.</li>
           <li>Nome da peça é único (restrição no banco).</li>
         </ul>
@@ -345,7 +344,7 @@
       <text x="330" y="204">o orçamento pendente é rejeitado e as reservas voltam ao estoque</text>
     </g>
   </svg>
-  <p class="nota">Estados em preto são finais. Cada mudança gera uma <code>TransicaoStatus</code> no histórico, base do acompanhamento e do tempo médio de execução (intervalo entre <code>EM_EXECUCAO</code> e <code>FINALIZADA</code>).</p>
+  <p class="nota">Estados em preto são finais. Cada mudança gera uma <code>TransicaoStatus</code> no histórico. Com essas datas dá para calcular o tempo médio de execução (intervalo entre <code>EM_EXECUCAO</code> e <code>FINALIZADA</code>), mas essa consulta ainda não foi implementada.</p>
 
   <h2 style="margin-top:4mm">Orçamento (<code>StatusOrcamento</code>)</h2>
   <svg viewBox="0 0 1000 175" style="width: 100%; height: 56mm" font-family="Segoe UI, Arial, sans-serif" font-size="11">

@@ -1,4 +1,4 @@
-# Linguagem ubíqua: Oficina Mecânica (grupo 31)
+# Linguagem ubíqua
 
 Vocabulário usado pelo grupo no Event Storming (Miro), nas histórias do egon.io e no código. Cada termo aponta onde ele aparece no código: classe, enum, evento ou endpoint.
 
@@ -28,7 +28,7 @@ Fontes:
 | Entregue | Veículo retirado pelo cliente. Estado final. | `ENTREGUE`, `PATCH .../entregar` |
 | Cancelada | OS encerrada antes da aprovação; o orçamento pendente é rejeitado e as peças voltam ao estoque. | `CANCELADA`, evento `OrdemServicoCancelada`, `PATCH .../cancelar` |
 | Histórico de status | Registro de cada mudança de status com data e hora. | `TransicaoStatus`, tabela `historico_status_ordem_servico` |
-| Tempo médio de execução | Média do tempo entre o início da execução e a finalização das OS. | calculado a partir do histórico de status; consulta em desenvolvimento no #42 |
+| Tempo médio de execução | Média do tempo entre o início da execução e a finalização das OS. | ainda não implementado; as datas de cada mudança já ficam em `historico_status_ordem_servico` |
 | Listagem / detalhe da OS | Consulta administrativa das OS, com filtro por status. | `GET /api/ordens-servico`, `GET /api/ordens-servico/{id}` |
 | Acompanhamento pelo cliente | Consulta do andamento sem login. | `POST /api/publico/ordens-servico/{id}/consultar` |
 
@@ -60,8 +60,8 @@ Fontes:
 | Reservar | Separar peças ao gerar o orçamento; falha se não houver saldo. | `ProdutoEstoque.reservar` |
 | Baixa de estoque | Consumir a reserva quando o orçamento é aprovado. | `ProdutoEstoque.confirmarBaixa` |
 | Devolver reserva | Voltar a reserva ao disponível (rejeição, item recusado, expiração, cancelamento). | `ProdutoEstoque.cancelarReserva` |
-| Entrada / saída manual | Ajuste administrativo de quantidade (compra recebida, perda, inventário). Mexe só no saldo disponível. | `ProdutoEstoque.adicionarEstoque` e `removerEstoque` (endpoints no #43) |
-| Manutenção do cadastro de peças | Listar, atualizar e excluir peças e insumos. | em desenvolvimento no #43 |
+| Entrada / saída manual | Ajuste administrativo de quantidade (compra recebida, perda, inventário). Mexe só no saldo disponível. | `ProdutoEstoque.adicionarEstoque` e `removerEstoque`, `POST /api/estoque/{id}/adicionar` e `/remover` |
+| Cadastro de peças | Criar a peça e consultar por id ou por nome. Listagem, atualização e exclusão ainda não existem. | `POST /api/estoque`, `GET /api/estoque/{id}`, `GET /api/estoque/peca?nomePeca=` |
 | Estoque insuficiente | Saldo menor que o pedido no orçamento; impede gerar o orçamento com aquela peça. | `RegraNegocioException` em `reservar` |
 
 ### Pessoas e acesso
@@ -84,22 +84,20 @@ Itens do Miro e do egon.io que o código trata de outro jeito, e o que vale no s
 
 | No Miro / egon.io | No código | Por quê |
 |---|---|---|
-| Ator **Mecânico** recebe a OS, analisa o veículo, cria o relatório e executa (Miro; egon 2, 3 e 4) | O mecânico não usa o sistema. O atendente registra diagnóstico (no orçamento), início da execução e finalização. Papéis: `ADMIN` e `ATENDENTE`. | O papel `MECANICO` foi removido na migration `V6__remove_papel_mecanico.sql`; quem opera o sistema é o atendente. |
-| **Relatório** do mecânico (agregado "Relatorio" no Miro) e "notificar atendente de relatório criado" | Não existe relatório separado. O resultado do diagnóstico vira os itens do orçamento. | O orçamento já documenta serviços e peças identificados. |
+| Ator Mecânico recebe a OS, analisa o veículo, cria o relatório e executa (Miro; egon 2, 3 e 4) | O mecânico não usa o sistema. O atendente registra diagnóstico (no orçamento), início da execução e finalização. Papéis: `ADMIN` e `ATENDENTE`. | O papel `MECANICO` foi removido na migration `V6__remove_papel_mecanico.sql`; quem opera o sistema é o atendente. |
+| Relatório do mecânico (agregado "Relatorio" no Miro) e "notificar atendente de relatório criado" | Não existe relatório separado. O resultado do diagnóstico vira os itens do orçamento. | O orçamento já documenta serviços e peças identificados. |
 | "Notificar mecânico de OS criada" e ponto de atenção "como é feita essa notificação?" | Notificação só para o cliente, por e-mail simulado, a partir de eventos de domínio publicados depois do commit. | Resolve o ponto de atenção do board: o canal é e-mail, disparado pelos eventos. |
-| Notificação por **WhatsApp** | E-mail simulado (log). | Escopo do MVP; não há integração com WhatsApp. |
-| **Baixar o PDF** da OS | Não existe. O cliente consulta a OS e o orçamento pela API pública. | O enunciado pede consulta via API. |
-| **Ordem de compra**, sistema de compras e fornecedor quando falta estoque | Não existem. Falta de saldo impede reservar a peça; a reposição é registrada como entrada manual (`/adicionar`). | Fora do escopo do MVP. |
+| Notificação por WhatsApp | E-mail simulado (log). | Escopo do MVP; não há integração com WhatsApp. |
+| Baixar o PDF da OS | Não existe. O cliente consulta a OS e o orçamento pela API pública. | O enunciado pede consulta via API. |
+| Ordem de compra, sistema de compras e fornecedor quando falta estoque | Não existem. Falta de saldo impede reservar a peça; a reposição é registrada como entrada manual (`/adicionar`). | Fora do escopo do MVP. |
 | "Caso estoque seja insuficiente, adicionar observação à OS" | Não há observação: o orçamento não é gerado com peça sem saldo. | A reserva acontece na geração do orçamento e é atômica. |
 | "Após 2 dias sem retorno, notificar cliente novamente" | Não há reenvio. O orçamento tem validade; tentar aprovar depois dela deixa o orçamento `EXPIRADO` e a OS Recusada. | Sem agendador no MVP; a expiração é verificada no momento da ação. |
-| Nota "ajustar para mandar o link ao cliente quando a OS for criada e quando receber orçamento" | Implementado: o e-mail de OS criada leva o link de consulta e o código de acesso; o de orçamento gerado avisa o cliente. | Nota em aberto no board já atendida pelo código. |
-| Nota "criar fluxo alternativo quando o cliente já sabe o que precisa, sem diagnóstico" | Implementado pela história 1 do egon: o atendente gera o orçamento direto; o status passa por `EM_DIAGNOSTICO` automaticamente. | Nota em aberto no board já atendida. |
-| egon 5: reprovação leva a OS para **Finalizada** e depois **Entregue** | Reprovação leva a OS para `RECUSADA`, estado final. | Separa OS sem execução das executadas, inclusive no tempo médio. |
-| egon 6: gerenciamento de peças com um único passo ("sistema atualiza estoque da OS aprovada") | O estoque tem reserva na geração, baixa na aprovação, devolução na rejeição/cancelamento e CRUD com entrada e saída manual. | O código é mais completo que a história; ver página 7 do `diagramas.pdf`. |
-| Status "Aprovada" (egon 3 e 4) | Existe: `APROVADA`, entre `AGUARDANDO_APROVACAO` e `EM_EXECUCAO`. | Igual nos dois. |
+| Nota "criar fluxo alternativo quando o cliente já sabe o que precisa, sem diagnóstico" | Não há fluxo separado. O atendente gera o orçamento direto (história 1 do egon) e a OS passa por `EM_DIAGNOSTICO` automaticamente em `GerarOrcamentoUseCase`. | Mantém uma só máquina de estados para a OS. |
+| egon 5: reprovação leva a OS para Finalizada e depois Entregue | Reprovação leva a OS para `RECUSADA`, estado final. | Separa OS sem execução das executadas. |
+| egon 6: gerenciamento de peças com um único passo ("sistema atualiza estoque da OS aprovada") | O estoque tem reserva na geração, baixa na aprovação, devolução na rejeição/cancelamento, cadastro de peça e entrada e saída manual. | O código é mais completo que a história; ver página 7 do `diagramas.pdf`. |
 | Status Cancelada e Recusada | Existem no código e não aparecem no Miro nem no egon. | Fluxos de exceção do código. |
 | "Revisar orçamento" pelo atendente antes de enviar (egon 1 e 2) | O orçamento é enviado ao ser gerado; não há etapa de revisão. | O atendente já monta o orçamento. |
-| Agregado **Cadastro** (Miro) | Dois agregados: `Cliente` e `Veiculo`, em módulos separados. | Ciclos de vida e regras próprias (documento único, placa única). |
+| Agregado Cadastro (Miro) | Dois agregados: `Cliente` e `Veiculo`, em módulos separados. | Ciclos de vida e regras próprias (documento único, placa única). |
 | "Aqui ele busca por cpf/cnpj ou placa do veículo" (nota do Miro junto à lista de ordens de serviço) | A abertura da OS (`POST /api/ordens-servico`) aceita `documentoCliente` e `placaVeiculo` no lugar dos ids e confere se o veículo é do cliente. A listagem de OS filtra só por status. | O atendente identifica cliente e veículo pelo documento e pela placa; buscar OS por esses campos não foi implementado. |
 
 ## Termos evitados

@@ -123,7 +123,7 @@
       <div class="post at"><b>Ator</b>Atendente / Admin</div>
       <div class="post cmd"><b>Comando</b><code>PATCH .../entregar</code></div>
       <div class="post fato"><b>Fato</b>OS <code>ENTREGUE</code> (histórico)</div>
-      <div class="post ml"><b>Leitura</b>histórico de status → tempo médio de execução (consulta em desenvolvimento no #42)</div>
+      <div class="post ml"><b>Leitura</b>histórico de status → tempo médio de execução (consulta ainda não implementada)</div>
     </div>
     <div class="passo" style="flex: 1.15; border-left: 1.5px dashed #bbb; padding-left: 2mm"><span class="n">EXCEÇÕES</span>
       <div class="post cmd"><b>Comando</b>rejeitar: <code>/api/publico/orcamentos/{id}/rejeitar</code> ou <code>PATCH /api/orcamentos/{id}/rejeitar</code></div>
@@ -157,7 +157,7 @@
     </div>
     <div class="passo"><span class="n">3. CONSULTAR / MANTER →</span>
       <div class="post ml"><b>Leitura</b>consulta de peça com saldo disponível e reservado</div>
-      <div class="post cmd"><b>Comandos</b>listagem, atualização e exclusão de peças (em desenvolvimento no #43)</div>
+      <div class="post cmd"><b>Comandos</b>listagem, atualização e exclusão de peças (ainda não implementadas)</div>
     </div>
     <div class="passo"><span class="n">4. CONSUMO PELA OS</span>
       <div class="post ev"><b>Gatilho</b>geração do orçamento (<code>OrcamentoGerado</code>)</div>
@@ -168,7 +168,7 @@
       <div class="post fato"><b>Fato</b><code>cancelarReserva</code>: reservado → disponível</div>
     </div>
   </div>
-  <p class="nota">Os endpoints de estoque estão no #43 e podem mudar até o merge, por isso esta página usa nomes de ação. Os métodos <code>reservar</code>, <code>confirmarBaixa</code> e <code>cancelarReserva</code> já estão na <code>dev</code>.</p>
+  <p class="nota">Endpoints de estoque: <code>POST /api/estoque</code>, <code>GET /api/estoque/{id}</code>, <code>GET /api/estoque/peca</code>, <code>POST /api/estoque/{id}/adicionar</code> e <code>/remover</code>. Os métodos <code>reservar</code>, <code>confirmarBaixa</code> e <code>cancelarReserva</code> ficam em <code>ProdutoEstoque</code>.</p>
   <div class="rodape"><span>Event Storming do sistema implementado</span><span class="num"></span></div>
 </section>
 

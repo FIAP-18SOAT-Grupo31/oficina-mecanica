@@ -56,7 +56,7 @@ def capa(regioes):
     ini_imp = ini_tr + 4
     return f"""
 <section class="pagina capa">
-  <h1>Event Storming: Oficina Mecânica</h1>
+  <h1>Event Storming da Oficina Mecânica</h1>
   <p>Tech Challenge SOAT, fase 1, grupo 31.</p>
   <ul>
     <li><b>Parte A: Event Storming exploratório (Miro)</b>, páginas 2 a {ini_imp - 1}. Exportação do board
@@ -85,7 +85,7 @@ def mapa(regioes, capturas):
     img = (Path(capturas) / f"{regioes[0]['nome']}.png").resolve().as_uri()
     return f"""
 <section class="pagina">
-  <h1>A. Event Storming exploratório (Miro): mapa do board</h1>
+  <h1>A. Mapa do board do Miro (Event Storming exploratório)</h1>
   <p class="sub">Visão inteira do board. Cada retângulo vermelho indica a página em que aquela região aparece ampliada.</p>
   <div class="fig"><img src="{img}">{''.join(marcas)}</div>
   {rodape("Event Storming exploratório (Miro)")}
