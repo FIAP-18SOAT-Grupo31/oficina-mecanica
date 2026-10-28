@@ -1,9 +1,11 @@
 package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico;
 
+import br.com.fiap.oficina_mecanica.cliente.domain.Cliente;
 import br.com.fiap.oficina_mecanica.cliente.domain.ClienteRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.VerificadorCliente;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -18,5 +20,13 @@ public class VerificadorClienteAdapter implements VerificadorCliente {
     @Override
     public boolean existe(UUID clienteId) {
         return clienteRepository.existePorId(clienteId);
+    }
+
+    @Override
+    public Optional<UUID> buscarIdPorDocumento(String documento) {
+        // O documento é único, então a primeira página com um item basta.
+        return clienteRepository.listar(null, documento, 0, 1).conteudo().stream()
+                .findFirst()
+                .map(Cliente::getId);
     }
 }
