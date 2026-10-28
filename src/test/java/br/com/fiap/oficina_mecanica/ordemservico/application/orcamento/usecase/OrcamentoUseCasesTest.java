@@ -11,6 +11,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.Gerar
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.ItemPecaInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.ItemServicoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.StatusOrcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
@@ -61,7 +62,7 @@ class OrcamentoUseCasesTest {
         aprovarOrcamento = new AprovarOrcamentoUseCase(repository, osRepository, estoqueRepository);
         rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository, osRepository, estoqueRepository);
         buscarOrcamento = new BuscarOrcamentoUseCase(repository);
-        aprovarOrcamentoCliente = new AprovarOrcamentoClienteUseCase(repository, verificadorAcesso, osRepository, estoqueRepository);
+        aprovarOrcamentoCliente = new AprovarOrcamentoClienteUseCase(repository, verificadorAcesso, aprovarOrcamento);
         rejeitarOrcamentoCliente = new RejeitarOrcamentoClienteUseCase(repository, verificadorAcesso, rejeitarOrcamento);
         buscarOrcamentoCliente = new BuscarOrcamentoClienteUseCase(repository, verificadorAcesso);
 
@@ -93,6 +94,8 @@ class OrcamentoUseCasesTest {
         assertThat(output.id()).isNotNull();
         assertThat(output.valorTotal()).isEqualByComparingTo("260.00");
         assertThat(output.status()).isEqualTo(StatusOrcamento.PENDENTE);
+        assertThat(output.servicos()).hasSize(1);
+        assertThat(output.pecas()).hasSize(1);
 
         ProdutoEstoque estoque = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
         assertThat(estoque.getQuantidadeDisponivel()).isEqualTo(6);
@@ -108,6 +111,20 @@ class OrcamentoUseCasesTest {
         assertThatThrownBy(() -> gerarOrcamento.execute(input))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessageContaining("Estoque insuficiente");
+    }
+
+    @Test
+    void falhaAoGerarOrcamentoComDataValidadePassada() {
+        GerarOrcamentoInput inputInvalido = new GerarOrcamentoInput(
+                ordemServicoIdFixa,
+                Horario.agora().minusDays(1),
+                List.of(),
+                List.of()
+        );
+
+        assertThatThrownBy(() -> gerarOrcamento.execute(inputInvalido))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("validade");
     }
 
     @Test
@@ -155,6 +172,69 @@ class OrcamentoUseCasesTest {
 
         assertThat(aprovado.status()).isEqualTo(StatusOrcamento.APROVADO_PARCIALMENTE);
         assertThat(aprovado.valorTotal()).isEqualByComparingTo("100.00");
+
+        ProdutoEstoque estoque = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
+        assertThat(estoque.getQuantidadeDisponivel()).isEqualTo(10);
+        assertThat(estoque.getQuantidadeReservada()).isEqualTo(0);
+    }
+
+    @Test
+    void aprovarComTodosItensRecusadosRejeitaOrcamentoERecusaOSDevolvendoEstoque() {
+        UUID servicoId = UUID.randomUUID();
+
+        GerarOrcamentoInput input = entrada(
+                List.of(new ItemServicoInput(servicoId, "Servico 1", new BigDecimal("100.00"))),
+                List.of(new ItemPecaInput(pecaComEstoqueId, "Peca 1", 2, new BigDecimal("40.00")))
+        );
+
+        OrcamentoOutput gerado = gerarOrcamento.execute(input);
+
+        AprovacaoInput recusaTudo = new AprovacaoInput(List.of(), List.of());
+        OrcamentoOutput resultado = aprovarOrcamento.execute(gerado.id(), recusaTudo);
+
+        assertThat(resultado.status()).isEqualTo(StatusOrcamento.REJEITADO);
+        assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus()).isEqualTo(StatusOrdemServico.RECUSADA);
+
+        ProdutoEstoque estoque = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
+        assertThat(estoque.getQuantidadeDisponivel()).isEqualTo(10);
+        assertThat(estoque.getQuantidadeReservada()).isEqualTo(0);
+    }
+
+    @Test
+    void aprovarOrcamentoExpiradoPersisteStatusExpiradoELiberaEstoque() {
+        ProdutoEstoque produto = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
+        produto.reservar(3);
+        estoqueRepository.salvar(produto);
+
+        OrdemServico os = osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow();
+        os.iniciarDiagnostico();
+
+        UUID orcamentoExpiradoId = UUID.randomUUID();
+        Orcamento orcamentoExpirado = new Orcamento(
+                orcamentoExpiradoId,
+                ordemServicoIdFixa,
+                Horario.agora().minusDays(10),
+                Horario.agora().minusDays(3),
+                StatusOrcamento.PENDENTE,
+                List.of(),
+                List.of(new ItemPeca(pecaComEstoqueId, "Filtro de Óleo", 3, new BigDecimal("40.00")))
+        );
+        os.anexarOrcamento(orcamentoExpirado);
+        osRepository.salvar(os);
+        repository.salvar(orcamentoExpirado);
+
+        assertThatThrownBy(() -> aprovarOrcamento.execute(orcamentoExpiradoId, null))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("expirado");
+
+        assertThat(repository.buscarPorId(orcamentoExpiradoId).orElseThrow().getStatus())
+                .isEqualTo(StatusOrcamento.EXPIRADO);
+        assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus())
+                .isEqualTo(StatusOrdemServico.RECUSADA);
+
+        ProdutoEstoque estoqueAtualizado = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
+        assertThat(estoqueAtualizado.getQuantidadeDisponivel()).isEqualTo(10);
+        assertThat(estoqueAtualizado.getQuantidadeReservada()).isEqualTo(0);
     }
 
     @Test
