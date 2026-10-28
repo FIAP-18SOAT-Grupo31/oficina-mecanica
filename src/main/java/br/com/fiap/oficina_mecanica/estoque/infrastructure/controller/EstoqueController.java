@@ -79,7 +79,7 @@ public class EstoqueController {
         return ok(produtoAtualizado);
     }
 
-    @DeleteMapping("/{id}/retirar")
+    @PostMapping("/{id}/retirar")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     public ResponseEntity<EstoqueOutput> retirarPeca(
             @PathVariable UUID id,
