@@ -20,7 +20,6 @@ public class VerificadorUsoDoServicoAdapter implements VerificadorUsoDoServico {
 
     @Override
     public boolean usadoEmOrcamento(UUID servicoId) {
-        Long quantidade = jdbc.queryForObject(CONSULTA, Long.class, servicoId);
-        return quantidade != null && quantidade > 0;
+        return jdbc.queryForObject(CONSULTA, Long.class, servicoId) > 0;
     }
 }
