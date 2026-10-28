@@ -127,7 +127,7 @@ O cliente vai em `clienteId` **ou** `documentoCliente` (CPF/CNPJ, com ou sem pon
 
 ## Banco de dados
 
-Usamos PostgreSQL 16 porque aprovar um orçamento mexe no orçamento, na OS e no saldo de várias peças de uma vez, e precisamos de transação ACID. Também usamos FK e `UNIQUE` (documento, placa, nome da peça) para o próprio banco segurar a consistência dos cadastros, e os tipos `UUID` e `NUMERIC` para ids e valores. Além disso, já conhecíamos o PostgreSQL e ele funciona bem com Spring Data JPA e Flyway. A decisão está no [ADR 0002](docs/arquitetura/adr/0002-banco-postgresql.md).
+Usamos PostgreSQL 16 porque aprovar um orçamento mexe no orçamento, na OS e no saldo de várias peças de uma vez, e precisamos de transação ACID. Também usamos FK e `UNIQUE` (documento, placa, nome da peça) para o próprio banco segurar a consistência dos cadastros, e os tipos `UUID` e `NUMERIC` para ids e valores. E a gente já conhecia o PostgreSQL, que funciona bem com Spring Data JPA e Flyway. A decisão está no [ADR 0002](docs/arquitetura/adr/0002-banco-postgresql.md).
 
 O esquema é versionado por migrations Flyway em `src/main/resources/db/migration`.
 

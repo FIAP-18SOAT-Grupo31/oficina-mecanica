@@ -1,6 +1,8 @@
 # ADR 0003: Autenticação com JWT e código de acesso para o cliente
 
-Status: aceito (07/10/2026, commit `13ba670`)
+- **Data:** 07/10/2026
+- **Status:** Aceita
+- **Responsável:** Henrique Melo (commit `13ba670`)
 
 ## Contexto
 
@@ -8,12 +10,13 @@ O enunciado pede JWT nas APIs administrativas. Quem usa o sistema é a equipe da
 
 ## Decisão
 
-- Login em `POST /api/auth/login`, com senha guardada em BCrypt. A resposta é um JWT HS256 com validade de 1 hora, emissor `oficina-mecanica` e os papéis na claim `roles`. A chave vem de `JWT_SECRET`, e a aplicação não sobe se ela tiver menos de 32 caracteres.
-- A API valida o token com o Resource Server do Spring Security (`SegurancaConfig`). Não há sessão (`STATELESS`), e `httpBasic` e `formLogin` estão desligados.
-- Dois papéis: `ADMIN` e `ATENDENTE`. Os endpoints de negócio aceitam os dois (`@PreAuthorize`); o Actuator, fora `health` e `prometheus`, só aceita `ADMIN`. O papel `MECANICO` saiu na migration `V6`.
-- CSRF desabilitado. A API não usa cookie nem sessão e o token vai no cabeçalho `Authorization`, então o navegador não manda credencial sozinho e o ataque não se aplica.
-- Para o cliente: ao abrir a OS, é gerado um código de acesso de 6 caracteres. Com o CPF/CNPJ e esse código, o cliente usa as rotas `/api/publico/**` sem login. O `VerificadorAcessoClienteAdapter` confere os dois.
-- `/api/auth/login` e `/api/publico/**` têm limite de requisições por minuto por IP (`LimiteRequisicoesFilter`, padrão 30).
+A equipe faz login em `POST /api/auth/login`, e o sistema guarda a senha em BCrypt. A resposta traz um JWT HS256 com validade de 1 hora (`app.seguranca.jwt.validade=1h`), emissor `oficina-mecanica` e os papéis na claim `roles`. A chave vem de `JWT_SECRET`, e a aplicação se recusa a subir se ela tiver menos de 32 caracteres.
+
+A API valida o token com o Resource Server do Spring Security (`SegurancaConfig`). Não guardamos sessão (`STATELESS`) e desligamos `httpBasic` e `formLogin`. Existem dois papéis, `ADMIN` e `ATENDENTE`. Os endpoints de negócio aceitam os dois via `@PreAuthorize`, e o Actuator, fora `health` e `prometheus`, só aceita `ADMIN`. Removemos o papel `MECANICO` na migration `V6`.
+
+Desabilitamos o CSRF. A API não usa cookie nem sessão e o token vai no cabeçalho `Authorization`, então o navegador não manda credencial sozinho e o ataque não se aplica.
+
+Para o cliente, o sistema gera um código de acesso de 6 caracteres ao abrir a OS. Com o CPF/CNPJ e esse código, o cliente usa as rotas `/api/publico/**` sem login, e o `VerificadorAcessoClienteAdapter` confere os dois. O `LimiteRequisicoesFilter` limita `/api/auth/login` e `/api/publico/**` por IP e por minuto (padrão 30, ajustável por `LIMITE_REQUISICOES_POR_MINUTO`).
 
 ## Alternativas consideradas
 
@@ -23,6 +26,13 @@ O enunciado pede JWT nas APIs administrativas. Quem usa o sistema é a equipe da
 
 ## Consequências
 
+Positivas:
+
 - Não precisamos guardar sessão, e qualquer instância valida o token só com a chave.
 - O cliente acessa só a OS cujo código recebeu.
-- Débito técnico: não existe refresh token nem revogação (um token vazado vale até expirar); o limite de requisições fica em memória e vale por instância; o código de acesso ainda aparece no log do e-mail simulado.
+
+Negativas:
+
+- Não existe refresh token nem revogação: um token vazado vale até expirar.
+- O limite de requisições fica em memória e vale por instância.
+- Ainda falta tirar o código de acesso do log do e-mail simulado.

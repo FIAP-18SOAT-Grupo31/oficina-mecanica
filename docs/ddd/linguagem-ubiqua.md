@@ -78,6 +78,21 @@ Fontes:
 | Sistema | Ator automático: calcula o orçamento, reserva e baixa estoque, muda status e notifica. | casos de uso e eventos de domínio |
 | Notificação | Mensagem ao cliente. No MVP, e-mail simulado no log. | `NotificadorOrdemServicoAdapter`, `NotificadorEmailAdapter` |
 
+## Mapa de contextos
+
+Desenhado na página 9 do [`diagramas.pdf`](diagramas.pdf). U é o contexto upstream (fornecedor) e D o downstream (cliente, que consome o U).
+
+| Relação | Padrão |
+|---|---|
+| Clientes (U) → Atendimento e execução (D) | camada anticorrupção: portas `VerificadorCliente` e `ConsultorClientes` no núcleo |
+| Veículos (U) → Atendimento e execução (D) | camada anticorrupção: portas `VerificadorVeiculo` e `ConsultorVeiculos` |
+| Estoque (U) → Atendimento e execução (D) | cliente-fornecedor: o orçamento usa `ProdutoEstoqueRepository` na mesma transação |
+| Catálogo (U) → Atendimento e execução (D) | conformista: o orçamento lê `ServicoRepository` e copia nome e valor |
+| Autenticação (U) → demais contextos (D) | genérico: JWT nas rotas administrativas |
+| Atendimento e execução (U) → E-mail ao cliente (D) | eventos de domínio depois do commit, e-mail simulado no log |
+
+O módulo `compartilhado` é só utilitário técnico (paginação, exceções, publicação de eventos e padrão de erros). Não é um shared kernel: nenhum modelo de domínio é compartilhado entre os contextos.
+
 ## Relação com o código
 
 Itens do Miro e do egon.io que o código trata de outro jeito, e o que vale no sistema.

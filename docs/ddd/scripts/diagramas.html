@@ -288,24 +288,32 @@
       <rect x="770" y="350" width="125" height="62" rx="7" fill="#ffe0ef" stroke="#d0508a" stroke-width="1.5"/>
       <text x="832" y="374" text-anchor="middle" font-weight="700">E-mail ao cliente</text><text x="832" y="392" text-anchor="middle" font-size="9.5">externo, simulado em log</text>
       <rect x="360" y="388" width="180" height="52" rx="7" fill="#eeeeee" stroke="#888" stroke-width="1.5"/>
-      <text x="450" y="410" text-anchor="middle" font-weight="700">Compartilhado</text><text x="450" y="427" text-anchor="middle" font-size="10">shared kernel · compartilhado</text>
+      <text x="450" y="410" text-anchor="middle" font-weight="700">Compartilhado</text><text x="450" y="427" text-anchor="middle" font-size="10">utilitário técnico · não é shared kernel</text>
       <rect x="360" y="28" width="180" height="52" rx="7" fill="#eeeeee" stroke="#888" stroke-width="1.5"/>
       <text x="450" y="50" text-anchor="middle" font-weight="700">Autenticação</text><text x="450" y="67" text-anchor="middle" font-size="10">genérico · /api/auth/login</text>
+    </g>
+    <g font-size="11" font-weight="700" fill="#b03a00">
+      <text x="119" y="104">U</text><text x="119" y="234">U</text><text x="119" y="364">U</text>
+      <text x="779" y="104">U</text><text x="779" y="364">D</text><text x="528" y="42">U</text>
+      <text x="336" y="199">D</text><text x="336" y="254">D</text><text x="336" y="309">D</text>
+      <text x="555" y="199">D</text><text x="555" y="309">U</text><text x="456" y="199">D</text>
     </g>
   </svg>
   <div style="flex: 0.9; font-size: 10px; line-height: 1.4">
     <div class="caixa" style="margin-bottom: 3mm"><b>Legenda</b><br>
       <span style="background:#fff4c2;padding:0 2mm">amarelo</span> núcleo ·
       <span style="background:#e7f0ff;padding:0 2mm">azul</span> suporte ·
-      <span style="background:#eeeeee;padding:0 2mm">cinza</span> genérico/compartilhado ·
-      <span style="background:#ffe0ef;padding:0 2mm">rosa</span> externo</div>
+      <span style="background:#eeeeee;padding:0 2mm">cinza</span> genérico / utilitário técnico ·
+      <span style="background:#ffe0ef;padding:0 2mm">rosa</span> externo<br>
+      <b style="color:#b03a00">U</b> upstream (fornecedor) · <b style="color:#b03a00">D</b> downstream (cliente, consome o U)</div>
     <b>Relações</b>
     <ul style="padding-left: 4mm; margin-top: 1mm">
-      <li><b>Clientes e Veículos:</b> o núcleo define portas próprias (<code>VerificadorCliente</code>, <code>VerificadorVeiculo</code>, <code>ConsultorClientes</code>, <code>ConsultorVeiculos</code>) implementadas por adaptadores, que funcionam como camada anticorrupção.</li>
-      <li><b>Estoque:</b> sem porta intermediária. Os casos de uso do orçamento e da OS usam o repositório de domínio <code>ProdutoEstoqueRepository</code> na mesma transação para reservar, baixar e devolver peças (cliente-fornecedor).</li>
-      <li><b>Catálogo:</b> também sem porta. O <code>GerarOrcamentoUseCase</code> lê <code>ServicoRepository</code> na mesma transação e copia nome e valor para o <code>ItemServico</code>.</li>
-      <li><b>Notificação:</b> eventos de domínio publicados depois do commit viram e-mail simulado. Não há WhatsApp nem PDF.</li>
-      <li><b>Compartilhado:</b> paginação, exceções de domínio, publicação de eventos e padrão de erros.</li>
+      <li><b>Clientes e Veículos (U) → Atendimento (D):</b> o núcleo define portas próprias (<code>VerificadorCliente</code>, <code>VerificadorVeiculo</code>, <code>ConsultorClientes</code>, <code>ConsultorVeiculos</code>) implementadas por adaptadores, que funcionam como camada anticorrupção.</li>
+      <li><b>Estoque (U) → Atendimento (D):</b> sem porta intermediária. Os casos de uso do orçamento e da OS usam o repositório de domínio <code>ProdutoEstoqueRepository</code> na mesma transação para reservar, baixar e devolver peças (cliente-fornecedor).</li>
+      <li><b>Catálogo (U) → Atendimento (D):</b> também sem porta, e o núcleo usa o modelo do catálogo como ele é (conformista). O <code>GerarOrcamentoUseCase</code> lê <code>ServicoRepository</code> na mesma transação e copia nome e valor para o <code>ItemServico</code>.</li>
+      <li><b>Atendimento (U) → E-mail (D):</b> eventos de domínio publicados depois do commit viram e-mail simulado. Não há WhatsApp nem PDF.</li>
+      <li><b>Autenticação (U) → Atendimento (D):</b> o JWT protege as rotas administrativas dos módulos.</li>
+      <li><b>Compartilhado:</b> só utilitário técnico (paginação, exceções, publicação de eventos e padrão de erros). Não é shared kernel: nenhum modelo de domínio é compartilhado entre os contextos.</li>
     </ul>
   </div>
   </div>

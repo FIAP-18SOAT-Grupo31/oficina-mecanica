@@ -35,7 +35,7 @@ Achados da análise de 07/10/2026, corrigidos antes da versão atual:
 | HIGH | DS-0002: container rodando como root | `Dockerfile` | imagem final roda com o usuário `oficina`, sem privilégio de root |
 | LOW | imagem sem `HEALTHCHECK` | `Dockerfile` | `HEALTHCHECK` na porta 8080 |
 
-Não suprimimos nenhum achado; as CVEs foram resolvidas subindo versão.
+Não ignoramos nenhum achado: resolvemos as CVEs subindo a versão.
 
 ## Outras análises
 
