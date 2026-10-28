@@ -13,11 +13,11 @@ import java.util.UUID;
 import static br.com.fiap.oficina_mecanica.estoque.application.dto.EstoqueOutput.deDominio;
 
 @Service
-public class RetirarPecaUseCase {
+public class RemoverEstoqueUseCase {
 
     private final ProdutoEstoqueRepository repository;
 
-    public RetirarPecaUseCase(ProdutoEstoqueRepository repository) {
+    public RemoverEstoqueUseCase(ProdutoEstoqueRepository repository) {
         this.repository = repository;
     }
 
@@ -26,10 +26,9 @@ public class RetirarPecaUseCase {
         ProdutoEstoque produto = repository.buscarPorId(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Peça não encontrada no estoque com o ID: " + id));
 
-        produto.confirmarBaixa(input.quantidade());
+        produto.removerEstoque(input.quantidade());
 
         ProdutoEstoque produtoSalvo = repository.salvar(produto);
-
         return deDominio(produtoSalvo);
     }
 }

@@ -3,11 +3,11 @@ package br.com.fiap.oficina_mecanica.estoque.infrastructure.controller;
 import br.com.fiap.oficina_mecanica.estoque.application.dto.AjustarQuantidadeInput;
 import br.com.fiap.oficina_mecanica.estoque.application.dto.CriarProdutoEstoqueInput;
 import br.com.fiap.oficina_mecanica.estoque.application.dto.EstoqueOutput;
+import br.com.fiap.oficina_mecanica.estoque.application.usecase.AdicionarEstoqueUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.BuscarProdutoEstoquePorIdUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.BuscarProdutoEstoquePorNomeUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.CriarProdutoEstoqueUseCase;
-import br.com.fiap.oficina_mecanica.estoque.application.usecase.ReservarPecaUseCase;
-import br.com.fiap.oficina_mecanica.estoque.application.usecase.RetirarPecaUseCase;
+import br.com.fiap.oficina_mecanica.estoque.application.usecase.RemoverEstoqueUseCase;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,20 +32,20 @@ public class EstoqueController {
     private final BuscarProdutoEstoquePorIdUseCase buscarProdutoEstoquePorIdUseCase;
     private final BuscarProdutoEstoquePorNomeUseCase buscarProdutoEstoquePorNomeUseCase;
     private final CriarProdutoEstoqueUseCase criarProdutoEstoqueUseCase;
-    private final ReservarPecaUseCase reservarPecaUseCase;
-    private final RetirarPecaUseCase retirarPecaUseCase;
+    private final AdicionarEstoqueUseCase adicionarEstoqueUseCase;
+    private final RemoverEstoqueUseCase removerEstoqueUseCase;
 
     public EstoqueController(
             BuscarProdutoEstoquePorIdUseCase buscarProdutoEstoquePorIdUseCase,
             BuscarProdutoEstoquePorNomeUseCase buscarProdutoEstoquePorNomeUseCase,
             CriarProdutoEstoqueUseCase criarProdutoEstoqueUseCase,
-            ReservarPecaUseCase reservarPecaUseCase,
-            RetirarPecaUseCase retirarPecaUseCase) {
+            AdicionarEstoqueUseCase adicionarEstoqueUseCase,
+            RemoverEstoqueUseCase removerEstoqueUseCase) {
         this.buscarProdutoEstoquePorIdUseCase = buscarProdutoEstoquePorIdUseCase;
         this.buscarProdutoEstoquePorNomeUseCase = buscarProdutoEstoquePorNomeUseCase;
         this.criarProdutoEstoqueUseCase = criarProdutoEstoqueUseCase;
-        this.reservarPecaUseCase = reservarPecaUseCase;
-        this.retirarPecaUseCase = retirarPecaUseCase;
+        this.adicionarEstoqueUseCase = adicionarEstoqueUseCase;
+        this.removerEstoqueUseCase = removerEstoqueUseCase;
     }
 
     @GetMapping("/{id}")
@@ -69,21 +69,21 @@ public class EstoqueController {
         return status(CREATED).body(produtoCriado);
     }
 
-    @PostMapping("/{id}/reservar")
+    @PostMapping("/{id}/adicionar")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
-    public ResponseEntity<EstoqueOutput> reservarPeca(
+    public ResponseEntity<EstoqueOutput> adicionarEstoque(
             @PathVariable UUID id,
             @Valid @RequestBody AjustarQuantidadeInput input) {
-        EstoqueOutput produtoAtualizado = reservarPecaUseCase.execute(id, input);
+        EstoqueOutput produtoAtualizado = adicionarEstoqueUseCase.execute(id, input);
         return ok(produtoAtualizado);
     }
 
-    @PostMapping("/{id}/retirar")
+    @PostMapping("/{id}/remover")
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
-    public ResponseEntity<EstoqueOutput> retirarPeca(
+    public ResponseEntity<EstoqueOutput> removerEstoque(
             @PathVariable UUID id,
             @Valid @RequestBody AjustarQuantidadeInput input) {
-        EstoqueOutput produtoAtualizado = retirarPecaUseCase.execute(id, input);
+        EstoqueOutput produtoAtualizado = removerEstoqueUseCase.execute(id, input);
         return ok(produtoAtualizado);
     }
 }
