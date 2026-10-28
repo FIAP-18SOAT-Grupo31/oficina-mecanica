@@ -37,6 +37,7 @@ class OrdemServicoIntegrationTest {
 
     private UUID clienteId;
     private UUID veiculoId;
+    private UUID servicoId;
 
     private RequestPostProcessor jwtAtendente() {
         return jwt().authorities(new SimpleGrantedAuthority("ROLE_ATENDENTE"));
@@ -53,6 +54,9 @@ class OrdemServicoIntegrationTest {
                 clienteId, "Cliente de teste", documento, "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
         jdbc.update("INSERT INTO veiculos (id, cliente_id, placa, marca, modelo, ano) VALUES (?, ?, ?, ?, ?, ?)",
                 veiculoId, clienteId, placa, "Fiat", "Argo", 2022);
+        servicoId = UUID.randomUUID();
+        jdbc.update("INSERT INTO servicos (id, nome, valor_mao_de_obra) VALUES (?, ?, ?)",
+                servicoId, "Troca de óleo " + servicoId, 200);
     }
 
     private String corpoOrdemServico(UUID cliente, UUID veiculo, String relato) {
@@ -76,7 +80,7 @@ class OrdemServicoIntegrationTest {
         String orcamento = mvc.perform(post("/api/orcamentos").with(jwtAtendente())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ordemServicoId\":\"" + ordemServicoId + "\",\"dataValidade\":\"2099-12-31T23:59:59\",\"servicos\":[{\"catalogoServicoId\":\""
-                                + UUID.randomUUID() + "\",\"descricao\":\"Troca de óleo\",\"valorMaoDeObra\":200.00}],"
+                                + servicoId + "\"}],"
                                 + "\"pecas\":[]}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("PENDENTE"))
