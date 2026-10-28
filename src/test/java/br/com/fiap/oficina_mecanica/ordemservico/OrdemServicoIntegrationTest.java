@@ -14,7 +14,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,6 +39,8 @@ class OrdemServicoIntegrationTest {
 
     private UUID clienteId;
     private UUID veiculoId;
+    private String documento;
+    private String placa;
 
     private RequestPostProcessor jwtAtendente() {
         return jwt().authorities(new SimpleGrantedAuthority("ROLE_ATENDENTE"));
@@ -46,13 +50,43 @@ class OrdemServicoIntegrationTest {
     void cadastrarClienteEVeiculo() {
         clienteId = UUID.randomUUID();
         veiculoId = UUID.randomUUID();
-        String documento = String.valueOf(Math.abs(clienteId.getMostSignificantBits())).substring(0, 11);
-        String placa = clienteId.toString().substring(0, 7).toUpperCase();
-        jdbc.update("INSERT INTO clientes (id, nome, documento, rua, numero, bairro, cidade, cep, estado) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                clienteId, "Cliente de teste", documento, "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
+        documento = cpfAleatorio();
+        placa = placaAleatoria();
+        jdbc.update("INSERT INTO clientes (id, nome, documento, email, telefone, rua, numero, bairro, cidade, cep, estado) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                clienteId, "Cliente de teste", documento, "cliente@email.com", "11987654321", "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
         jdbc.update("INSERT INTO veiculos (id, cliente_id, placa, marca, modelo, ano) VALUES (?, ?, ?, ?, ?, ?)",
                 veiculoId, clienteId, placa, "Fiat", "Argo", 2022);
+    }
+
+    private static String cpfAleatorio() {
+        int[] digitos = new int[11];
+        for (int i = 0; i < 9; i++) {
+            digitos[i] = ThreadLocalRandom.current().nextInt(10);
+        }
+        digitos[9] = digitoVerificadorCpf(digitos, 9);
+        digitos[10] = digitoVerificadorCpf(digitos, 10);
+        StringBuilder cpf = new StringBuilder();
+        for (int digito : digitos) {
+            cpf.append(digito);
+        }
+        return cpf.toString();
+    }
+
+    private static int digitoVerificadorCpf(int[] digitos, int quantidade) {
+        int soma = 0;
+        for (int i = 0; i < quantidade; i++) {
+            soma += digitos[i] * (quantidade + 1 - i);
+        }
+        int resto = 11 - (soma % 11);
+        return resto > 9 ? 0 : resto;
+    }
+
+    private static String placaAleatoria() {
+        ThreadLocalRandom aleatorio = ThreadLocalRandom.current();
+        return "" + (char) ('A' + aleatorio.nextInt(26)) + (char) ('A' + aleatorio.nextInt(26))
+                + (char) ('A' + aleatorio.nextInt(26)) + aleatorio.nextInt(10) + (char) ('A' + aleatorio.nextInt(26))
+                + aleatorio.nextInt(10) + aleatorio.nextInt(10);
     }
 
     private String corpoOrdemServico(UUID cliente, UUID veiculo, String relato) {
@@ -103,6 +137,84 @@ class OrdemServicoIntegrationTest {
                         .content(corpoOrdemServico(UUID.randomUUID(), veiculoId, "Barulho na suspensão dianteira")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.mensagem").value("Cliente não encontrado."));
+    }
+
+    private String corpoPorDocumentoEPlaca(String documentoCliente, String placaVeiculo) {
+        return "{\"documentoCliente\":\"" + documentoCliente + "\",\"placaVeiculo\":\"" + placaVeiculo
+                + "\",\"relatoProblema\":\"Barulho na suspensão dianteira\"}";
+    }
+
+    @Test
+    void criaOrdemDeServicoPeloDocumentoDoClienteEPelaPlaca() throws Exception {
+        String documentoFormatado = documento.substring(0, 3) + "." + documento.substring(3, 6) + "."
+                + documento.substring(6, 9) + "-" + documento.substring(9);
+        String placaFormatada = placa.substring(0, 3).toLowerCase() + "-" + placa.substring(3);
+
+        String resposta = mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPorDocumentoEPlaca(documentoFormatado, placaFormatada)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        UUID ordemServicoId = UUID.fromString(JsonPath.read(resposta, "$.ordemServicoId"));
+        assertThat(jdbc.queryForObject("SELECT cliente_id FROM ordens_servico WHERE id = ?", UUID.class, ordemServicoId))
+                .isEqualTo(clienteId);
+        assertThat(jdbc.queryForObject("SELECT veiculo_id FROM ordens_servico WHERE id = ?", UUID.class, ordemServicoId))
+                .isEqualTo(veiculoId);
+    }
+
+    @Test
+    void documentoSemClienteVolta404() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPorDocumentoEPlaca("00000000000", placa)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.mensagem").value("Cliente não encontrado para o CPF/CNPJ informado."));
+    }
+
+    @Test
+    void placaSemVeiculoVolta404() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPorDocumentoEPlaca(documento, "ZZZ9Z99")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.mensagem").value("Veículo não encontrado para a placa informada."));
+    }
+
+    @Test
+    void veiculoDeOutroClienteVolta422() throws Exception {
+        UUID outroCliente = UUID.randomUUID();
+        jdbc.update("INSERT INTO clientes (id, nome, documento, email, telefone, rua, numero, bairro, cidade, cep, estado) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                outroCliente, "Outro cliente", cpfAleatorio(), "outro@email.com", "11987654322",
+                "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
+
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoOrdemServico(outroCliente, veiculoId, "Barulho na suspensão dianteira")))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensagem").value("O veículo informado não pertence ao cliente."));
+    }
+
+    @Test
+    void clienteInformadoPorIdEDocumentoAoMesmoTempoVolta400() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clienteId\":\"" + clienteId + "\",\"documentoCliente\":\"" + documento
+                                + "\",\"veiculoId\":\"" + veiculoId
+                                + "\",\"relatoProblema\":\"Barulho na suspensão dianteira\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem", containsString("informe clienteId ou documentoCliente")));
+    }
+
+    @Test
+    void semIdentificarOVeiculoVolta400() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"documentoCliente\":\"" + documento
+                                + "\",\"relatoProblema\":\"Barulho na suspensão dianteira\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem", containsString("informe veiculoId ou placaVeiculo")));
     }
 
     @Test
