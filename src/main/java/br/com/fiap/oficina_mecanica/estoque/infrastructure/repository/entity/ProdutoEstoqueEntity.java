@@ -23,7 +23,7 @@ public class ProdutoEstoqueEntity {
     @Id
     private UUID id;
 
-    @Column(name = "nome_peca", nullable = false)
+    @Column(name = "nome_peca", nullable = false, unique = true)
     private String nomePeca;
 
     @Column(name = "quantidade_disponivel", nullable = false)
