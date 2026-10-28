@@ -32,6 +32,11 @@ class CriarOrdemServicoUseCaseTest {
         public Optional<OrdemServico> buscarPorId(UUID id) {
             return Optional.ofNullable(ordens.get(id));
         }
+
+        @Override
+        public boolean existePorVeiculoId(UUID veiculoId) {
+            return ordens.values().stream().anyMatch(ordem -> ordem.getVeiculoId().equals(veiculoId));
+        }
     }
 
     private final OrdemServicoRepositoryEmMemoria repository = new OrdemServicoRepositoryEmMemoria();

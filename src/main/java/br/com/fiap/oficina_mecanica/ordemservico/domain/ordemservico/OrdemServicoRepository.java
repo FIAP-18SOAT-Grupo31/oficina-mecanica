@@ -6,4 +6,5 @@ import java.util.UUID;
 public interface OrdemServicoRepository {
     OrdemServico salvar(OrdemServico ordemServico);
     Optional<OrdemServico> buscarPorId(UUID id);
+    boolean existePorVeiculoId(UUID veiculoId);
 }
