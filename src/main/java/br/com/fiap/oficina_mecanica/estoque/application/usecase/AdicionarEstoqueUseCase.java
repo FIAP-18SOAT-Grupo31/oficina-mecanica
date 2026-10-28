@@ -10,12 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+import static br.com.fiap.oficina_mecanica.estoque.application.dto.EstoqueOutput.deDominio;
+
 @Service
-public class ReservarPecaUseCase {
+public class AdicionarEstoqueUseCase {
 
     private final ProdutoEstoqueRepository repository;
 
-    public ReservarPecaUseCase(ProdutoEstoqueRepository repository) {
+    public AdicionarEstoqueUseCase(ProdutoEstoqueRepository repository) {
         this.repository = repository;
     }
 
@@ -24,10 +26,9 @@ public class ReservarPecaUseCase {
         ProdutoEstoque produto = repository.buscarPorId(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Peça não encontrada no estoque com o ID: " + id));
 
-        produto.reservar(input.quantidade());
+        produto.adicionarEstoque(input.quantidade());
 
         ProdutoEstoque produtoSalvo = repository.salvar(produto);
-
-        return EstoqueOutput.deDominio(produtoSalvo);
+        return deDominio(produtoSalvo);
     }
 }

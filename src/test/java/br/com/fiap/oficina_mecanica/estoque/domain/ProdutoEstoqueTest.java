@@ -36,6 +36,10 @@ class ProdutoEstoqueTest {
         assertThatThrownBy(() -> new ProdutoEstoque(id, "Peca", 5, BigDecimal.ZERO))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessage("Valor unitário deve ser maior que zero.");
+
+        assertThatThrownBy(() -> new ProdutoEstoque(id, "Peca", 5, null))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Valor unitário deve ser maior que zero.");
     }
 
     @Test
@@ -58,6 +62,19 @@ class ProdutoEstoqueTest {
     }
 
     @Test
+    void falhaAoReservarComQuantidadeMenorOuIgualAZero() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+
+        assertThatThrownBy(() -> produto.reservar(0))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade de reserva deve ser maior que zero.");
+
+        assertThatThrownBy(() -> produto.reservar(-1))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade de reserva deve ser maior que zero.");
+    }
+
+    @Test
     void confirmaBaixaDeProdutoReservado() {
         ProdutoEstoque produto = criarProdutoPadrao();
         produto.reservar(3);
@@ -66,6 +83,16 @@ class ProdutoEstoqueTest {
 
         assertThat(produto.getQuantidadeDisponivel()).isEqualTo(7);
         assertThat(produto.getQuantidadeReservada()).isEqualTo(1);
+    }
+
+    @Test
+    void falhaAoConfirmarBaixaSeQuantidadeReservadaInsuficiente() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+        produto.reservar(2);
+
+        assertThatThrownBy(() -> produto.confirmarBaixa(3))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade reservada insuficiente para confirmar baixa.");
     }
 
     @Test
@@ -80,11 +107,66 @@ class ProdutoEstoqueTest {
     }
 
     @Test
+    void falhaAoCancelarReservaSeQuantidadeReservadaInsuficiente() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+        produto.reservar(2);
+
+        assertThatThrownBy(() -> produto.cancelarReserva(3))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade reservada insuficiente para cancelamento.");
+    }
+
+    @Test
     void adicionaEstoqueComSucesso() {
         ProdutoEstoque produto = criarProdutoPadrao();
 
         produto.adicionarEstoque(5);
 
         assertThat(produto.getQuantidadeDisponivel()).isEqualTo(15);
+    }
+
+    @Test
+    void falhaAoAdicionarEstoqueComQuantidadeMenorOuIgualAZero() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+
+        assertThatThrownBy(() -> produto.adicionarEstoque(0))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade de entrada deve ser maior que zero.");
+
+        assertThatThrownBy(() -> produto.adicionarEstoque(-2))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade de entrada deve ser maior que zero.");
+    }
+
+    @Test
+    void removeEstoqueComSucesso() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+
+        produto.removerEstoque(4);
+
+        assertThat(produto.getQuantidadeDisponivel()).isEqualTo(6);
+        assertThat(produto.getQuantidadeReservada()).isZero();
+    }
+
+    @Test
+    void falhaAoRemoverEstoqueComQuantidadeMaiorQueDisponivel() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+
+        assertThatThrownBy(() -> produto.removerEstoque(11))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade disponível insuficiente para remoção do estoque.");
+    }
+
+    @Test
+    void falhaAoRemoverEstoqueComQuantidadeMenorOuIgualAZero() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+
+        assertThatThrownBy(() -> produto.removerEstoque(0))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade de saída deve ser maior que zero.");
+
+        assertThatThrownBy(() -> produto.removerEstoque(-3))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Quantidade de saída deve ser maior que zero.");
     }
 }
