@@ -1,6 +1,6 @@
 # ADR 0003: Autenticação com JWT e código de acesso para o cliente
 
-- **Data:** 07/10/2026
+- **Data:** decisão de 07/10/2026; registro escrito em 28/10/2026
 - **Status:** Aceita
 - **Responsável:** Henrique Melo
 

@@ -1,6 +1,6 @@
 # ADR 0001: Monólito modular em camadas
 
-- **Data:** 25/09/2026 (atualizado em 28/10/2026)
+- **Data:** decisão tomada no setup do projeto, em 25/09/2026; registro escrito em 28/10/2026
 - **Status:** Aceita
 - **Responsável:** Ruan Pablo
 
@@ -22,7 +22,8 @@ O que entrou depois do setup inicial:
 
 ## Alternativas consideradas
 
-- Microsserviços: separação maior, mas exige mais de um deploy, comunicação pela rede e consistência entre bancos. Não faz sentido para um MVP, e o enunciado pede monólito.
+Monólito era requisito do enunciado, então a discussão foi só sobre como organizar os módulos dentro dele.
+
 - Camadas globais (`controller/`, `service/`, `repository/` na raiz): mais simples no começo, mas mistura os contextos e gera conflito de merge entre os PRs.
 - Arquitetura hexagonal completa, com portas para tudo: mais isolamento, mas muito código de adaptador para o tamanho do projeto.
 

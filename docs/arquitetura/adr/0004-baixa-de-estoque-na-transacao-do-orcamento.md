@@ -1,6 +1,6 @@
 # ADR 0004: Reserva e baixa de estoque na mesma transação do orçamento
 
-- **Data:** 13/10/2026
+- **Data:** decisão de 13/10/2026; registro escrito em 28/10/2026
 - **Status:** Aceita
 - **Responsável:** Ruan Pablo
 

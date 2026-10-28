@@ -21,7 +21,7 @@ Todas as rotas de `/api`, menos `/api/auth/**` e `/api/publico/**`, exigem JWT c
 | RF11 | O sistema deve oferecer CRUD de serviços. | Must | atendido |
 | RF12 | O sistema deve oferecer CRUD de peças e insumos com controle de estoque. | Must | parcial: faltam listar, atualizar e excluir peça |
 | RF13 | O sistema deve listar e detalhar as OS, com filtro por status. | Must | atendido |
-| RF14 | O sistema deve informar o tempo médio de execução dos serviços. | Should | pendente: as datas já ficam em `historico_status_ordem_servico`, mas não há cálculo nem endpoint |
+| RF14 | O sistema deve informar o tempo médio de execução dos serviços. | Must | pendente: as datas já ficam em `historico_status_ordem_servico`, mas não há cálculo nem endpoint |
 | RF15 | O sistema deve autenticar a equipe da oficina por login e senha. | Must | atendido |
 | RF16 | O sistema deve avisar o cliente por WhatsApp e gerar PDF da OS. | Won't | fora do escopo do MVP; o aviso é só o e-mail simulado |
 
@@ -34,7 +34,7 @@ Todas as rotas de `/api`, menos `/api/auth/**` e `/api/publico/**`, exigem JWT c
 | RNF03 | O código deve ter cobertura de testes de pelo menos 80%. | Must | `./mvnw verify` falha com menos de 80% de linhas cobertas no projeto todo (regra `BUNDLE`, contador `LINE`); roda em todo PR | `jacoco.cobertura.minima=0.80` no `pom.xml`; job `build` do `ci.yml` |
 | RNF04 | O sistema deve manter orçamento, OS e estoque consistentes. | Must | se uma peça do orçamento não tiver saldo, nenhuma reserva é gravada e a resposta é 422 | `@Transactional` nos casos de uso |
 | RNF05 | O sistema deve rodar em qualquer máquina com Docker. | Must | `docker compose --profile app up` sobe aplicação, PostgreSQL 16 e pgAdmin | `Dockerfile` multi-stage, `docker-compose.yml` |
-| RNF06 | A API deve ser documentada. | Should | `/v3/api-docs` e `/swagger-ui.html` respondem sem token, com o esquema `bearer-jwt` | springdoc-openapi |
+| RNF06 | A API deve ser documentada. | Must | `/v3/api-docs` e `/swagger-ui.html` respondem sem token, com o esquema `bearer-jwt` | springdoc-openapi |
 | RNF07 | O sistema deve limitar requisições nas rotas abertas. | Must | até 30 requisições por minuto por IP, com um contador para `/api/auth/login` e outro para todas as rotas `/api/publico/**` juntas (janela fixa de 1 minuto, em memória); acima disso, 429 com `Retry-After` | `app.seguranca.limite-requisicoes.por-minuto` (padrão 30, variável `LIMITE_REQUISICOES_POR_MINUTO`) |
 | RNF08 | O sistema deve expor health check. | Should | `/actuator/health` responde sem token; `HEALTHCHECK` no `Dockerfile`; `pg_isready` no serviço `db` | `SegurancaConfig`, `Dockerfile`, `docker-compose.yml` |
 | RNF09 | O build deve barrar vulnerabilidades conhecidas. | Must | o Trivy falha o CI com CVE CRITICAL ou HIGH que já tenha correção; CodeQL analisa todo PR ([relatório](../seguranca/relatorio-vulnerabilidades.md)) | `ci.yml` (Trivy); CodeQL pela configuração padrão do GitHub |

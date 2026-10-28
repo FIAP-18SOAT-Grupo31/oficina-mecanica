@@ -1,6 +1,6 @@
 # ADR 0002: PostgreSQL como banco de dados
 
-- **Data:** 25/09/2026
+- **Data:** decisão tomada no setup do projeto, em 25/09/2026; registro escrito em 28/10/2026
 - **Status:** Aceita
 - **Responsável:** Ruan Pablo e Henrique Melo
 

@@ -26,7 +26,7 @@ Achados da análise de 07/10/2026:
 | HIGH | DS-0002: container rodando como root | `Dockerfile` | imagem final roda com o usuário `oficina`, sem privilégio de root |
 | LOW | imagem sem `HEALTHCHECK` | `Dockerfile` | `HEALTHCHECK` na porta 8080 |
 
-Os achados do Trivy listados acima foram corrigidos subindo a versão.
+Atualizamos as dependências e corrigimos a configuração do Dockerfile para resolver os achados do Trivy listados acima.
 
 ## Outras análises
 
