@@ -6,7 +6,6 @@ import java.util.UUID;
 public interface VerificadorVeiculo {
     Optional<VeiculoCadastrado> buscarPorId(UUID veiculoId);
 
-    /** Busca o veículo pela placa já normalizada (só letras e dígitos, em maiúsculas). */
     Optional<VeiculoCadastrado> buscarPorPlaca(String placa);
 
     record VeiculoCadastrado(UUID id, UUID clienteId) {}

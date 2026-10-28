@@ -64,7 +64,6 @@ public class CriarOrdemServicoUseCase {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Veículo não encontrado para a placa informada."));
     }
 
-    // Mesma normalização do cadastro de cliente e de veículo: só letras e dígitos, em maiúsculas.
     private static String normalizar(String valor) {
         return valor.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
     }

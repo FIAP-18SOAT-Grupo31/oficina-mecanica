@@ -24,7 +24,6 @@ public class VerificadorClienteAdapter implements VerificadorCliente {
 
     @Override
     public Optional<UUID> buscarIdPorDocumento(String documento) {
-        // O documento é único, então a primeira página com um item basta.
         return clienteRepository.listar(null, documento, 0, 1).conteudo().stream()
                 .findFirst()
                 .map(Cliente::getId);

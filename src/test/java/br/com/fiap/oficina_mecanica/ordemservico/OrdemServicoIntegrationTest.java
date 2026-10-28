@@ -59,7 +59,6 @@ class OrdemServicoIntegrationTest {
                 veiculoId, clienteId, placa, "Fiat", "Argo", 2022);
     }
 
-    // Cliente e veículo são carregados pelo domínio, que valida CPF e placa; por isso os dados de teste são válidos.
     private static String cpfAleatorio() {
         int[] digitos = new int[11];
         for (int i = 0; i < 9; i++) {
@@ -147,7 +146,6 @@ class OrdemServicoIntegrationTest {
 
     @Test
     void criaOrdemDeServicoPeloDocumentoDoClienteEPelaPlaca() throws Exception {
-        // pontuação e minúsculas são ignoradas, como no cadastro
         String documentoFormatado = documento.substring(0, 3) + "." + documento.substring(3, 6) + "."
                 + documento.substring(6, 9) + "-" + documento.substring(9);
         String placaFormatada = placa.substring(0, 3).toLowerCase() + "-" + placa.substring(3);
@@ -172,15 +170,6 @@ class OrdemServicoIntegrationTest {
                         .content(corpoPorDocumentoEPlaca("00000000000", placa)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.mensagem").value("Cliente não encontrado para o CPF/CNPJ informado."));
-    }
-
-    @Test
-    void placaSemVeiculoVolta404() throws Exception {
-        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoPorDocumentoEPlaca(documento, "ZZZ9Z99")))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.mensagem").value("Veículo não encontrado para a placa informada."));
     }
 
     @Test

@@ -6,6 +6,5 @@ import java.util.UUID;
 public interface VerificadorCliente {
     boolean existe(UUID clienteId);
 
-    /** Busca o id do cliente pelo CPF/CNPJ já normalizado (só letras e dígitos, em maiúsculas). */
     Optional<UUID> buscarIdPorDocumento(String documento);
 }

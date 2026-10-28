@@ -24,7 +24,6 @@ public class VerificadorVeiculoAdapter implements VerificadorVeiculo {
 
     @Override
     public Optional<VeiculoCadastrado> buscarPorPlaca(String placa) {
-        // A placa é única, então a primeira página com um item basta.
         return veiculoRepository.listar(null, placa, null, 0, 1).conteudo().stream()
                 .findFirst()
                 .map(VerificadorVeiculoAdapter::paraCadastrado);

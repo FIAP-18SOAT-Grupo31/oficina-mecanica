@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
-/**
- * O cliente é identificado pelo id ou pelo CPF/CNPJ, e o veículo pelo id ou pela placa. Em cada par, informe só um.
- */
 public record CriarOrdemServicoInput(
         @Schema(description = "Id do cliente. Use este campo ou documentoCliente.") UUID clienteId,
         @Schema(description = "CPF ou CNPJ do cliente, com ou sem pontuação. Use este campo ou clienteId.",
