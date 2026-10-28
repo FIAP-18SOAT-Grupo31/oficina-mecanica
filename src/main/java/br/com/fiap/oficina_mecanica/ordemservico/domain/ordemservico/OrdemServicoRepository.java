@@ -10,4 +10,5 @@ public interface OrdemServicoRepository {
     OrdemServico salvar(OrdemServico ordemServico);
     Optional<OrdemServico> buscarPorId(UUID id);
     Pagina<OrdemServico> listar(StatusOrdemServico status, Paginacao paginacao);
+    boolean existePorVeiculoId(UUID veiculoId);
 }

@@ -61,7 +61,9 @@ class OrdemServicoIntegrationTest {
         String documento = String.valueOf(Math.abs(clienteId.getMostSignificantBits())).substring(0, 11);
         documentoCliente = documento;
         String placa = clienteId.toString().substring(0, 7).toUpperCase();
-        jdbc.update("INSERT INTO clientes (id, nome, documento) VALUES (?, ?, ?)", clienteId, "Cliente de teste", documento);
+        jdbc.update("INSERT INTO clientes (id, nome, documento, rua, numero, bairro, cidade, cep, estado) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                clienteId, "Cliente de teste", documento, "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
         jdbc.update("INSERT INTO veiculos (id, cliente_id, placa, marca, modelo, ano) VALUES (?, ?, ?, ?, ?, ?)",
                 veiculoId, clienteId, placa, "Fiat", "Argo", 2022);
     }

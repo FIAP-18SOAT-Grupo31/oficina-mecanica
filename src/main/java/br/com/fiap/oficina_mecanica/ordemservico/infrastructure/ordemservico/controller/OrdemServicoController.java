@@ -1,6 +1,6 @@
 package br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.controller;
 
-import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
+import br.com.fiap.oficina_mecanica.compartilhado.application.dto.PaginaOutput;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Paginacao;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoOutput;
@@ -74,13 +74,13 @@ public class OrdemServicoController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
     @Operation(summary = "Lista as ordens de serviço com paginação, podendo filtrar por status")
-    public ResponseEntity<Pagina<OrdemServicoResumoOutput>> listarOrdensServico(
+    public ResponseEntity<PaginaOutput<OrdemServicoResumoOutput>> listarOrdensServico(
             @RequestParam(required = false) StatusOrdemServico status,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "deve ser maior ou igual a 0") int pagina,
             @RequestParam(defaultValue = "20")
             @Min(value = 1, message = "deve ser entre 1 e 100")
             @Max(value = Paginacao.TAMANHO_MAXIMO, message = "deve ser entre 1 e 100") int tamanho) {
-        return ResponseEntity.ok(listarOrdensServicoUseCase.execute(status, new Paginacao(pagina, tamanho)));
+        return ResponseEntity.ok(PaginaOutput.de(listarOrdensServicoUseCase.execute(status, new Paginacao(pagina, tamanho))));
     }
 
     @PostMapping
