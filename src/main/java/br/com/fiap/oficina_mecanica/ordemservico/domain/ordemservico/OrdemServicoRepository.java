@@ -11,4 +11,5 @@ public interface OrdemServicoRepository {
     Optional<OrdemServico> buscarPorId(UUID id);
     Pagina<OrdemServico> listar(StatusOrdemServico status, Paginacao paginacao);
     boolean existePorVeiculoId(UUID veiculoId);
+    TempoExecucaoMedio calcularTempoExecucaoMedio();
 }

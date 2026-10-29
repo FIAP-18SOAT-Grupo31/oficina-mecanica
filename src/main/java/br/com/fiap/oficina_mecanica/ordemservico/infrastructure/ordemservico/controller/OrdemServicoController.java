@@ -6,8 +6,10 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.Cr
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoDetalheOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.OrdemServicoResumoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.TempoExecucaoMedioOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.BuscarOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.CancelarOrdemServicoUseCase;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.ConsultarTempoExecucaoMedioUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.CriarOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.EntregarOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.FinalizarOrdemServicoUseCase;
@@ -47,6 +49,7 @@ public class OrdemServicoController {
     private final IniciarExecucaoOrdemServicoUseCase iniciarExecucaoOrdemServicoUseCase;
     private final FinalizarOrdemServicoUseCase finalizarOrdemServicoUseCase;
     private final EntregarOrdemServicoUseCase entregarOrdemServicoUseCase;
+    private final ConsultarTempoExecucaoMedioUseCase consultarTempoExecucaoMedioUseCase;
 
     public OrdemServicoController(CriarOrdemServicoUseCase criarOrdemServicoUseCase,
                                   ListarOrdensServicoUseCase listarOrdensServicoUseCase,
@@ -54,7 +57,8 @@ public class OrdemServicoController {
                                   CancelarOrdemServicoUseCase cancelarOrdemServicoUseCase,
                                   IniciarExecucaoOrdemServicoUseCase iniciarExecucaoOrdemServicoUseCase,
                                   FinalizarOrdemServicoUseCase finalizarOrdemServicoUseCase,
-                                  EntregarOrdemServicoUseCase entregarOrdemServicoUseCase) {
+                                  EntregarOrdemServicoUseCase entregarOrdemServicoUseCase,
+                                  ConsultarTempoExecucaoMedioUseCase consultarTempoExecucaoMedioUseCase) {
         this.criarOrdemServicoUseCase = criarOrdemServicoUseCase;
         this.listarOrdensServicoUseCase = listarOrdensServicoUseCase;
         this.buscarOrdemServicoUseCase = buscarOrdemServicoUseCase;
@@ -62,6 +66,14 @@ public class OrdemServicoController {
         this.iniciarExecucaoOrdemServicoUseCase = iniciarExecucaoOrdemServicoUseCase;
         this.finalizarOrdemServicoUseCase = finalizarOrdemServicoUseCase;
         this.entregarOrdemServicoUseCase = entregarOrdemServicoUseCase;
+        this.consultarTempoExecucaoMedioUseCase = consultarTempoExecucaoMedioUseCase;
+    }
+
+    @GetMapping("/metricas/tempo-execucao")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Tempo médio entre o início da execução e a finalização das ordens de serviço")
+    public ResponseEntity<TempoExecucaoMedioOutput> tempoMedioExecucao() {
+        return ResponseEntity.ok(consultarTempoExecucaoMedioUseCase.execute());
     }
 
     @GetMapping("/{id}")

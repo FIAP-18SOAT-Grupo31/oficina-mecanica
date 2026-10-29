@@ -7,6 +7,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepos
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.TempoExecucaoMedio;
 import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.ordemservico.entity.OrdemServicoEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -76,6 +78,15 @@ public class OrdemServicoRepositoryAdapter implements OrdemServicoRepository {
     @Override
     public boolean existePorVeiculoId(UUID veiculoId) {
         return jpaRepository.existsByVeiculoId(veiculoId);
+    }
+
+    @Override
+    public TempoExecucaoMedio calcularTempoExecucaoMedio() {
+        HistoricoStatusJpaRepository.TempoExecucaoAgregado agregado = historicoRepository.calcularTempoExecucaoMedio();
+        Duration media = agregado.getMediaSegundos() == null
+                ? null
+                : Duration.ofMillis(Math.round(agregado.getMediaSegundos() * 1000));
+        return new TempoExecucaoMedio(media, agregado.getTotal());
     }
 
     private List<Orcamento> orcamentosDa(UUID ordemServicoId) {
