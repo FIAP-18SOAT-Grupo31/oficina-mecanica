@@ -25,6 +25,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.StatusOrcament
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.TempoExecucaoMedio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -415,6 +416,11 @@ class OrcamentoUseCasesTest {
         @Override
         public boolean existePorVeiculoId(UUID veiculoId) {
             return ordens.values().stream().anyMatch(ordem -> ordem.getVeiculoId().equals(veiculoId));
+        }
+
+        @Override
+        public TempoExecucaoMedio calcularTempoExecucaoMedio() {
+            throw new UnsupportedOperationException();
         }
     }
 

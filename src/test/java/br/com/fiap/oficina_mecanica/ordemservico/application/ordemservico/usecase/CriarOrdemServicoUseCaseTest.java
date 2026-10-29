@@ -10,6 +10,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCriad
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.TempoExecucaoMedio;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -47,6 +48,11 @@ class CriarOrdemServicoUseCaseTest {
         @Override
         public boolean existePorVeiculoId(UUID veiculoId) {
             return ordens.values().stream().anyMatch(ordem -> ordem.getVeiculoId().equals(veiculoId));
+        }
+
+        @Override
+        public TempoExecucaoMedio calcularTempoExecucaoMedio() {
+            throw new UnsupportedOperationException();
         }
     }
 

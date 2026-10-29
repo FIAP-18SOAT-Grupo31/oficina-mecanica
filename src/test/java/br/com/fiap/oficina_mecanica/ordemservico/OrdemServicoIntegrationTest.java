@@ -851,6 +851,54 @@ class OrdemServicoIntegrationTest {
     }
 
     @Test
+    void calculaTempoMedioEntreInicioDaExecucaoEFinalizacao() throws Exception {
+        jdbc.update("DELETE FROM historico_status_ordem_servico WHERE status_novo IN ('EM_EXECUCAO', 'FINALIZADA')");
+        String primeira = criarOrdemAprovada();
+        String segunda = criarOrdemAprovada();
+        for (String id : new String[]{primeira, segunda}) {
+            acao(id, "iniciar-execucao", jwtAtendente(), 204);
+            acao(id, "finalizar", jwtAtendente(), 204);
+        }
+        definirDuracaoDaExecucao(primeira, 3600);
+        definirDuracaoDaExecucao(segunda, 7200);
+
+        mvc.perform(get("/api/ordens-servico/metricas/tempo-execucao").with(jwtAtendente()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tempoMedioSegundos").value(5400))
+                .andExpect(jsonPath("$.tempoMedio").value("PT1H30M"))
+                .andExpect(jsonPath("$.totalOrdensFinalizadas").value(2));
+    }
+
+    @Test
+    void tempoMedioSemOrdensFinalizadasVoltaNulo() throws Exception {
+        jdbc.update("DELETE FROM historico_status_ordem_servico WHERE status_novo IN ('EM_EXECUCAO', 'FINALIZADA')");
+        String emExecucao = criarOrdemAprovada();
+        acao(emExecucao, "iniciar-execucao", jwtAdmin(), 204);
+
+        mvc.perform(get("/api/ordens-servico/metricas/tempo-execucao").with(jwtAdmin()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tempoMedioSegundos").doesNotExist())
+                .andExpect(jsonPath("$.tempoMedio").doesNotExist())
+                .andExpect(jsonPath("$.totalOrdensFinalizadas").value(0));
+    }
+
+    @Test
+    void tempoMedioExigeTokenEPapelPermitido() throws Exception {
+        mvc.perform(get("/api/ordens-servico/metricas/tempo-execucao")).andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/ordens-servico/metricas/tempo-execucao")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"))))
+                .andExpect(status().isForbidden());
+    }
+
+    private void definirDuracaoDaExecucao(String ordemServicoId, int segundos) {
+        UUID id = UUID.fromString(ordemServicoId);
+        jdbc.update("UPDATE historico_status_ordem_servico SET data_transicao = TIMESTAMP '2026-01-01 08:00:00' "
+                + "WHERE ordem_servico_id = ? AND status_novo = 'EM_EXECUCAO'", id);
+        jdbc.update("UPDATE historico_status_ordem_servico SET data_transicao = DATEADD('SECOND', ?, TIMESTAMP '2026-01-01 08:00:00') "
+                + "WHERE ordem_servico_id = ? AND status_novo = 'FINALIZADA'", segundos, id);
+    }
+
+    @Test
     void ordemInexistenteVolta404NasTresAcoes() throws Exception {
         String inexistente = UUID.randomUUID().toString();
 
