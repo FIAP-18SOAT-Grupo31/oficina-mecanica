@@ -1,0 +1,44 @@
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/application/ordemservico/usecase/ListarOrdensServicoUseCaseTest.java
+  s_4aaeed999b861f::t_16bddf417df1ed 13,61-64
+  s_4aaeed999b861f::t_139288521d9b22 65
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/ordemservico/HistoricoStatusJpaRepository.java
+  s_4aaeed999b861f::t_80f44f0d0776ae 5,11-27
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/domain/ordemservico/OrdemServicoRepository.java
+  s_4aaeed999b861f::t_96a54b411260ce 14
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/ordemservico/OrdemServicoRepositoryAdapter.java
+  s_4aaeed999b861f::t_5987eaf67ccb84 10,18,83-89
+  s_4aaeed999b861f::t_d807c3721acea6 90-91
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/application/orcamento/usecase/OrcamentoUseCasesTest.java
+  s_4aaeed999b861f::t_0fa27c9c10485a 28,420-423
+  s_4aaeed999b861f::t_cb51efd5c8e8df 424
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/application/ordemservico/usecase/CriarOrdemServicoUseCaseTest.java
+  s_4aaeed999b861f::t_bd7f6bce4af6f2 13,52-55
+  s_4aaeed999b861f::t_a54f57f7133a87 56
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/OrdemServicoIntegrationTest.java
+  s_4aaeed999b861f::t_9cd315ee00e7ca 853-900
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/application/ordemservico/usecase/ConsultarTempoExecucaoMedioUseCase.java
+  s_4aaeed999b861f::t_f5a4332fccb0de 1-21
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/domain/ordemservico/TempoExecucaoMedio.java
+  s_4aaeed999b861f::t_e47f8be04f3c07 1-7
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/application/ordemservico/dto/TempoExecucaoMedioOutput.java
+  s_4aaeed999b861f::t_18b89791a9dc92 1-18
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/ordemservico/controller/OrdemServicoController.java
+  s_4aaeed999b861f::t_8f3c7be1f72a00 12
+  s_4aaeed999b861f::t_1cfd2e82e3aecf 9,52,60-61,69-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "f23bb01e0801d6d51a29e52901d0b9c7aa991dff",
+  "prompts": {},
+  "sessions": {
+    "s_4aaeed999b861f": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "ad603c55-0870-4343-b599-530b97debd52",
+        "model": "unknown"
+      },
+      "human_author": "Natan Santos <Natantech.sa@gmail.com>"
+    }
+  }
+}
