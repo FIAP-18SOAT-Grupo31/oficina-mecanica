@@ -60,4 +60,14 @@ public class ProdutoEstoque {
         if (quantidade <= 0) throw new RegraNegocioException("Quantidade de entrada deve ser maior que zero.");
         this.quantidadeDisponivel += quantidade;
     }
+
+    public void removerEstoque(int quantidade) {
+        if (quantidade <= 0)
+            throw new RegraNegocioException("Quantidade de saída deve ser maior que zero.");
+
+        if (this.quantidadeDisponivel < quantidade)
+            throw new RegraNegocioException("Quantidade disponível insuficiente para remoção do estoque.");
+
+        this.quantidadeDisponivel -= quantidade;
+    }
 }

@@ -1,8 +1,9 @@
-package br.com.fiap.oficina_mecanica.estoque.infrastructure;
+package br.com.fiap.oficina_mecanica.estoque.infrastructure.repository;
 
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
-import br.com.fiap.oficina_mecanica.estoque.infrastructure.entity.ProdutoEstoqueEntity;
+import br.com.fiap.oficina_mecanica.estoque.infrastructure.repository.entity.ProdutoEstoqueEntity;
+import br.com.fiap.oficina_mecanica.estoque.infrastructure.repository.entity.ProdutoEstoqueMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -29,5 +30,10 @@ public class ProdutoEstoqueRepositoryAdapter implements ProdutoEstoqueRepository
     @Override
     public Optional<ProdutoEstoque> buscarPorId(UUID id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public Optional<ProdutoEstoque> buscarPorNomePeca(String nomePeca) {
+        return jpaRepository.findByNomePeca(nomePeca).map(mapper::toDomain);
     }
 }

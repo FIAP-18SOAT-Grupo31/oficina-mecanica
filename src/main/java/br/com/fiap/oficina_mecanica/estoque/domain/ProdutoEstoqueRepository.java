@@ -6,4 +6,5 @@ import java.util.UUID;
 public interface ProdutoEstoqueRepository {
     ProdutoEstoque salvar(ProdutoEstoque produto);
     Optional<ProdutoEstoque> buscarPorId(UUID id);
+    Optional<ProdutoEstoque> buscarPorNomePeca(String nomePeca);
 }
