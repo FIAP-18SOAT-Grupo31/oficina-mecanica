@@ -1,0 +1,31 @@
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/application/ordemservico/usecase/AvancoDeStatusOrdemServicoUseCasesTest.java
+  s_97f65c67967395::t_65ffdefedb878f 53-82
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/OrdemServicoIntegrationTest.java
+  s_97f65c67967395::t_c0a896d8e611ed 765,775-811
+  s_97f65c67967395::t_fdb1be88f22588 86,109,941,944,955
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/application/ordemservico/usecase/IniciarDiagnosticoOrdemServicoUseCase.java
+  s_97f65c67967395::t_7677e59114baa2 1-29
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/ordemservico/controller/OrdemServicoController.java
+  s_97f65c67967395::t_ec70cd40d64ddb 16,50,60,69,122-126
+  s_97f65c67967395::t_b485dc31f75f40 127-129
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/application/orcamento/usecase/OrcamentoUseCasesTest.java
+  s_97f65c67967395::t_511cee391a1809 93
+  s_97f65c67967395::t_b84d04ae3d3b9c 140-151
+  s_97f65c67967395::t_54c72063295fe7 139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "bfebb9f0ac9cc16a1e9752b834efcd7f0e16ece9",
+  "prompts": {},
+  "sessions": {
+    "s_97f65c67967395": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "77ca8b5d-8538-480e-99bb-849256f7d13f",
+        "model": "unknown"
+      },
+      "human_author": "Natan Santos <Natantech.sa@gmail.com>"
+    }
+  }
+}
