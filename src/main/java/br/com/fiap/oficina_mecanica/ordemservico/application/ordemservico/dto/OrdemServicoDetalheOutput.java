@@ -14,7 +14,6 @@ public record OrdemServicoDetalheOutput(
         String relatoProblema,
         LocalDateTime dataAbertura,
         LocalDateTime dataConclusao,
-        String codigoAcesso,
         ClienteDetalheOutput cliente,
         VeiculoDetalheOutput veiculo,
         List<OrcamentoOutput> orcamentos
@@ -28,7 +27,6 @@ public record OrdemServicoDetalheOutput(
                 ordemServico.getRelatoProblema(),
                 ordemServico.getDataAbertura(),
                 ordemServico.getDataConclusao(),
-                ordemServico.getCodigoAcesso(),
                 cliente,
                 veiculo,
                 orcamentos);

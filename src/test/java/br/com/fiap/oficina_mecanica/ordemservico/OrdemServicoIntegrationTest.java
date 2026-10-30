@@ -94,10 +94,8 @@ class OrdemServicoIntegrationTest {
     }
 
     private String codigoAcesso(String ordemServicoId) throws Exception {
-        String resposta = mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
-                .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsString();
-        return JsonPath.read(resposta, "$.codigoAcesso");
+        return jdbc.queryForObject("SELECT codigo_acesso FROM ordens_servico WHERE id = ?", String.class,
+                UUID.fromString(ordemServicoId));
     }
 
     private String corpoConsulta(String cpf, String codigoAcesso) {
@@ -290,7 +288,7 @@ class OrdemServicoIntegrationTest {
                 .andExpect(jsonPath("$.id").value(ordemServicoId))
                 .andExpect(jsonPath("$.status").value("AGUARDANDO_APROVACAO"))
                 .andExpect(jsonPath("$.relatoProblema").value("Barulho na suspensão dianteira"))
-                .andExpect(jsonPath("$.codigoAcesso").isNotEmpty())
+                .andExpect(jsonPath("$.codigoAcesso").doesNotExist())
                 .andExpect(jsonPath("$.cliente.id").value(clienteId.toString()))
                 .andExpect(jsonPath("$.cliente.nome").value("Cliente de teste"))
                 .andExpect(jsonPath("$.cliente.documento").value(documentoCliente))
@@ -745,7 +743,8 @@ class OrdemServicoIntegrationTest {
         assertThat(saida.getOut())
                 .contains("Ordem de servi\u00e7o recebida")
                 .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
-                .contains("C\u00f3digo de Acesso: " + codigoAcesso(ordemServicoId));
+                .contains("C\u00f3digo de Acesso: ******")
+                .doesNotContain(codigoAcesso(ordemServicoId));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package br.com.fiap.oficina_mecanica.compartilhado.infrastructure.email;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -17,6 +18,7 @@ class EnviadorEmailLogTest {
 
     @BeforeEach
     void anexarAppender() {
+        logger.setLevel(Level.DEBUG);
         logs.start();
         logger.addAppender(logs);
     }
@@ -36,5 +38,17 @@ class EnviadorEmailLogTest {
                 .contains("Assunto")
                 .contains("Para: cliente@exemplo.com")
                 .contains("Corpo da mensagem");
+    }
+
+    @Test
+    void mascaraCodigoDeAcessoNoCorpoRegistrado() {
+        new EnviadorEmailLog().enviar("cliente@exemplo.com", "Assunto",
+                "Código de Acesso: ABC123\nInformação adicional");
+
+        assertThat(logs.list).hasSize(1);
+        assertThat(logs.list.getFirst().getFormattedMessage())
+                .contains("Código de Acesso: ******")
+                .contains("Informação adicional")
+                .doesNotContain("ABC123");
     }
 }

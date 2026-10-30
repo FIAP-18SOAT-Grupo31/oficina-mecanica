@@ -14,12 +14,13 @@ public class EnviadorEmailLog implements EnviadorEmail {
 
     @Override
     public void enviar(String destinatario, String assunto, String corpo) {
-        LOG.info("\n=========================================================================" +
+        String corpoMascarado = corpo.replaceAll("(?im)(C[oó]digo de Acesso:\\s*)[^\\r\\n]+", "$1******");
+        LOG.debug("\n=========================================================================" +
                         "\n📧 [SIMULAÇÃO DE E-MAIL] - {}" +
                         "\nPara: {}" +
                         "\n=========================================================================" +
                         "\n{}" +
                         "\n=========================================================================\n",
-                assunto, destinatario, corpo);
+                assunto, destinatario, corpoMascarado);
     }
 }
