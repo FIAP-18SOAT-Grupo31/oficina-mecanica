@@ -61,9 +61,9 @@ class OrdemServicoIntegrationTest {
         String documento = String.valueOf(Math.abs(clienteId.getMostSignificantBits())).substring(0, 11);
         documentoCliente = documento;
         String placa = clienteId.toString().substring(0, 7).toUpperCase();
-        jdbc.update("INSERT INTO clientes (id, nome, documento, rua, numero, bairro, cidade, cep, estado) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                clienteId, "Cliente de teste", documento, "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
+        jdbc.update("INSERT INTO clientes (id, nome, documento, email, rua, numero, bairro, cidade, cep, estado) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                clienteId, "Cliente de teste", documento, "cliente@exemplo.com", "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
         jdbc.update("INSERT INTO veiculos (id, cliente_id, placa, marca, modelo, ano) VALUES (?, ?, ?, ?, ?, ?)",
                 veiculoId, clienteId, placa, "Fiat", "Argo", 2022);
     }
@@ -585,12 +585,12 @@ class OrdemServicoIntegrationTest {
     void finalizarAvisaOClienteQueOVeiculoEstaProntoParaRetirada(CapturedOutput saida) throws Exception {
         String ordemServicoId = criarOrdemAprovada();
         acao(ordemServicoId, "iniciar-execucao", jwtAtendente(), 204);
-        assertThat(saida.getOut()).doesNotContain("VEÍCULO PRONTO PARA RETIRADA");
+        assertThat(saida.getOut()).doesNotContain("Veículo pronto para retirada");
 
         acao(ordemServicoId, "finalizar", jwtAtendente(), 204);
 
         assertThat(saida.getOut())
-                .contains("VEÍCULO PRONTO PARA RETIRADA")
+                .contains("Veículo pronto para retirada")
                 .contains("Argo (placa ");
     }
 
@@ -600,20 +600,20 @@ class OrdemServicoIntegrationTest {
 
         acao(ordemServicoId, "finalizar", jwtAtendente(), 422);
 
-        assertThat(saida.getOut()).doesNotContain("VEÍCULO PRONTO PARA RETIRADA");
+        assertThat(saida.getOut()).doesNotContain("Veículo pronto para retirada");
     }
 
     @Test
     void aprovarOrcamentoAvisaOClienteParaAcompanharAOrdem(CapturedOutput saida) throws Exception {
         String ordemServicoId = criarOrdemServico();
         String orcamentoId = gerarOrcamento(ordemServicoId);
-        assertThat(saida.getOut()).doesNotContain("OR\u00c7AMENTO APROVADO");
+        assertThat(saida.getOut()).doesNotContain("Or\u00e7amento aprovado");
 
         mvc.perform(patch("/api/orcamentos/" + orcamentoId + "/aprovar").with(jwtAtendente()))
                 .andExpect(status().isOk());
 
         assertThat(saida.getOut())
-                .contains("OR\u00c7AMENTO APROVADO")
+                .contains("Or\u00e7amento aprovado")
                 .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consultar");
     }
 
@@ -628,7 +628,7 @@ class OrdemServicoIntegrationTest {
                         .content(corpoConsulta(documentoCliente, codigo)))
                 .andExpect(status().isOk());
 
-        assertThat(saida.getOut()).contains("OR\u00c7AMENTO APROVADO");
+        assertThat(saida.getOut()).contains("Or\u00e7amento aprovado");
     }
 
     @Test
@@ -668,7 +668,7 @@ class OrdemServicoIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("REJEITADO"));
 
-        assertThat(saida.getOut()).contains("OR\u00c7AMENTO N\u00c3O APROVADO");
+        assertThat(saida.getOut()).contains("Or\u00e7amento n\u00e3o aprovado");
     }
 
     @Test
@@ -688,8 +688,8 @@ class OrdemServicoIntegrationTest {
                 .andExpect(status().isOk());
 
         assertThat(saida.getOut())
-                .contains("OR\u00c7AMENTO N\u00c3O APROVADO")
-                .doesNotContain("OR\u00c7AMENTO APROVADO");
+                .contains("Or\u00e7amento n\u00e3o aprovado")
+                .doesNotContain("Or\u00e7amento aprovado");
     }
 
     @Test
@@ -704,8 +704,8 @@ class OrdemServicoIntegrationTest {
                 .andExpect(jsonPath("$.status").value("REJEITADO"));
 
         assertThat(saida.getOut())
-                .contains("OR\u00c7AMENTO N\u00c3O APROVADO")
-                .doesNotContain("OR\u00c7AMENTO APROVADO");
+                .contains("Or\u00e7amento n\u00e3o aprovado")
+                .doesNotContain("Or\u00e7amento aprovado");
     }
 
     @Test
@@ -714,7 +714,7 @@ class OrdemServicoIntegrationTest {
 
         acao(ordemServicoId, "cancelar", jwtAtendente(), 204);
 
-        assertThat(saida.getOut()).contains("ORDEM DE SERVI\u00c7O CANCELADA");
+        assertThat(saida.getOut()).contains("Ordem de servi\u00e7o cancelada");
     }
 
     @Test
@@ -723,7 +723,7 @@ class OrdemServicoIntegrationTest {
 
         acao(ordemServicoId, "cancelar", jwtAtendente(), 422);
 
-        assertThat(saida.getOut()).doesNotContain("ORDEM DE SERVI\u00c7O CANCELADA");
+        assertThat(saida.getOut()).doesNotContain("Ordem de servi\u00e7o cancelada");
     }
 
     @Test
@@ -733,9 +733,9 @@ class OrdemServicoIntegrationTest {
         gerarOrcamento(ordemServicoId);
 
         assertThat(saida.getOut())
-                .contains("NOVO OR\u00c7AMENTO GERADO")
+                .contains("Novo or\u00e7amento gerado")
                 .contains("/api/publico/orcamentos/");
-        assertThat(saida.getOut().split("NOVO OR\u00c7AMENTO GERADO", -1)).hasSize(2);
+        assertThat(saida.getOut().split("Novo or\u00e7amento gerado", -1)).hasSize(2);
     }
 
     @Test
@@ -743,7 +743,7 @@ class OrdemServicoIntegrationTest {
         String ordemServicoId = criarOrdemServico();
 
         assertThat(saida.getOut())
-                .contains("ORDEM DE SERVI\u00c7O RECEBIDA")
+                .contains("Ordem de servi\u00e7o recebida")
                 .contains("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
                 .contains("C\u00f3digo de Acesso: " + codigoAcesso(ordemServicoId));
     }
@@ -755,7 +755,7 @@ class OrdemServicoIntegrationTest {
                         .content(corpoOrdemServico(UUID.randomUUID(), veiculoId, "Barulho na suspensão dianteira")))
                 .andExpect(status().isNotFound());
 
-        assertThat(saida.getOut()).doesNotContain("ORDEM DE SERVI\u00c7O RECEBIDA");
+        assertThat(saida.getOut()).doesNotContain("Ordem de servi\u00e7o recebida");
     }
 
     @Test
@@ -769,7 +769,7 @@ class OrdemServicoIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isNotFound());
 
-        assertThat(saida.getOut()).doesNotContain("NOVO OR\u00c7AMENTO GERADO");
+        assertThat(saida.getOut()).doesNotContain("Novo or\u00e7amento gerado");
         mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
                 .andExpect(jsonPath("$.status").value("RECEBIDA"));
     }
@@ -787,8 +787,8 @@ class OrdemServicoIntegrationTest {
                 .andExpect(status().is(422));
 
         assertThat(saida.getOut())
-                .contains("OR\u00c7AMENTO N\u00c3O APROVADO")
-                .doesNotContain("OR\u00c7AMENTO APROVADO");
+                .contains("Or\u00e7amento n\u00e3o aprovado")
+                .doesNotContain("Or\u00e7amento aprovado");
         mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
                 .andExpect(jsonPath("$.status").value("RECUSADA"));
     }
