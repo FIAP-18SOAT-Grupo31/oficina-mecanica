@@ -63,7 +63,7 @@ class BuscarOrdemServicoUseCaseTest {
     }
 
     @Test
-    void detalhaOrdemComClienteVeiculoECodigoDeAcesso() {
+    void detalhaOrdemComClienteEVeiculo() {
         ClienteDetalheOutput cliente = new ClienteDetalheOutput(clienteId, "Maria", "12345678900", "m@email.com", "11999990000");
         VeiculoDetalheOutput veiculo = new VeiculoDetalheOutput(veiculoId, "ABC1D23", "Fiat", "Argo", 2022);
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordemComOrcamentos(List.of())));
@@ -75,7 +75,6 @@ class BuscarOrdemServicoUseCaseTest {
         assertThat(output.id()).isEqualTo(ordemId);
         assertThat(output.status()).isEqualTo(StatusOrdemServico.AGUARDANDO_APROVACAO);
         assertThat(output.relatoProblema()).isEqualTo("Barulho na suspensão dianteira");
-        assertThat(output.codigoAcesso()).isEqualTo("ABC123");
         assertThat(output.cliente()).isEqualTo(cliente);
         assertThat(output.veiculo()).isEqualTo(veiculo);
         assertThat(output.orcamentos()).isEmpty();
