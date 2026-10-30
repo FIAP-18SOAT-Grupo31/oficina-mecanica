@@ -1,0 +1,38 @@
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/OrdemServicoIntegrationTest.java
+  s_fbb68f7a79eaf1::t_3a3b7ce318ee46 97-98,291,746-747
+src/main/java/br/com/fiap/oficina_mecanica/compartilhado/infrastructure/email/EnviadorEmailLog.java
+  s_003f937678d9b0::t_6db71a10647f75 17,24
+  s_fbb68f7a79eaf1::t_66c45bf8d15868 18
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/application/ordemservico/usecase/BuscarOrdemServicoUseCaseTest.java
+  s_fbb68f7a79eaf1::t_3a87bb51b0ff7a 66
+src/test/resources/application-test.properties
+  s_fbb68f7a79eaf1::t_4949f8545c048c 12
+  s_fbb68f7a79eaf1::t_a51058961d6e3b 13
+src/test/java/br/com/fiap/oficina_mecanica/compartilhado/infrastructure/email/EnviadorEmailLogTest.java
+  s_003f937678d9b0::t_6db71a10647f75 42-53
+  s_fbb68f7a79eaf1::t_6e46a9f9d0cd52 3,21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "1b2b6af603ed9a52cb62dea848b52f5aaec7f8ef",
+  "prompts": {},
+  "sessions": {
+    "s_003f937678d9b0": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "87211c5e-ef24-4522-9320-d07b9e63b88b",
+        "model": "unknown"
+      },
+      "human_author": "Natan Santos <Natantech.sa@gmail.com>"
+    },
+    "s_fbb68f7a79eaf1": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "e489ece7-72a3-45c5-ac3f-049990428ca4",
+        "model": "unknown"
+      },
+      "human_author": "Natan Santos <Natantech.sa@gmail.com>"
+    }
+  }
+}
