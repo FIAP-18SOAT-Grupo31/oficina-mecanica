@@ -13,6 +13,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecas
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.CriarOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.EntregarOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.FinalizarOrdemServicoUseCase;
+import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.IniciarDiagnosticoOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.IniciarExecucaoOrdemServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.ListarOrdensServicoUseCase;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
@@ -46,6 +47,7 @@ public class OrdemServicoController {
     private final ListarOrdensServicoUseCase listarOrdensServicoUseCase;
     private final BuscarOrdemServicoUseCase buscarOrdemServicoUseCase;
     private final CancelarOrdemServicoUseCase cancelarOrdemServicoUseCase;
+    private final IniciarDiagnosticoOrdemServicoUseCase iniciarDiagnosticoOrdemServicoUseCase;
     private final IniciarExecucaoOrdemServicoUseCase iniciarExecucaoOrdemServicoUseCase;
     private final FinalizarOrdemServicoUseCase finalizarOrdemServicoUseCase;
     private final EntregarOrdemServicoUseCase entregarOrdemServicoUseCase;
@@ -55,6 +57,7 @@ public class OrdemServicoController {
                                   ListarOrdensServicoUseCase listarOrdensServicoUseCase,
                                   BuscarOrdemServicoUseCase buscarOrdemServicoUseCase,
                                   CancelarOrdemServicoUseCase cancelarOrdemServicoUseCase,
+                                  IniciarDiagnosticoOrdemServicoUseCase iniciarDiagnosticoOrdemServicoUseCase,
                                   IniciarExecucaoOrdemServicoUseCase iniciarExecucaoOrdemServicoUseCase,
                                   FinalizarOrdemServicoUseCase finalizarOrdemServicoUseCase,
                                   EntregarOrdemServicoUseCase entregarOrdemServicoUseCase,
@@ -63,6 +66,7 @@ public class OrdemServicoController {
         this.listarOrdensServicoUseCase = listarOrdensServicoUseCase;
         this.buscarOrdemServicoUseCase = buscarOrdemServicoUseCase;
         this.cancelarOrdemServicoUseCase = cancelarOrdemServicoUseCase;
+        this.iniciarDiagnosticoOrdemServicoUseCase = iniciarDiagnosticoOrdemServicoUseCase;
         this.iniciarExecucaoOrdemServicoUseCase = iniciarExecucaoOrdemServicoUseCase;
         this.finalizarOrdemServicoUseCase = finalizarOrdemServicoUseCase;
         this.entregarOrdemServicoUseCase = entregarOrdemServicoUseCase;
@@ -112,6 +116,14 @@ public class OrdemServicoController {
     @Operation(summary = "Cancela a ordem antes da aprovação, rejeita o orçamento pendente e libera as peças reservadas")
     public ResponseEntity<Void> cancelarOrdemServico(@PathVariable UUID id) {
         cancelarOrdemServicoUseCase.execute(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/iniciar-diagnostico")
+    @PreAuthorize("hasAnyRole('ADMIN', 'ATENDENTE')")
+    @Operation(summary = "Inicia o diagnóstico de uma ordem recém-recebida, etapa necessária antes de gerar o orçamento")
+    public ResponseEntity<Void> iniciarDiagnostico(@PathVariable UUID id) {
+        iniciarDiagnosticoOrdemServicoUseCase.execute(id);
         return ResponseEntity.noContent().build();
     }
 

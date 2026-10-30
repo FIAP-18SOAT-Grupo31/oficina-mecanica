@@ -14,7 +14,6 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
-import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
 import com.github.f4b6a3.uuid.UuidCreator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,10 +43,6 @@ public class GerarOrcamentoUseCase {
 
         OrdemServico os = ordemServicoRepository.buscarPorId(input.ordemServicoId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Ordem de Serviço não encontrada."));
-
-        if (os.getStatus() == StatusOrdemServico.RECEBIDA) {
-            os.iniciarDiagnostico();
-        }
 
         UUID orcamentoId = UuidCreator.getTimeOrderedEpoch();
         Orcamento orcamento = new Orcamento(orcamentoId, input.ordemServicoId(), input.dataValidade());
