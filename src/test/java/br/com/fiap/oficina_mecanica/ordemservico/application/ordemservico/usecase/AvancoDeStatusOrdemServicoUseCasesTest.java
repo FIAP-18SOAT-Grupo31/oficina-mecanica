@@ -51,6 +51,36 @@ class AvancoDeStatusOrdemServicoUseCasesTest {
     }
 
     @Test
+    void iniciaDiagnosticoEPersiste() {
+        OrdemServico ordem = ordemComStatus(StatusOrdemServico.RECEBIDA);
+        when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));
+
+        new IniciarDiagnosticoOrdemServicoUseCase(repository).execute(ordemId);
+
+        assertThat(ordem.getStatus()).isEqualTo(StatusOrdemServico.EM_DIAGNOSTICO);
+        verify(repository).salvar(ordem);
+    }
+
+    @Test
+    void iniciarDiagnosticoForaDeOrdemRecebidaFalhaSemPersistir() {
+        ordemExistente(StatusOrdemServico.EM_DIAGNOSTICO);
+
+        assertThatThrownBy(() -> new IniciarDiagnosticoOrdemServicoUseCase(repository).execute(ordemId))
+                .isInstanceOf(RegraNegocioException.class);
+        verify(repository, never()).salvar(any());
+    }
+
+    @Test
+    void iniciarDiagnosticoDeOrdemInexistenteViraRecursoNaoEncontrado() {
+        when(repository.buscarPorId(ordemId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> new IniciarDiagnosticoOrdemServicoUseCase(repository).execute(ordemId))
+                .isInstanceOf(RecursoNaoEncontradoException.class)
+                .hasMessage("Ordem de Serviço não encontrada.");
+        verify(repository, never()).salvar(any());
+    }
+
+    @Test
     void iniciaExecucaoEPersiste() {
         OrdemServico ordem = ordemComStatus(StatusOrdemServico.APROVADA);
         when(repository.buscarPorId(ordemId)).thenReturn(Optional.of(ordem));

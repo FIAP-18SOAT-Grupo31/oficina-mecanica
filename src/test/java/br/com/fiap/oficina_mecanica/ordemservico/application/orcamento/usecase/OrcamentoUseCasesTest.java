@@ -90,6 +90,7 @@ class OrcamentoUseCasesTest {
 
         ordemServicoIdFixa = UUID.randomUUID();
         OrdemServico os = new OrdemServico(ordemServicoIdFixa, UUID.randomUUID(), UUID.randomUUID(), "Relato valido longo suficiente");
+        os.iniciarDiagnostico();
         osRepository.salvar(os);
 
         pecaComEstoqueId = UUID.randomUUID();
@@ -133,6 +134,19 @@ class OrcamentoUseCasesTest {
         assertThatThrownBy(() -> gerarOrcamento.execute(input))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessageContaining("Estoque insuficiente");
+    }
+
+    @Test
+    void falhaAoGerarOrcamentoSemDiagnosticoIniciado() {
+        UUID osRecebidaId = UUID.randomUUID();
+        osRepository.salvar(new OrdemServico(osRecebidaId, UUID.randomUUID(), UUID.randomUUID(), "Relato valido longo suficiente"));
+        GerarOrcamentoInput input = new GerarOrcamentoInput(osRecebidaId, Horario.agora().plusDays(7), List.of(), List.of());
+
+        assertThatThrownBy(() -> gerarOrcamento.execute(input))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("diagnóstico");
+        assertThat(osRepository.buscarPorId(osRecebidaId).orElseThrow().getStatus())
+                .isEqualTo(StatusOrdemServico.RECEBIDA);
     }
 
     @Test
@@ -232,7 +246,6 @@ class OrcamentoUseCasesTest {
         estoqueRepository.salvar(produto);
 
         OrdemServico os = osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow();
-        os.iniciarDiagnostico();
 
         UUID orcamentoExpiradoId = UUID.randomUUID();
         Orcamento orcamentoExpirado = new Orcamento(

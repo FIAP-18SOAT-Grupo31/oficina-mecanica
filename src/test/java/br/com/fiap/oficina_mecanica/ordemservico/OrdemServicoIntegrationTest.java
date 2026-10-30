@@ -83,6 +83,7 @@ class OrdemServicoIntegrationTest {
     }
 
     private String gerarOrcamento(String ordemServicoId) throws Exception {
+        acao(ordemServicoId, "iniciar-diagnostico", jwtAtendente(), 204);
         String resposta = mvc.perform(post("/api/orcamentos").with(jwtAtendente())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ordemServicoId\":\"" + ordemServicoId + "\",\"dataValidade\":\"2099-12-31T23:59:59\",\"servicos\":[{\"catalogoServicoId\":\""
@@ -105,6 +106,7 @@ class OrdemServicoIntegrationTest {
     @Test
     void criaOrdemDeServicoEOrcamentoEAprovaOrcamento() throws Exception {
         String ordemServicoId = criarOrdemServico();
+        acao(ordemServicoId, "iniciar-diagnostico", jwtAtendente(), 204);
 
         String orcamento = mvc.perform(post("/api/orcamentos").with(jwtAtendente())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -760,6 +762,7 @@ class OrdemServicoIntegrationTest {
     @Test
     void gerarOrcamentoQueFalhaERevertidoNaoAvisaOCliente(CapturedOutput saida) throws Exception {
         String ordemServicoId = criarOrdemServico();
+        acao(ordemServicoId, "iniciar-diagnostico", jwtAtendente(), 204);
         String corpo = "{\"ordemServicoId\":\"" + ordemServicoId + "\",\"dataValidade\":\"2099-12-31T23:59:59\","
                 + "\"servicos\":[],\"pecas\":[{\"produtoEstoqueId\":\"" + UUID.randomUUID()
                 + "\",\"nomePeca\":\"Filtro\",\"quantidade\":1,\"valorUnitario\":10.00}]}";
@@ -769,6 +772,43 @@ class OrdemServicoIntegrationTest {
                 .andExpect(status().isNotFound());
 
         assertThat(saida.getOut()).doesNotContain("Novo or\u00e7amento gerado");
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("EM_DIAGNOSTICO"));
+    }
+
+    @Test
+    void iniciaODiagnosticoERegistraAtransicao() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        acao(ordemServicoId, "iniciar-diagnostico", jwtAtendente(), 204);
+
+        mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
+                .andExpect(jsonPath("$.status").value("EM_DIAGNOSTICO"));
+    }
+
+    @Test
+    void iniciarDiagnosticoDuasVezesVolta422() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        acao(ordemServicoId, "iniciar-diagnostico", jwtAtendente(), 204);
+        acao(ordemServicoId, "iniciar-diagnostico", jwtAtendente(), 422);
+    }
+
+    @Test
+    void iniciarDiagnosticoDeOrdemInexistenteVolta404() throws Exception {
+        acao(UUID.randomUUID().toString(), "iniciar-diagnostico", jwtAtendente(), 404);
+    }
+
+    @Test
+    void gerarOrcamentoSemDiagnosticoIniciadoVolta422() throws Exception {
+        String ordemServicoId = criarOrdemServico();
+
+        mvc.perform(post("/api/orcamentos").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ordemServicoId\":\"" + ordemServicoId + "\",\"dataValidade\":\"2099-12-31T23:59:59\","
+                                + "\"servicos\":[],\"pecas\":[]}"))
+                .andExpect(status().is(422));
+
         mvc.perform(get("/api/ordens-servico/" + ordemServicoId).with(jwtAdmin()))
                 .andExpect(jsonPath("$.status").value("RECEBIDA"));
     }
@@ -898,9 +938,10 @@ class OrdemServicoIntegrationTest {
     }
 
     @Test
-    void ordemInexistenteVolta404NasTresAcoes() throws Exception {
+    void ordemInexistenteVolta404NasAcoes() throws Exception {
         String inexistente = UUID.randomUUID().toString();
 
+        acao(inexistente, "iniciar-diagnostico", jwtAtendente(), 404);
         acao(inexistente, "iniciar-execucao", jwtAtendente(), 404);
         acao(inexistente, "finalizar", jwtAtendente(), 404);
         acao(inexistente, "entregar", jwtAtendente(), 404);
@@ -911,7 +952,7 @@ class OrdemServicoIntegrationTest {
         String id = UUID.randomUUID().toString();
         RequestPostProcessor papelSemPermissao = jwt().authorities(new SimpleGrantedAuthority("ROLE_CLIENTE"));
 
-        for (String caminho : new String[]{"iniciar-execucao", "finalizar", "entregar"}) {
+        for (String caminho : new String[]{"iniciar-diagnostico", "iniciar-execucao", "finalizar", "entregar"}) {
             mvc.perform(patch("/api/ordens-servico/" + id + "/" + caminho)).andExpect(status().isUnauthorized());
             acao(id, caminho, papelSemPermissao, 403);
         }
