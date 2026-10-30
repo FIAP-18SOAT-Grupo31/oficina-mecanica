@@ -1,0 +1,50 @@
+src/main/resources/application.properties
+  s_4aaeed999b861f::t_78311e31b6231e 13-25
+src/main/java/br/com/fiap/oficina_mecanica/compartilhado/infrastructure/email/EnviadorEmail.java
+  s_4aaeed999b861f::t_7b3441d3f47ba4 1-5
+src/main/resources/application-prd.properties
+  s_4aaeed999b861f::t_9a14f5c466a1f3 9-10
+src/main/java/br/com/fiap/oficina_mecanica/compartilhado/infrastructure/email/EnviadorEmailSmtp.java
+  s_4aaeed999b861f::t_1eed17fae12ec8 1-30
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/orcamento/NotificadorEmailAdapterTest.java
+  s_4aaeed999b861f::t_1e761326835603 1-92
+src/main/java/br/com/fiap/oficina_mecanica/compartilhado/infrastructure/email/EnviadorEmailLog.java
+  s_4aaeed999b861f::t_b6a5b88cd6621b 1-25
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/orcamento/NotificadorEmailAdapter.java
+  s_4aaeed999b861f::t_a3fdae5f0476a7 3,5-6,12,21,23-25,27-30,32-34,46-57,59,61
+docker-compose.yml
+  s_4aaeed999b861f::t_bbf0564f678193 32-39,48-49,59-60
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/ordemservico/NotificadorOrdemServicoAdapterTest.java
+  s_4aaeed999b861f::t_eefb694b00f438 3,19,29-32,38-40,44-49,57,60-68,84,90-92,99,104,109,114,119-120,123-126,131-142,145-146,149-151,153,161-162,165,172-173,176-178,185-186,189-191,196-219,229
+pom.xml
+  s_4aaeed999b861f::t_b5eb282ced7448 64-66
+  s_4aaeed999b861f::t_5e28866e745448 63
+src/test/java/br/com/fiap/oficina_mecanica/compartilhado/infrastructure/email/EnviadorEmailLogTest.java
+  s_4aaeed999b861f::t_21cdd046fa892a 1-40
+src/main/resources/application-dev.properties
+  s_4aaeed999b861f::t_d789faee473253 13-14
+src/test/java/br/com/fiap/oficina_mecanica/compartilhado/infrastructure/email/EnviadorEmailSmtpTest.java
+  s_4aaeed999b861f::t_08437391129e2e 1-33
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/ordemservico/ResolvedorEmailCliente.java
+  s_4aaeed999b861f::t_b57732eb2c823f 1-29
+src/main/java/br/com/fiap/oficina_mecanica/ordemservico/infrastructure/ordemservico/NotificadorOrdemServicoAdapter.java
+  s_4aaeed999b861f::t_ae1434a92c0da6 3,13,18-19,26-28,30-33,35-37,43-45,53-55,62-64,70-72,82-83,86-98
+src/test/resources/application-test.properties
+  s_4aaeed999b861f::t_c52ecab4716b1d 10-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "4214f75fa4e133cb5ef3fb2b198f71d8bd9ec4b5",
+  "prompts": {},
+  "sessions": {
+    "s_4aaeed999b861f": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "ad603c55-0870-4343-b599-530b97debd52",
+        "model": "unknown"
+      },
+      "human_author": "Natan Santos <Natantech.sa@gmail.com>"
+    }
+  }
+}
