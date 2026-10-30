@@ -1,0 +1,23 @@
+src/test/java/br/com/fiap/oficina_mecanica/ordemservico/OrdemServicoIntegrationTest.java
+  s_fbb68f7a79eaf1::t_4e3765472c29dd 734,736,744,757,771
+  s_fbb68f7a79eaf1::t_cbbce1f06e220c 64-66
+  s_fbb68f7a79eaf1::t_116dcc5bfb57f6 705-706,715,724
+  s_fbb68f7a79eaf1::t_349d0e233d3927 789-790
+  s_fbb68f7a79eaf1::t_fd9a5d337c1757 586,591,601,608,614,629,669,689-690
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.3",
+  "base_commit_sha": "381cd00a7ad2114a16efb41373209a748abc51c8",
+  "prompts": {},
+  "sessions": {
+    "s_fbb68f7a79eaf1": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "e489ece7-72a3-45c5-ac3f-049990428ca4",
+        "model": "unknown"
+      },
+      "human_author": "Natan Santos <Natantech.sa@gmail.com>"
+    }
+  }
+}
