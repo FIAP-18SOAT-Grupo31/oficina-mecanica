@@ -4,7 +4,7 @@ Vocabulário usado no Event Storming (Miro), nas histórias do egon.io e no cód
 
 Fontes:
 - Event Storming: https://miro.com/app/board/uXjVHnerRBQ=/?share_link_id=849086151688 (exportado em [`event-storming.pdf`](event-storming.pdf))
-- Domain Storytelling: [`egon/`](egon) (renderizado em [`diagramas.pdf`](diagramas.pdf))
+- Domain Storytelling: [`domain-storytelling/`](domain-storytelling) (renderizado em [`diagramas.pdf`](diagramas.pdf))
 
 ## Glossário
 

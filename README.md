@@ -216,7 +216,7 @@ O resto do Actuator exige `ADMIN`. Login e rotas públicas têm limite de 30 req
 - Board do Event Storming no Miro: https://miro.com/app/board/uXjVHnerRBQ=/?share_link_id=849086151688
 - Exportação do Event Storming: [`docs/ddd/event-storming.pdf`](docs/ddd/event-storming.pdf)
 - Domain Storytelling, agregados, contextos e máquinas de estado: [`docs/ddd/diagramas.pdf`](docs/ddd/diagramas.pdf)
-- Histórias do egon.io (SVG e o `.egn`, que abre em https://egon.io/app): [`docs/ddd/egon`](docs/ddd/egon)
+- Histórias do egon.io (SVG e o `.egn`, que abre em https://egon.io/app): [`docs/ddd/domain-storytelling`](docs/ddd/domain-storytelling)
 - Linguagem ubíqua e relação com o código: [`docs/ddd/linguagem-ubiqua.md`](docs/ddd/linguagem-ubiqua.md)
 
 ## Segurança
