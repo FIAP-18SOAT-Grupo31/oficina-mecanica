@@ -1,9 +1,12 @@
 package br.com.fiap.oficina_mecanica.cliente.application.usecase;
 
 import br.com.fiap.oficina_mecanica.cliente.domain.Cliente;
+import br.com.fiap.oficina_mecanica.cliente.domain.ClienteDetalhe;
 import br.com.fiap.oficina_mecanica.cliente.domain.ClienteRepository;
+import br.com.fiap.oficina_mecanica.cliente.domain.ClienteResumo;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,5 +66,20 @@ class ClienteRepositoryEmMemoria implements ClienteRepository {
     @Override
     public Optional<String> buscarDocumentoPorId(UUID id) {
         return buscarPorId(id).map(Cliente::getDocumento);
+    }
+
+    @Override
+    public List<ClienteResumo> buscarResumosPorIds(Collection<UUID> ids) {
+        return ids.stream()
+                .map(clientes::get)
+                .filter(cliente -> cliente != null)
+                .map(cliente -> new ClienteResumo(cliente.getId(), cliente.getNome()))
+                .toList();
+    }
+
+    @Override
+    public Optional<ClienteDetalhe> buscarDetalhePorId(UUID id) {
+        return buscarPorId(id).map(c -> new ClienteDetalhe(c.getId(), c.getNome(), c.getDocumento(), c.getEmail(),
+                c.getTelefone()));
     }
 }

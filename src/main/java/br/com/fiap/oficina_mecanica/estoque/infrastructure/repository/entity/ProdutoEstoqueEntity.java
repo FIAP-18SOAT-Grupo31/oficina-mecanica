@@ -1,4 +1,4 @@
-package br.com.fiap.oficina_mecanica.estoque.infrastructure.entity;
+package br.com.fiap.oficina_mecanica.estoque.infrastructure.repository.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -23,7 +23,7 @@ public class ProdutoEstoqueEntity {
     @Id
     private UUID id;
 
-    @Column(name = "nome_peca", nullable = false)
+    @Column(name = "nome_peca", nullable = false, unique = true)
     private String nomePeca;
 
     @Column(name = "quantidade_disponivel", nullable = false)

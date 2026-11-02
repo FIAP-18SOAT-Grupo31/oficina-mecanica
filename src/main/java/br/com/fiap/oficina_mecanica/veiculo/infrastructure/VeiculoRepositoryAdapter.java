@@ -3,7 +3,9 @@ package br.com.fiap.oficina_mecanica.veiculo.infrastructure;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
 import br.com.fiap.oficina_mecanica.compartilhado.infrastructure.persistence.TextoLike;
 import br.com.fiap.oficina_mecanica.veiculo.domain.Veiculo;
+import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoDetalhe;
 import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoRepository;
+import br.com.fiap.oficina_mecanica.veiculo.domain.VeiculoResumo;
 import br.com.fiap.oficina_mecanica.veiculo.infrastructure.entity.VeiculoEntity;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
@@ -13,6 +15,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,6 +51,19 @@ public class VeiculoRepositoryAdapter implements VeiculoRepository {
     @Override
     public boolean existePorId(UUID id) {
         return jpaRepository.existsById(id);
+    }
+
+    @Override
+    public List<VeiculoResumo> buscarResumosPorIds(Collection<UUID> ids) {
+        return jpaRepository.findAllById(ids).stream()
+                .map(veiculo -> new VeiculoResumo(veiculo.getId(), veiculo.getPlaca(), veiculo.getMarca(), veiculo.getModelo()))
+                .toList();
+    }
+
+    @Override
+    public Optional<VeiculoDetalhe> buscarDetalhePorId(UUID id) {
+        return jpaRepository.findById(id)
+                .map(v -> new VeiculoDetalhe(v.getId(), v.getPlaca(), v.getMarca(), v.getModelo(), v.getAno()));
     }
 
     @Override

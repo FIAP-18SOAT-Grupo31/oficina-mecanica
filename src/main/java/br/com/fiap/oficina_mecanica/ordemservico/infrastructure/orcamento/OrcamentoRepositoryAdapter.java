@@ -5,6 +5,7 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepos
 import br.com.fiap.oficina_mecanica.ordemservico.infrastructure.orcamento.entity.OrcamentoEntity;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,8 +34,9 @@ public class OrcamentoRepositoryAdapter implements OrcamentoRepository {
     }
 
     @Override
-    public Optional<Orcamento> buscarPorOrdemServicoId(UUID ordemServicoId) {
-        return jpaRepository.findByOrdemServicoId(ordemServicoId)
-                .map(mapper::toDomain);
+    public List<Orcamento> buscarPorOrdemServicoId(UUID ordemServicoId) {
+        return jpaRepository.findByOrdemServicoIdOrderByDataCriacao(ordemServicoId).stream()
+                .map(mapper::toDomain)
+                .toList();
     }
 }

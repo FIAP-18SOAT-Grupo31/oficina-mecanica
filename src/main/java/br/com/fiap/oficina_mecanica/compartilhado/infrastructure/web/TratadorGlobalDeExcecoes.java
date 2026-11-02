@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -42,6 +43,11 @@ public class TratadorGlobalDeExcecoes {
     @ExceptionHandler(NaoAutenticadoException.class)
     public ResponseEntity<ErroResposta> tratarNaoAutenticado(NaoAutenticadoException ex) {
         return responder(TipoErro.NAO_AUTENTICADO, ex.getMessage());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErroResposta> tratarAcessoNegado(AccessDeniedException ex) {
+        return responder(TipoErro.ACESSO_NEGADO, "Seu perfil não tem permissão para este recurso.");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -29,4 +29,14 @@ public final class OrcamentoMapper {
                 pecas
         );
     }
+
+    public static OrcamentoResumoOutput toResumo(Orcamento orcamento) {
+        return new OrcamentoResumoOutput(
+                orcamento.getId(),
+                orcamento.calcularValorTotal(),
+                orcamento.getStatus(),
+                orcamento.getDataCriacao(),
+                orcamento.getDataValidade()
+        );
+    }
 }

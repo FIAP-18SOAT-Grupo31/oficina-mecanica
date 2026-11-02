@@ -21,6 +21,10 @@ public record Pagina<T>(List<T> conteudo, int pagina, int tamanho, long totalEle
         conteudo = List.copyOf(conteudo);
     }
 
+    public static <T> Pagina<T> de(List<T> conteudo, Paginacao paginacao, long totalElementos) {
+        return new Pagina<>(conteudo, paginacao.pagina(), paginacao.tamanho(), totalElementos);
+    }
+
     public int totalPaginas() {
         return (int) ((totalElementos + tamanho - 1) / tamanho);
     }
