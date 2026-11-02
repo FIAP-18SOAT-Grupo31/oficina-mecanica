@@ -19,7 +19,7 @@ Fontes:
 | Código de acesso | Código curto e aleatório enviado ao cliente. Junto com o CPF/CNPJ, dá acesso à área pública. | `OrdemServico.codigoAcesso` |
 | Status da OS | Etapa do atendimento. Só muda pelas operações do agregado. | enum `StatusOrdemServico` |
 | Recebida | OS aberta, ainda sem orçamento. | `RECEBIDA` |
-| Em diagnóstico | Oficina identificando serviços e peças. | `EM_DIAGNOSTICO` |
+| Em diagnóstico | Oficina identificando serviços e peças. O orçamento só é gerado nesse status. | `EM_DIAGNOSTICO`, `PATCH /api/ordens-servico/{id}/iniciar-diagnostico` |
 | Aguardando aprovação | Orçamento enviado, esperando a decisão do cliente. | `AGUARDANDO_APROVACAO` |
 | Aprovada | Orçamento aprovado (total ou parcial), serviço liberado para execução. | `APROVADA`, evento `OrdemServicoAprovada` |
 | Recusada | Orçamento rejeitado ou expirado. Estado final, sem execução. | `RECUSADA`, evento `OrdemServicoRecusada` |
@@ -28,7 +28,7 @@ Fontes:
 | Entregue | Veículo retirado pelo cliente. Estado final. | `ENTREGUE`, `PATCH .../entregar` |
 | Cancelada | OS encerrada antes da aprovação; o orçamento pendente é rejeitado e as peças voltam ao estoque. | `CANCELADA`, evento `OrdemServicoCancelada`, `PATCH .../cancelar` |
 | Histórico de status | Registro de cada mudança de status com data e hora. | `TransicaoStatus`, tabela `historico_status_ordem_servico` |
-| Tempo médio de execução | Média do tempo entre o início da execução e a finalização das OS. | ainda não implementado; as datas de cada mudança já ficam em `historico_status_ordem_servico` |
+| Tempo médio de execução | Média do tempo entre o início da execução e a finalização das OS. | `ConsultarTempoExecucaoMedioUseCase`, `GET /api/ordens-servico/metricas/tempo-execucao` |
 | Listagem / detalhe da OS | Consulta administrativa das OS, com filtro por status. | `GET /api/ordens-servico`, `GET /api/ordens-servico/{id}` |
 | Acompanhamento pelo cliente | Consulta do andamento sem login. | `POST /api/publico/ordens-servico/{id}/consultar` |
 
@@ -76,7 +76,7 @@ Fontes:
 | Atendente | Opera o sistema: cadastros, OS, orçamento, execução e entrega. | papel `ATENDENTE` |
 | Administrador | Mesmas permissões do atendente e acesso ao Actuator. | papel `ADMIN` |
 | Sistema | Ator automático: calcula o orçamento, reserva e baixa estoque, muda status e notifica. | casos de uso e eventos de domínio |
-| Notificação | Mensagem ao cliente. No MVP, e-mail simulado no log. | `NotificadorOrdemServicoAdapter`, `NotificadorEmailAdapter` |
+| Notificação | Mensagem ao cliente por e-mail (SMTP; no ambiente local, o Mailpit). | `NotificadorOrdemServicoAdapter`, `NotificadorEmailAdapter` |
 
 ## Mapa de contextos
 
@@ -88,7 +88,7 @@ Como cada relação aparece no código:
 - **Estoque → Atendimento e execução.** O `GerarOrcamentoUseCase` usa direto o `ProdutoEstoqueRepository`: busca a peça, reserva a quantidade e salva, dentro da mesma transação do orçamento. Não tem porta nem tradução no meio.
 - **Catálogo → Atendimento e execução.** O mesmo caso de uso lê o `ServicoRepository` e copia nome e valor de mão de obra para o `ItemServico`. Depois disso o orçamento não depende mais do catálogo, então mudar o preço não altera orçamento já gerado.
 - **Autenticação → demais contextos.** Os outros módulos não chamam a autenticação. O `SegurancaConfig` exige JWT em todas as rotas, menos login, rotas públicas, Swagger e health.
-- **Atendimento e execução → E-mail ao cliente.** Os casos de uso publicam eventos de domínio e os adapters de notificação (`NotificadorOrdemServicoAdapter`, `NotificadorEmailAdapter`) escutam com `@TransactionalEventListener(AFTER_COMMIT)`, ou seja, o e-mail (simulado no log) só sai depois do commit.
+- **Atendimento e execução → E-mail ao cliente.** Os casos de uso publicam eventos de domínio e os adapters de notificação (`NotificadorOrdemServicoAdapter`, `NotificadorEmailAdapter`) escutam com `@TransactionalEventListener(AFTER_COMMIT)`, ou seja, o e-mail só sai depois do commit.
 
 O módulo `compartilhado` é só utilitário técnico (paginação, exceções, publicação de eventos e padrão de erros). Não é um shared kernel: nenhum modelo de domínio é compartilhado entre os contextos.
 
@@ -98,10 +98,10 @@ Principais pontos em que o código ficou diferente do Miro e do egon.io.
 
 | No Miro / egon.io | No código | Por quê |
 |---|---|---|
-| Mecânico recebe a OS, analisa o veículo e executa (Miro; egon 2, 3 e 4) | O mecânico não usa o sistema. O atendente registra orçamento, início da execução e finalização. | O papel `MECANICO` saiu na `V6__remove_papel_mecanico.sql`. |
-| Relatório do mecânico (agregado "Relatorio") | Não existe. O diagnóstico vira os itens do orçamento. | O orçamento já lista serviços e peças. |
-| "Notificar mecânico de OS criada" e o ponto de atenção "como é feita essa notificação?" | Só o cliente é avisado, por e-mail simulado, depois do commit. | O aviso ao mecânico ficou fora do sistema; implementamos avisos ao cliente. |
-| WhatsApp e PDF da OS | E-mail simulado no log; o cliente consulta pela API pública. | Fora do escopo do MVP. |
+| Mecânico recebe a OS, analisa o veículo e executa (Miro; egon 1 a 4) | O mecânico não usa o sistema. O atendente registra início do diagnóstico, orçamento, início da execução e finalização. | O papel `MECANICO` saiu na `V6__remove_papel_mecanico.sql`. |
+| Relatório do mecânico (agregado "Relatorio"; egon 2) | Não existe. O diagnóstico vira os itens do orçamento. | O orçamento já lista serviços e peças. |
+| "Notificar mecânico de OS criada" e o ponto de atenção "como é feita essa notificação?" | Só o cliente é avisado, por e-mail, depois do commit. | O aviso ao mecânico ficou fora do sistema; implementamos avisos ao cliente. |
+| WhatsApp e PDF da OS; link de acompanhamento (egon 2) | E-mail com o código de acesso; o cliente consulta pela API pública. | Fora do escopo do MVP. |
 | Ordem de compra e fornecedor quando falta estoque | Sem saldo, o orçamento não é gerado; a reposição é entrada manual (`/adicionar`). | Fora do escopo do MVP. |
 | egon 5: reprovação leva a OS para Finalizada e Entregue | Reprovação deixa a OS `RECUSADA`, estado final. | Separa OS sem execução das executadas. |
 

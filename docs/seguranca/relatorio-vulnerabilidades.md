@@ -34,7 +34,7 @@ O CodeQL (configuração padrão do code scanning do GitHub) analisa o código J
 
 ## Pontos de atenção conhecidos
 
-O e-mail simulado (`NotificadorOrdemServicoAdapter` e `NotificadorEmailAdapter`) grava no log, em nível INFO, a mensagem com o código de acesso da OS. Junto com o CPF/CNPJ, esse código dá acesso à área pública do cliente. Mascarar o código e trocar a URL fixa `http://localhost:8080` por uma propriedade ficou para o #42.
+O código de acesso da OS, junto com o CPF/CNPJ, dá acesso à área pública do cliente. Antes, o e-mail simulado gravava esse código no log em nível INFO. No PR #42 isso mudou: o e-mail sai por SMTP (Mailpit no ambiente local); quando o SMTP está desligado, o `EnviadorEmailLog` mascara o código e registra em DEBUG; o detalhe administrativo da OS não mostra mais o código; e a URL do link virou a propriedade `app.notificacao.url-base` (`APP_URL_BASE`).
 
 ## Controles da aplicação
 

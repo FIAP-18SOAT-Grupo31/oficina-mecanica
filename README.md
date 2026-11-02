@@ -8,10 +8,10 @@ A oficina controla atendimentos, diagnósticos, orçamentos e estoque em planilh
 
 ## Descrição da solução
 
-- **Ordem de serviço (OS):** aberta para um cliente e um veículo cadastrados, identificados pelo id ou pelo CPF/CNPJ do cliente e pela placa do veículo. O status muda conforme as ações no sistema: Recebida, Em diagnóstico, Aguardando aprovação, Aprovada, Em execução, Finalizada e Entregue. Também pode terminar como Recusada ou Cancelada. O histórico de cada mudança de status entra com o PR #42.
+- **Ordem de serviço (OS):** aberta para um cliente e um veículo cadastrados, identificados pelo id ou pelo CPF/CNPJ do cliente e pela placa do veículo. O status muda conforme as ações no sistema: Recebida, Em diagnóstico, Aguardando aprovação, Aprovada, Em execução, Finalizada e Entregue. Também pode terminar como Recusada ou Cancelada. O atendente marca o início do diagnóstico, e o orçamento só pode ser gerado depois disso. Cada mudança de status fica no histórico da OS.
 - **Orçamento:** montado com serviços do catálogo e peças do estoque. O total é calculado automaticamente e as peças ficam reservadas até a decisão. O cliente aprova tudo, aprova só parte dos itens ou rejeita. A aprovação dá baixa no estoque, e a rejeição devolve as peças reservadas.
-- **Acompanhamento pelo cliente:** ao abrir a OS, o cliente recebe por e-mail um código de acesso. Com o CPF/CNPJ e esse código, ele consulta a OS e decide o orçamento nas rotas públicas `/api/publico/**`, sem login. No MVP, o envio de e-mail é simulado e a mensagem aparece no log da aplicação.
-- **Gestão administrativa:** CRUD de clientes, veículos e serviços do catálogo; cadastro e consulta de peças/insumos com entrada e saída de estoque; listagem e detalhe de OS. O histórico de status já grava a data de cada mudança, mas a consulta do tempo médio de execução ainda não foi implementada.
+- **Acompanhamento pelo cliente:** ao abrir a OS, o cliente recebe por e-mail um código de acesso. Com o CPF/CNPJ e esse código, ele consulta a OS e decide o orçamento nas rotas públicas `/api/publico/**`, sem login. O e-mail sai por SMTP. No ambiente local o Mailpit recebe as mensagens, que podem ser vistas em `http://localhost:8025`.
+- **Gestão administrativa:** CRUD de clientes, veículos e serviços do catálogo; cadastro e consulta de peças/insumos com entrada e saída de estoque; listagem e detalhe de OS; tempo médio de execução das OS (`GET /api/ordens-servico/metricas/tempo-execucao`), calculado a partir do histórico de status.
 - **Segurança:** as APIs administrativas exigem JWT. Os papéis são `ADMIN` e `ATENDENTE`. CPF/CNPJ é validado pelos dígitos verificadores e a placa no padrão antigo ou Mercosul.
 
 ## Arquitetura
@@ -83,7 +83,7 @@ Os testes ArchUnit conferem o padrão de erros da API.
    docker compose --profile app up --build -d
    ```
 
-   A API fica em `http://localhost:8080` e o pgAdmin em `http://localhost:5050`. Sem `--profile app`, sobem só o banco e o pgAdmin.
+   A API fica em `http://localhost:8080`, o pgAdmin em `http://localhost:5050` e o Mailpit (caixa de e-mail de teste) em `http://localhost:8025`. Sem `--profile app`, sobem só o banco, o pgAdmin e o Mailpit.
 
 3. Para rodar a aplicação fora do container (com o banco do compose):
 
@@ -216,12 +216,16 @@ O resto do Actuator exige `ADMIN`. Login e rotas públicas têm limite de 30 req
 - Board do Event Storming no Miro: https://miro.com/app/board/uXjVHnerRBQ=/?share_link_id=849086151688
 - Exportação do Event Storming: [`docs/ddd/event-storming.pdf`](docs/ddd/event-storming.pdf)
 - Domain Storytelling, agregados, contextos e máquinas de estado: [`docs/ddd/diagramas.pdf`](docs/ddd/diagramas.pdf)
-- Histórias originais do egon.io: [`docs/ddd/egon`](docs/ddd/egon)
+- Histórias do egon.io (SVG e o `.egn`, que abre em https://egon.io/app): [`docs/ddd/egon`](docs/ddd/egon)
 - Linguagem ubíqua e relação com o código: [`docs/ddd/linguagem-ubiqua.md`](docs/ddd/linguagem-ubiqua.md)
 
 ## Segurança
 
 Relatório de vulnerabilidades: [`docs/seguranca/relatorio-vulnerabilidades.md`](docs/seguranca/relatorio-vulnerabilidades.md).
+
+## Licença
+
+MIT. Veja o arquivo [`LICENSE`](LICENSE).
 
 ## Vídeo da entrega
 

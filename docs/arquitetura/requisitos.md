@@ -14,7 +14,7 @@ Todas as rotas de `/api`, menos `/api/auth/**` e `/api/publico/**`, exigem JWT c
 | RF02 | O sistema deve cadastrar o veículo (placa, marca, modelo, ano) e aceitar a placa na abertura da OS. | Must | cadastro na dev; placa na abertura da OS no PR #46 |
 | RF03 | O sistema deve permitir incluir serviços do catálogo e peças/insumos do estoque no orçamento. | Must | peças na dev; serviços do catálogo no PR #44 |
 | RF04 | O sistema deve calcular o total do orçamento (mão de obra + peças). | Must | atendido |
-| RF05 | O sistema deve enviar o orçamento ao cliente. | Must | atendido (e-mail simulado no log) |
+| RF05 | O sistema deve enviar o orçamento ao cliente. | Must | atendido (e-mail por SMTP; no ambiente local cai no Mailpit) |
 | RF06 | O sistema deve permitir aprovar, aprovar em parte ou rejeitar o orçamento. | Must | atendido |
 | RF07 | O sistema deve mudar o status da OS conforme as ações (diagnóstico, aprovação, execução, finalização, entrega, cancelamento). | Must | implementado no PR #42 |
 | RF08 | O sistema deve permitir que o cliente acompanhe a OS pela API, sem login. | Must | implementado no PR #42 |
@@ -23,9 +23,9 @@ Todas as rotas de `/api`, menos `/api/auth/**` e `/api/publico/**`, exigem JWT c
 | RF11 | O sistema deve oferecer CRUD de serviços. | Must | implementado no PR #44 |
 | RF12 | O sistema deve oferecer CRUD de peças e insumos com controle de estoque. | Must | parcial: faltam listar, atualizar e excluir peça |
 | RF13 | O sistema deve listar e detalhar as OS, com filtro por status. | Must | implementado no PR #42 |
-| RF14 | O sistema deve informar o tempo médio de execução dos serviços. | Must | pendente: as datas já ficam em `historico_status_ordem_servico`, mas não há cálculo nem endpoint |
+| RF14 | O sistema deve informar o tempo médio de execução dos serviços. | Must | implementado no PR #42 (`GET /api/ordens-servico/metricas/tempo-execucao`) |
 | RF15 | O sistema deve autenticar a equipe da oficina por login e senha. | Must | atendido |
-| RF16 | O sistema deve avisar o cliente por WhatsApp e gerar PDF da OS. | Won't | fora do escopo do MVP; o aviso é só o e-mail simulado |
+| RF16 | O sistema deve avisar o cliente por WhatsApp e gerar PDF da OS. | Won't | fora do escopo do MVP; o aviso é só por e-mail |
 
 ## Requisitos não funcionais
 
@@ -70,4 +70,3 @@ Todas as rotas de `/api`, menos `/api/auth/**` e `/api/publico/**`, exigem JWT c
 ## Pendências
 
 - RF12: faltam listar, atualizar e excluir peça.
-- RF14: tempo médio de execução ainda não foi implementado.
