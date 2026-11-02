@@ -34,7 +34,7 @@ class EnviadorEmailLogTest {
 
         assertThat(logs.list).hasSize(1);
         assertThat(logs.list.getFirst().getFormattedMessage())
-                .contains("SIMULAÇÃO DE E-MAIL")
+                .contains("SMTP desligado")
                 .contains("Assunto")
                 .contains("Para: cliente@exemplo.com")
                 .contains("Corpo da mensagem");

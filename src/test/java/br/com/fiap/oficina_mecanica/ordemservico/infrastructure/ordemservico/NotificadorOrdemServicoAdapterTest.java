@@ -123,8 +123,8 @@ class NotificadorOrdemServicoAdapterTest {
         String[] email = emailEnviado();
         assertThat(email[0]).isEqualTo("Ordem de serviço recebida");
         assertThat(email[1])
-                .contains("Acompanhe o andamento: " + URL_BASE + "/api/publico/ordens-servico/" + ordemId + "/consultar")
-                .contains("CPF e o Código de Acesso")
+                .contains("chame POST " + URL_BASE + "/api/publico/ordens-servico/" + ordemId + "/consultar")
+                .contains("CPF/CNPJ e o código de acesso")
                 .contains("Código de Acesso: ABC123");
     }
 
@@ -150,8 +150,8 @@ class NotificadorOrdemServicoAdapterTest {
         assertThat(email[0]).isEqualTo("Orçamento aprovado");
         assertThat(email[1])
                 .contains("O orçamento foi aprovado e o serviço")
-                .contains("Acompanhe o andamento: " + URL_BASE + "/api/publico/ordens-servico/" + ordemId + "/consultar")
-                .contains("CPF e o Código de Acesso")
+                .contains("chame POST " + URL_BASE + "/api/publico/ordens-servico/" + ordemId + "/consultar")
+                .contains("CPF/CNPJ e o código de acesso")
                 .contains("Código de Acesso: ABC123")
                 .doesNotContain("parcialmente");
     }

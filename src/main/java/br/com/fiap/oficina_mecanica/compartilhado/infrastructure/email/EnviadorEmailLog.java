@@ -15,12 +15,7 @@ public class EnviadorEmailLog implements EnviadorEmail {
     @Override
     public void enviar(String destinatario, String assunto, String corpo) {
         String corpoMascarado = corpo.replaceAll("(?im)(C[oó]digo de Acesso:\\s*)[^\\r\\n]+", "$1******");
-        LOG.debug("\n=========================================================================" +
-                        "\n📧 [SIMULAÇÃO DE E-MAIL] - {}" +
-                        "\nPara: {}" +
-                        "\n=========================================================================" +
-                        "\n{}" +
-                        "\n=========================================================================\n",
+        LOG.debug("SMTP desligado, e-mail nao enviado. Assunto: {} | Para: {}\n{}",
                 assunto, destinatario, corpoMascarado);
     }
 }

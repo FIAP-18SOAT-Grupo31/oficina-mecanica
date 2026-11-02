@@ -85,9 +85,9 @@ public class NotificadorOrdemServicoAdapter {
     }
 
     private String acessoAoAndamento(UUID ordemServicoId, String codigoAcesso) {
-        return "\n\n🔗 Acompanhe o andamento: " + urlBase + "/api/publico/ordens-servico/" + ordemServicoId + "/consultar" +
-                "\n🔑 Para sua segurança, utilize o seu CPF e o Código de Acesso abaixo:" +
-                "\n\n   Código de Acesso: " + codigoAcesso;
+        return "\n\nPara acompanhar a OS, chame POST " + urlBase + "/api/publico/ordens-servico/" + ordemServicoId
+                + "/consultar com o seu CPF/CNPJ e o código de acesso abaixo." +
+                "\n\nCódigo de Acesso: " + codigoAcesso;
     }
 
     private void enviar(UUID ordemServicoId, String assunto, String corpo) {

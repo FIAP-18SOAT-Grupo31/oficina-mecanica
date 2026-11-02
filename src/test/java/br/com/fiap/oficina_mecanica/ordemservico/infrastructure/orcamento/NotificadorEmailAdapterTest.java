@@ -65,7 +65,7 @@ class NotificadorEmailAdapterTest {
         verify(enviadorEmail).enviar(eq("maria@exemplo.com"), assunto.capture(), corpo.capture());
         assertThat(assunto.getValue()).isEqualTo("Novo orçamento gerado");
         assertThat(corpo.getValue())
-                .contains("Acesse o portal: " + URL_BASE + "/api/publico/orcamentos/" + orcamentoId + "/consultar")
+                .contains("chame POST " + URL_BASE + "/api/publico/orcamentos/" + orcamentoId + "/consultar")
                 .contains("Código de Acesso: ABC123");
     }
 

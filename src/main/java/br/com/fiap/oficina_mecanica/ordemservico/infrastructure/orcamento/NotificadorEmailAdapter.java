@@ -54,8 +54,8 @@ public class NotificadorEmailAdapter {
 
         enviadorEmail.enviar(email, "Novo orçamento gerado",
                 "Olá! O diagnóstico do seu veículo foi concluído e o orçamento da OS " + os.getId() + " está pronto." +
-                        "\n\n🔗 Acesse o portal: " + urlBase + "/api/publico/orcamentos/" + evento.orcamentoId() + "/consultar" +
-                        "\n🔑 Para sua segurança, utilize o seu CPF e o Código de Acesso abaixo:" +
-                        "\n\n   Código de Acesso: " + os.getCodigoAcesso());
+                        "\n\nPara ver e aprovar o orçamento, chame POST " + urlBase + "/api/publico/orcamentos/"
+                        + evento.orcamentoId() + "/consultar com o seu CPF/CNPJ e o código de acesso abaixo." +
+                        "\n\nCódigo de Acesso: " + os.getCodigoAcesso());
     }
 }
