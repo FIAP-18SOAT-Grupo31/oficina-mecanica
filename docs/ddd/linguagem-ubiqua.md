@@ -84,7 +84,7 @@ Desenhado na página 9 do [`diagramas.pdf`](diagramas.pdf). U é o contexto upst
 
 Como cada relação aparece no código:
 
-- **Clientes e Veículos → Atendimento e execução.** A OS consulta cliente e veículo pelas portas `VerificadorCliente` e `VerificadorVeiculo` (só respondem se o cadastro existe) e, na consulta da OS, por `ConsultorClientes` e `ConsultorVeiculos`, que devolvem DTOs do próprio módulo de OS. O módulo de OS não conhece as classes de cliente e veículo; quem traduz são os adapters na infraestrutura. Por isso chamamos de camada anticorrupção.
+- **Clientes e Veículos → Atendimento e execução.** A OS consulta cliente e veículo pelas portas `VerificadorCliente` e `VerificadorVeiculo` (conferem se o cadastro existe e acham o cliente pelo CPF/CNPJ e o veículo pela placa, devolvendo só id e dono) e, na consulta da OS, por `ConsultorClientes` e `ConsultorVeiculos`, que devolvem DTOs do próprio módulo de OS. O módulo de OS não conhece as classes de cliente e veículo; quem traduz são os adapters na infraestrutura. Por isso chamamos de camada anticorrupção.
 - **Estoque → Atendimento e execução.** O `GerarOrcamentoUseCase` usa direto o `ProdutoEstoqueRepository`: busca a peça, reserva a quantidade e salva, dentro da mesma transação do orçamento. Não tem porta nem tradução no meio.
 - **Catálogo → Atendimento e execução.** O mesmo caso de uso lê o `ServicoRepository` e copia nome e valor de mão de obra para o `ItemServico`. Depois disso o orçamento não depende mais do catálogo, então mudar o preço não altera orçamento já gerado.
 - **Autenticação → demais contextos.** Os outros módulos não chamam a autenticação. O `SegurancaConfig` exige JWT em todas as rotas, menos login, rotas públicas, Swagger e health.
