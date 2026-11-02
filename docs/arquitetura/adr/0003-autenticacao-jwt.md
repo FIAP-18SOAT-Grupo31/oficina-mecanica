@@ -35,4 +35,4 @@ Negativas:
 
 - Não existe refresh token nem revogação: um token vazado vale até expirar.
 - O limite de requisições fica em memória e vale por instância.
-- O código de acesso funciona como senha do cliente. Por isso ele é mascarado no log do e-mail e não aparece no detalhe administrativo da OS (PR #42).
+- O código de acesso funciona como senha do cliente. Por isso ele é mascarado no log do e-mail e não aparece no detalhe administrativo da OS.
