@@ -1,7 +1,6 @@
-package br.com.fiap.oficina_mecanica.estoque.infrastructure;
+package br.com.fiap.oficina_mecanica.estoque.infrastructure.repository.entity;
 
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
-import br.com.fiap.oficina_mecanica.estoque.infrastructure.entity.ProdutoEstoqueEntity;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -450,5 +450,24 @@ class OrcamentoUseCasesTest {
         public Optional<ProdutoEstoque> buscarPorId(UUID id) {
             return Optional.ofNullable(estoque.get(id));
         }
+
+
+        @Override
+        public Optional<ProdutoEstoque> buscarPorNomePeca(String nomePeca) {
+            return estoque.values().stream()
+                    .filter(p -> p.getNomePeca().equalsIgnoreCase(nomePeca))
+                    .findFirst();
+        }
+
+        @Override
+        public Pagina<ProdutoEstoque> listar(String nomePeca, int pagina, int tamanho) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void excluirPorId(UUID id) {
+            estoque.remove(id);
+        }
+
     }
 }
