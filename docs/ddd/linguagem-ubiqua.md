@@ -61,7 +61,7 @@ Fontes:
 | Baixa de estoque | Consumir a reserva quando o orçamento é aprovado. | `ProdutoEstoque.confirmarBaixa` |
 | Devolver reserva | Voltar a reserva ao disponível (rejeição, item recusado, expiração, cancelamento). | `ProdutoEstoque.cancelarReserva` |
 | Entrada / saída manual | Ajuste administrativo de quantidade (compra recebida, perda, inventário). Mexe só no saldo disponível. | `ProdutoEstoque.adicionarEstoque` e `removerEstoque`, `POST /api/estoque/{id}/adicionar` e `/remover` |
-| Cadastro de peças | Criar a peça e consultar por id ou por nome. Listagem, atualização e exclusão ainda não existem. | `POST /api/estoque`, `GET /api/estoque/{id}`, `GET /api/estoque/peca?nomePeca=` |
+| Cadastro de peças | Criar, listar (com filtro por nome), consultar, atualizar nome e valor e excluir a peça. Não exclui peça com unidades reservadas em orçamento pendente. | `POST`, `GET`, `PUT` e `DELETE` em `/api/estoque`, `GET /api/estoque/peca?nomePeca=` |
 | Estoque insuficiente | Saldo menor que o pedido no orçamento; impede gerar o orçamento com aquela peça. | `RegraNegocioException` em `reservar` |
 
 ### Pessoas e acesso

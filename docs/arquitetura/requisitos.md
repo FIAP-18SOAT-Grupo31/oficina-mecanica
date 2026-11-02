@@ -21,7 +21,7 @@ Todas as rotas de `/api`, menos `/api/auth/**` e `/api/publico/**`, exigem JWT c
 | RF09 | O sistema deve oferecer CRUD de clientes. | Must | atendido |
 | RF10 | O sistema deve oferecer CRUD de veículos. | Must | atendido |
 | RF11 | O sistema deve oferecer CRUD de serviços. | Must | implementado no PR #44 |
-| RF12 | O sistema deve oferecer CRUD de peças e insumos com controle de estoque. | Must | parcial: faltam listar, atualizar e excluir peça |
+| RF12 | O sistema deve oferecer CRUD de peças e insumos com controle de estoque. | Must | implementado no PR #43 |
 | RF13 | O sistema deve listar e detalhar as OS, com filtro por status. | Must | implementado no PR #42 |
 | RF14 | O sistema deve informar o tempo médio de execução dos serviços. | Must | implementado no PR #42 (`GET /api/ordens-servico/metricas/tempo-execucao`) |
 | RF15 | O sistema deve autenticar a equipe da oficina por login e senha. | Must | atendido |
@@ -69,4 +69,4 @@ Todas as rotas de `/api`, menos `/api/auth/**` e `/api/publico/**`, exigem JWT c
 
 ## Pendências
 
-- RF12: faltam listar, atualizar e excluir peça.
+Nenhum requisito Must pendente. O RF16 (WhatsApp e PDF) ficou fora do MVP.
