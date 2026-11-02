@@ -1,7 +1,9 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Paginacao;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
@@ -12,12 +14,18 @@ import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.Gerar
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.ItemPecaInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.ItemServicoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrcamentoGerado;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoAprovada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCancelada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoFinalizada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoRecusada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.StatusOrcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.TempoExecucaoMedio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +45,20 @@ class OrcamentoUseCasesTest {
     private final OrcamentoRepositoryEmMemoria repository = new OrcamentoRepositoryEmMemoria();
     private final OrdemServicoRepositoryEmMemoria osRepository = new OrdemServicoRepositoryEmMemoria();
     private final ProdutoEstoqueRepositoryEmMemoria estoqueRepository = new ProdutoEstoqueRepositoryEmMemoria();
-    private final List<Orcamento> notificados = new ArrayList<>();
+    private final List<UUID> notificados = new ArrayList<>();
+    private final List<String> avisosOrdem = new ArrayList<>();
+
+    private final PublicadorEventos publicador = evento -> {
+        switch (evento) {
+            case OrcamentoGerado gerado -> notificados.add(gerado.orcamentoId());
+            case OrdemServicoAprovada aprovada ->
+                    avisosOrdem.add(aprovada.aprovacaoParcial() ? "APROVADA_PARCIALMENTE" : "APROVADA");
+            case OrdemServicoRecusada recusada -> avisosOrdem.add("RECUSADA");
+            case OrdemServicoCancelada cancelada -> avisosOrdem.add("CANCELADA");
+            case OrdemServicoFinalizada finalizada -> avisosOrdem.add("FINALIZADA");
+            default -> throw new IllegalStateException("Evento inesperado: " + evento);
+        }
+    };
 
     private final VerificadorAcessoCliente verificadorAcesso = (osId, cpf, codigo) -> {
         if (!"12345678900".equals(cpf) || !"SENHA123".equals(codigo)) {
@@ -59,9 +80,9 @@ class OrcamentoUseCasesTest {
 
     @BeforeEach
     void setup() {
-        gerarOrcamento = new GerarOrcamentoUseCase(repository, notificados::add, osRepository, estoqueRepository);
-        aprovarOrcamento = new AprovarOrcamentoUseCase(repository, osRepository, estoqueRepository);
-        rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository, osRepository, estoqueRepository);
+        gerarOrcamento = new GerarOrcamentoUseCase(repository, publicador, osRepository, estoqueRepository);
+        aprovarOrcamento = new AprovarOrcamentoUseCase(repository, osRepository, estoqueRepository, publicador);
+        rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository, osRepository, estoqueRepository, publicador);
         buscarOrcamento = new BuscarOrcamentoUseCase(repository);
         aprovarOrcamentoCliente = new AprovarOrcamentoClienteUseCase(repository, verificadorAcesso, aprovarOrcamento);
         rejeitarOrcamentoCliente = new RejeitarOrcamentoClienteUseCase(repository, verificadorAcesso, rejeitarOrcamento);
@@ -69,6 +90,7 @@ class OrcamentoUseCasesTest {
 
         ordemServicoIdFixa = UUID.randomUUID();
         OrdemServico os = new OrdemServico(ordemServicoIdFixa, UUID.randomUUID(), UUID.randomUUID(), "Relato valido longo suficiente");
+        os.iniciarDiagnostico();
         osRepository.salvar(os);
 
         pecaComEstoqueId = UUID.randomUUID();
@@ -115,6 +137,19 @@ class OrcamentoUseCasesTest {
     }
 
     @Test
+    void falhaAoGerarOrcamentoSemDiagnosticoIniciado() {
+        UUID osRecebidaId = UUID.randomUUID();
+        osRepository.salvar(new OrdemServico(osRecebidaId, UUID.randomUUID(), UUID.randomUUID(), "Relato valido longo suficiente"));
+        GerarOrcamentoInput input = new GerarOrcamentoInput(osRecebidaId, Horario.agora().plusDays(7), List.of(), List.of());
+
+        assertThatThrownBy(() -> gerarOrcamento.execute(input))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("diagnóstico");
+        assertThat(osRepository.buscarPorId(osRecebidaId).orElseThrow().getStatus())
+                .isEqualTo(StatusOrdemServico.RECEBIDA);
+    }
+
+    @Test
     void falhaAoGerarOrcamentoComDataValidadePassada() {
         GerarOrcamentoInput inputInvalido = new GerarOrcamentoInput(
                 ordemServicoIdFixa,
@@ -131,7 +166,7 @@ class OrcamentoUseCasesTest {
     @Test
     void notificaOClienteAoGerarOrcamento() {
         OrcamentoOutput output = gerarOrcamento.execute(entrada(List.of(), List.of()));
-        assertThat(notificados).extracting(Orcamento::getId).containsExactly(output.id());
+        assertThat(notificados).containsExactly(output.id());
     }
 
     @Test
@@ -151,6 +186,7 @@ class OrcamentoUseCasesTest {
 
         assertThat(aprovado.status()).isEqualTo(StatusOrcamento.APROVADO);
         assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus()).isEqualTo(StatusOrdemServico.APROVADA);
+        assertThat(avisosOrdem).containsExactly("APROVADA");
 
         ProdutoEstoque estoque = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
         assertThat(estoque.getQuantidadeDisponivel()).isEqualTo(8);
@@ -173,6 +209,7 @@ class OrcamentoUseCasesTest {
 
         assertThat(aprovado.status()).isEqualTo(StatusOrcamento.APROVADO_PARCIALMENTE);
         assertThat(aprovado.valorTotal()).isEqualByComparingTo("100.00");
+        assertThat(avisosOrdem).containsExactly("APROVADA_PARCIALMENTE");
 
         ProdutoEstoque estoque = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
         assertThat(estoque.getQuantidadeDisponivel()).isEqualTo(10);
@@ -195,6 +232,7 @@ class OrcamentoUseCasesTest {
 
         assertThat(resultado.status()).isEqualTo(StatusOrcamento.REJEITADO);
         assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus()).isEqualTo(StatusOrdemServico.RECUSADA);
+        assertThat(avisosOrdem).containsExactly("RECUSADA");
 
         ProdutoEstoque estoque = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
         assertThat(estoque.getQuantidadeDisponivel()).isEqualTo(10);
@@ -208,7 +246,6 @@ class OrcamentoUseCasesTest {
         estoqueRepository.salvar(produto);
 
         OrdemServico os = osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow();
-        os.iniciarDiagnostico();
 
         UUID orcamentoExpiradoId = UUID.randomUUID();
         Orcamento orcamentoExpirado = new Orcamento(
@@ -232,6 +269,7 @@ class OrcamentoUseCasesTest {
                 .isEqualTo(StatusOrcamento.EXPIRADO);
         assertThat(osRepository.buscarPorId(ordemServicoIdFixa).orElseThrow().getStatus())
                 .isEqualTo(StatusOrdemServico.RECUSADA);
+        assertThat(avisosOrdem).containsExactly("RECUSADA");
 
         ProdutoEstoque estoqueAtualizado = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
         assertThat(estoqueAtualizado.getQuantidadeDisponivel()).isEqualTo(10);
@@ -244,6 +282,44 @@ class OrcamentoUseCasesTest {
         assertThatThrownBy(() -> aprovarOrcamento.execute(inexistente, null))
                 .isInstanceOf(RecursoNaoEncontradoException.class)
                 .hasMessageContaining("não encontrado");
+        assertThat(avisosOrdem).isEmpty();
+    }
+
+    @Test
+    void rejeitarOrcamentoAvisaQueAOrdemFoiRecusada() {
+        OrcamentoOutput gerado = gerarOrcamento.execute(entrada(List.of(), List.of()));
+
+        rejeitarOrcamento.execute(gerado.id());
+
+        assertThat(avisosOrdem).containsExactly("RECUSADA");
+    }
+
+    @Test
+    void gerarOrcamentoNaoAvisaSobreAOrdem() {
+        gerarOrcamento.execute(entrada(List.of(), List.of()));
+
+        assertThat(avisosOrdem).isEmpty();
+    }
+
+    @Test
+    void aprovarDeNovoUmOrcamentoJaAprovadoFalhaSemNovoAviso() {
+        OrcamentoOutput gerado = gerarOrcamento.execute(entrada(List.of(), List.of()));
+        aprovarOrcamento.execute(gerado.id(), null);
+
+        assertThatThrownBy(() -> aprovarOrcamento.execute(gerado.id(), null))
+                .isInstanceOf(RegraNegocioException.class);
+
+        assertThat(avisosOrdem).containsExactly("APROVADA");
+    }
+
+    @Test
+    void rejeitarOrcamentoInexistenteNaoAvisa() {
+        UUID inexistente = UUID.randomUUID();
+
+        assertThatThrownBy(() -> rejeitarOrcamento.execute(inexistente))
+                .isInstanceOf(RecursoNaoEncontradoException.class);
+
+        assertThat(avisosOrdem).isEmpty();
     }
 
     @Test
@@ -346,8 +422,18 @@ class OrcamentoUseCasesTest {
         }
 
         @Override
+        public Pagina<OrdemServico> listar(StatusOrdemServico status, Paginacao paginacao) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public boolean existePorVeiculoId(UUID veiculoId) {
             return ordens.values().stream().anyMatch(ordem -> ordem.getVeiculoId().equals(veiculoId));
+        }
+
+        @Override
+        public TempoExecucaoMedio calcularTempoExecucaoMedio() {
+            throw new UnsupportedOperationException();
         }
     }
 

@@ -78,6 +78,10 @@ public class Orcamento {
         return false;
     }
 
+    public boolean aguardandoDecisao() {
+        return this.status == StatusOrcamento.PENDENTE && !Horario.agora().isAfter(this.dataValidade);
+    }
+
     public List<ItemPeca> aprovar(List<UUID> servicosAprovadosIds, List<UUID> pecasAprovadasIds) {
         if (this.status != StatusOrcamento.PENDENTE) {
             throw new RegraNegocioException("Apenas orçamentos pendentes podem ser aprovados.");

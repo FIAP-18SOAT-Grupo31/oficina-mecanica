@@ -43,8 +43,6 @@ public class SegurancaConfig {
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health/**", "/actuator/prometheus").permitAll()
 
-                        .requestMatchers("/api/orcamentos/*/cliente/**").permitAll()
-
                         .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(erros -> erros

@@ -42,6 +42,24 @@ class OrcamentoTest {
     }
 
     @Test
+    void pendenteDentroDaValidadeAguardaDecisao() {
+        assertThat(novoOrcamento(Horario.agora().plusDays(1)).aguardandoDecisao()).isTrue();
+    }
+
+    @Test
+    void pendenteComValidadeVencidaNaoAguardaDecisao() {
+        assertThat(novoOrcamento(Horario.agora().minusMinutes(1)).aguardandoDecisao()).isFalse();
+    }
+
+    @Test
+    void orcamentoJaDecididoNaoAguardaDecisao() {
+        Orcamento rejeitado = novoOrcamento(Horario.agora().plusDays(1));
+        rejeitado.rejeitar();
+
+        assertThat(rejeitado.aguardandoDecisao()).isFalse();
+    }
+
+    @Test
     void somaOValorTotalDosServicosEDasPecas() {
         Orcamento orcamento = novoOrcamento(Horario.agora().plusDays(1));
         orcamento.adicionarServico(servico("100.50"));
