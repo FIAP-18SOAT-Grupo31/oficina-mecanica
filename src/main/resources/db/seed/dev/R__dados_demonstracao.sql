@@ -10,7 +10,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO ordens_servico (id, cliente_id, veiculo_id, relato_problema, status, data_abertura, codigo_acesso)
 VALUES ('0192f0a0-0000-7000-8000-0000000000a1', '0192f0a0-0000-7000-8000-0000000000d1',
         '0192f0a0-0000-7000-8000-0000000000e1', 'Barulho na suspensão dianteira', 'AGUARDANDO_APROVACAO',
-        CURRENT_TIMESTAMP, 'DEMO12')
+        CURRENT_TIMESTAMP - INTERVAL '2 hours', 'DEMO12')
     ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO historico_status_ordem_servico (id, ordem_servico_id, status_anterior, status_novo, data_transicao)
