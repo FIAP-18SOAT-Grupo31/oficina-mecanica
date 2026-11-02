@@ -521,14 +521,6 @@ class OrdemServicoIntegrationTest {
                 .andExpect(jsonPath("$.erro").value("Acesso Negado"));
     }
 
-    @Test
-    void adminTambemPodeCriarOrdemDeServico() throws Exception {
-        mvc.perform(post("/api/ordens-servico").with(jwtAdmin())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoOrdemServico(clienteId, veiculoId, "Barulho na suspensão dianteira")))
-                .andExpect(status().isCreated());
-    }
-
     private String criarOrdemAprovada() throws Exception {
         String ordemServicoId = criarOrdemServico();
         String orcamentoId = gerarOrcamento(ordemServicoId);

@@ -36,8 +36,3 @@ build/
 
 ### Ambiente local ###
 .env
-
-### Ambiente Extensão Cline
-.cline/
-.clinerules/
-.clineignore
