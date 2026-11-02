@@ -169,4 +169,40 @@ class ProdutoEstoqueTest {
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessage("Quantidade de saída deve ser maior que zero.");
     }
+
+    @Test
+    void atualizaNomeEValorSemMexerNasQuantidades() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+
+        produto.atualizar("FILTRO NOVO", new BigDecimal("99.90"));
+
+        assertThat(produto.getNomePeca()).isEqualTo("FILTRO NOVO");
+        assertThat(produto.getValorUnitario()).isEqualByComparingTo("99.90");
+        assertThat(produto.getQuantidadeDisponivel()).isEqualTo(10);
+    }
+
+    @Test
+    void falhaAoAtualizarComNomeVazioOuValorInvalido() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+
+        assertThatThrownBy(() -> produto.atualizar(" ", new BigDecimal("10.00")))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("O nome da peça é obrigatório.");
+
+        assertThatThrownBy(() -> produto.atualizar("FILTRO", BigDecimal.ZERO))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Valor unitário deve ser maior que zero.");
+    }
+
+    @Test
+    void falhaAoValidarExclusaoComReserva() {
+        ProdutoEstoque produto = criarProdutoPadrao();
+        produto.validarExclusao();
+
+        produto.reservar(1);
+
+        assertThatThrownBy(produto::validarExclusao)
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessage("Não é possível excluir a peça: há unidades reservadas em orçamento pendente.");
+    }
 }

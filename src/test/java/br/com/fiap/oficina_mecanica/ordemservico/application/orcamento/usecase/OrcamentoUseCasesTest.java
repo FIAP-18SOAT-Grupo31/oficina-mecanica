@@ -1,6 +1,7 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.domain.Horario;
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
@@ -370,6 +371,16 @@ class OrcamentoUseCasesTest {
             return estoque.values().stream()
                     .filter(p -> p.getNomePeca().equalsIgnoreCase(nomePeca))
                     .findFirst();
+        }
+
+        @Override
+        public Pagina<ProdutoEstoque> listar(String nomePeca, int pagina, int tamanho) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void excluirPorId(UUID id) {
+            estoque.remove(id);
         }
 
     }
