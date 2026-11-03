@@ -2,7 +2,6 @@ package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
 import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.AprovacaoInput;
@@ -39,7 +38,7 @@ public class AprovarOrcamentoUseCase {
         this.publicador = publicador;
     }
 
-    @Transactional(noRollbackFor = RegraNegocioException.class)
+    @Transactional(noRollbackFor = OrcamentoExpiradoException.class)
     public OrcamentoOutput execute(UUID orcamentoId, AprovacaoInput input) {
         Orcamento orcamento = repository.buscarPorId(orcamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Orçamento não encontrado."));
@@ -55,7 +54,7 @@ public class AprovarOrcamentoUseCase {
             ordemServicoRepository.salvar(os);
             publicador.publicar(new OrdemServicoRecusada(os.getId()));
 
-            throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
+            throw new OrcamentoExpiradoException();
         }
 
         List<UUID> servicosAprovados = input != null ? input.servicosAprovados() : null;

@@ -55,6 +55,23 @@ class VerificadorAcessoClienteAdapterTest {
     }
 
     @Test
+    void cnpjAlfanumericoPrecisaBaterComAsLetras() {
+        UUID osId = UUID.randomUUID();
+        UUID clienteId = UUID.randomUUID();
+
+        when(ordemServicoJpaRepository.findById(osId))
+                .thenReturn(Optional.of(criarOsEntity(osId, clienteId, "ABC123")));
+        when(clienteRepository.buscarDocumentoPorId(clienteId))
+                .thenReturn(Optional.of("12ABC34501DE35"));
+
+        assertThatCode(() -> verificador.validar(osId, "12.abc.345/01de-35", "ABC123"))
+                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> verificador.validar(osId, "123450135", "ABC123"))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("Credenciais inválidas");
+    }
+
+    @Test
     void lancaExcecaoQuandoOrdemServicoNaoExiste() {
         UUID osId = UUID.randomUUID();
 
