@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -44,7 +45,8 @@ class OrdemServicoIntegrationTest {
 
     private UUID clienteId;
     private UUID veiculoId;
-    private String documentoCliente;
+    private String documento;
+    private String placa;
     private UUID servicoId;
 
     private RequestPostProcessor jwtAtendente() {
@@ -59,17 +61,46 @@ class OrdemServicoIntegrationTest {
     void cadastrarClienteEVeiculo() {
         clienteId = UUID.randomUUID();
         veiculoId = UUID.randomUUID();
-        String documento = String.valueOf(Math.abs(clienteId.getMostSignificantBits())).substring(0, 11);
-        documentoCliente = documento;
-        String placa = clienteId.toString().substring(0, 7).toUpperCase();
-        jdbc.update("INSERT INTO clientes (id, nome, documento, email, rua, numero, bairro, cidade, cep, estado) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                clienteId, "Cliente de teste", documento, "cliente@exemplo.com", "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
+        documento = cpfAleatorio();
+        placa = placaAleatoria();
+        jdbc.update("INSERT INTO clientes (id, nome, documento, email, telefone, rua, numero, bairro, cidade, cep, estado) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                clienteId, "Cliente de teste", documento, "cliente@email.com", "11987654321", "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
         jdbc.update("INSERT INTO veiculos (id, cliente_id, placa, marca, modelo, ano) VALUES (?, ?, ?, ?, ?, ?)",
                 veiculoId, clienteId, placa, "Fiat", "Argo", 2022);
         servicoId = UUID.randomUUID();
         jdbc.update("INSERT INTO servicos (id, nome, valor_mao_de_obra) VALUES (?, ?, ?)",
                 servicoId, "Troca de óleo " + servicoId, 200);
+    }
+
+    private static String cpfAleatorio() {
+        int[] digitos = new int[11];
+        for (int i = 0; i < 9; i++) {
+            digitos[i] = ThreadLocalRandom.current().nextInt(10);
+        }
+        digitos[9] = digitoVerificadorCpf(digitos, 9);
+        digitos[10] = digitoVerificadorCpf(digitos, 10);
+        StringBuilder cpf = new StringBuilder();
+        for (int digito : digitos) {
+            cpf.append(digito);
+        }
+        return cpf.toString();
+    }
+
+    private static int digitoVerificadorCpf(int[] digitos, int quantidade) {
+        int soma = 0;
+        for (int i = 0; i < quantidade; i++) {
+            soma += digitos[i] * (quantidade + 1 - i);
+        }
+        int resto = 11 - (soma % 11);
+        return resto > 9 ? 0 : resto;
+    }
+
+    private static String placaAleatoria() {
+        ThreadLocalRandom aleatorio = ThreadLocalRandom.current();
+        return "" + (char) ('A' + aleatorio.nextInt(26)) + (char) ('A' + aleatorio.nextInt(26))
+                + (char) ('A' + aleatorio.nextInt(26)) + aleatorio.nextInt(10) + (char) ('A' + aleatorio.nextInt(26))
+                + aleatorio.nextInt(10) + aleatorio.nextInt(10);
     }
 
     private String corpoOrdemServico(UUID cliente, UUID veiculo, String relato) {
@@ -142,6 +173,84 @@ class OrdemServicoIntegrationTest {
                         .content(corpoOrdemServico(UUID.randomUUID(), veiculoId, "Barulho na suspensão dianteira")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.mensagem").value("Cliente não encontrado."));
+    }
+
+    private String corpoPorDocumentoEPlaca(String documentoCliente, String placaVeiculo) {
+        return "{\"documentoCliente\":\"" + documentoCliente + "\",\"placaVeiculo\":\"" + placaVeiculo
+                + "\",\"relatoProblema\":\"Barulho na suspensão dianteira\"}";
+    }
+
+    @Test
+    void criaOrdemDeServicoPeloDocumentoDoClienteEPelaPlaca() throws Exception {
+        String documentoFormatado = documento.substring(0, 3) + "." + documento.substring(3, 6) + "."
+                + documento.substring(6, 9) + "-" + documento.substring(9);
+        String placaFormatada = placa.substring(0, 3).toLowerCase() + "-" + placa.substring(3);
+
+        String resposta = mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPorDocumentoEPlaca(documentoFormatado, placaFormatada)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        UUID ordemServicoId = UUID.fromString(JsonPath.read(resposta, "$.ordemServicoId"));
+        assertThat(jdbc.queryForObject("SELECT cliente_id FROM ordens_servico WHERE id = ?", UUID.class, ordemServicoId))
+                .isEqualTo(clienteId);
+        assertThat(jdbc.queryForObject("SELECT veiculo_id FROM ordens_servico WHERE id = ?", UUID.class, ordemServicoId))
+                .isEqualTo(veiculoId);
+    }
+
+    @Test
+    void documentoSemClienteVolta404() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPorDocumentoEPlaca("00000000000", placa)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.mensagem").value("Cliente não encontrado para o CPF/CNPJ informado."));
+    }
+
+    @Test
+    void placaSemVeiculoVolta404() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoPorDocumentoEPlaca(documento, "ZZZ9Z99")))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.mensagem").value("Veículo não encontrado para a placa informada."));
+    }
+
+    @Test
+    void veiculoDeOutroClienteVolta422() throws Exception {
+        UUID outroCliente = UUID.randomUUID();
+        jdbc.update("INSERT INTO clientes (id, nome, documento, email, telefone, rua, numero, bairro, cidade, cep, estado) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                outroCliente, "Outro cliente", cpfAleatorio(), "outro@email.com", "11987654322",
+                "Rua das Flores", "123", "Centro", "São Paulo", "01001000", "SP");
+
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpoOrdemServico(outroCliente, veiculoId, "Barulho na suspensão dianteira")))
+                .andExpect(status().is(422))
+                .andExpect(jsonPath("$.mensagem").value("O veículo informado não pertence ao cliente."));
+    }
+
+    @Test
+    void clienteInformadoPorIdEDocumentoAoMesmoTempoVolta400() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"clienteId\":\"" + clienteId + "\",\"documentoCliente\":\"" + documento
+                                + "\",\"veiculoId\":\"" + veiculoId
+                                + "\",\"relatoProblema\":\"Barulho na suspensão dianteira\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem", containsString("informe clienteId ou documentoCliente")));
+    }
+
+    @Test
+    void semIdentificarOVeiculoVolta400() throws Exception {
+        mvc.perform(post("/api/ordens-servico").with(jwtAtendente())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"documentoCliente\":\"" + documento
+                                + "\",\"relatoProblema\":\"Barulho na suspensão dianteira\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.mensagem", containsString("informe veiculoId ou placaVeiculo")));
     }
 
     @Test
@@ -297,7 +406,7 @@ class OrdemServicoIntegrationTest {
                 .andExpect(jsonPath("$.codigoAcesso").doesNotExist())
                 .andExpect(jsonPath("$.cliente.id").value(clienteId.toString()))
                 .andExpect(jsonPath("$.cliente.nome").value("Cliente de teste"))
-                .andExpect(jsonPath("$.cliente.documento").value(documentoCliente))
+                .andExpect(jsonPath("$.cliente.documento").value(documento))
                 .andExpect(jsonPath("$.veiculo.id").value(veiculoId.toString()))
                 .andExpect(jsonPath("$.veiculo.ano").value(2022))
                 .andExpect(jsonPath("$.orcamentos.length()").value(1))
@@ -361,8 +470,8 @@ class OrdemServicoIntegrationTest {
         String ordemServicoId = criarOrdemServico();
         String orcamentoId = gerarOrcamento(ordemServicoId);
         String codigo = codigoAcesso(ordemServicoId);
-        String cpfFormatado = documentoCliente.substring(0, 3) + "." + documentoCliente.substring(3, 6) + "."
-                + documentoCliente.substring(6, 9) + "-" + documentoCliente.substring(9);
+        String cpfFormatado = documento.substring(0, 3) + "." + documento.substring(3, 6) + "."
+                + documento.substring(6, 9) + "-" + documento.substring(9);
 
         mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -393,7 +502,7 @@ class OrdemServicoIntegrationTest {
 
         mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoConsulta(documentoCliente, codigo)))
+                        .content(corpoConsulta(documento, codigo)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APROVADA"))
                 .andExpect(jsonPath("$.ultimoOrcamento.id").value(orcamentoId))
@@ -406,7 +515,7 @@ class OrdemServicoIntegrationTest {
 
         mvc.perform(post("/api/publico/ordens-servico/" + ordemServicoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoConsulta(documentoCliente, "ZZZZZZ")))
+                        .content(corpoConsulta(documento, "ZZZZZZ")))
                 .andExpect(status().is(422))
                 .andExpect(jsonPath("$.mensagem").value("Credenciais inválidas"));
     }
@@ -438,7 +547,7 @@ class OrdemServicoIntegrationTest {
     void consultaDeOrdemInexistenteVolta404() throws Exception {
         mvc.perform(post("/api/publico/ordens-servico/" + UUID.randomUUID() + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoConsulta(documentoCliente, "ABC123")))
+                        .content(corpoConsulta(documento, "ABC123")))
                 .andExpect(status().isNotFound());
     }
 
@@ -621,7 +730,7 @@ class OrdemServicoIntegrationTest {
 
         mvc.perform(post("/api/publico/orcamentos/" + orcamentoId + "/aprovar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoConsulta(documentoCliente, codigo)))
+                        .content(corpoConsulta(documento, codigo)))
                 .andExpect(status().isOk());
 
         assertThat(saida.getOut()).contains("Or\u00e7amento aprovado");
@@ -635,7 +744,7 @@ class OrdemServicoIntegrationTest {
 
         mvc.perform(post("/api/publico/orcamentos/" + orcamentoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoConsulta(documentoCliente, codigo)))
+                        .content(corpoConsulta(documento, codigo)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(orcamentoId))
                 .andExpect(jsonPath("$.status").value("PENDENTE"));
@@ -648,7 +757,7 @@ class OrdemServicoIntegrationTest {
 
         mvc.perform(post("/api/publico/orcamentos/" + orcamentoId + "/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoConsulta(documentoCliente, "ERRADO")))
+                        .content(corpoConsulta(documento, "ERRADO")))
                 .andExpect(status().isUnprocessableEntity());
     }
 
@@ -660,7 +769,7 @@ class OrdemServicoIntegrationTest {
 
         mvc.perform(post("/api/publico/orcamentos/" + orcamentoId + "/rejeitar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoConsulta(documentoCliente, codigo)))
+                        .content(corpoConsulta(documento, codigo)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("REJEITADO"));
 
@@ -671,7 +780,7 @@ class OrdemServicoIntegrationTest {
     void rotasAntigasDoClienteNoOrcamentoNaoExistemMais() throws Exception {
         mvc.perform(post("/api/orcamentos/" + UUID.randomUUID() + "/cliente/consultar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(corpoConsulta(documentoCliente, "ABC123")))
+                        .content(corpoConsulta(documento, "ABC123")))
                 .andExpect(status().isUnauthorized());
     }
 
