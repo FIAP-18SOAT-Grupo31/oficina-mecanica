@@ -3,13 +3,10 @@ package br.com.fiap.oficina_mecanica.cliente.domain;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
 
@@ -19,9 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verifyNoInteractions;
 
-@ExtendWith(MockitoExtension.class)
 class ClienteTest {
 
     private static final String CPF_VALIDO = "529.982.247-25";
@@ -40,11 +35,11 @@ class ClienteTest {
     private static final String MSG_ENDERECO_INVALIDO =
             "O endereço do cliente é inválido";
 
-    @Mock
-    private Endereco endereco;
+    private final Endereco endereco =
+            new Endereco("Rua das Flores", "123", null, "Centro", "São Paulo", Estado.SP, "01001-000");
 
-    @Mock
-    private Endereco outroEndereco;
+    private final Endereco outroEndereco =
+            new Endereco("Avenida Paulista", "1000", "Sala 5", "Bela Vista", "São Paulo", Estado.SP, "01310-100");
 
     private Cliente criaCliente() {
         return new Cliente(
@@ -59,10 +54,6 @@ class ClienteTest {
     private static IllegalArgumentException assertInvalido(Runnable acao) {
         return assertThrows(IllegalArgumentException.class, acao::run);
     }
-
-    // ------------------------------------------------------------------
-    // Construtor - documento (CPF e CNPJ numérico/alfanumérico)
-    // ------------------------------------------------------------------
 
     @Test
     @DisplayName("Construtor: cria o cliente normalizando os dados")
@@ -81,8 +72,6 @@ class ClienteTest {
         assertEquals("11987654321", cliente.getTelefone());
         assertEquals("maria@email.com", cliente.getEmail());
         assertSame(endereco, cliente.getEndereco());
-
-        verifyNoInteractions(endereco);
     }
 
     @Test
@@ -220,10 +209,6 @@ class ClienteTest {
                 ex.getMessage()
         );
     }
-
-    // ------------------------------------------------------------------
-    // Construtor - demais campos
-    // ------------------------------------------------------------------
 
     @ParameterizedTest(name = "nome nulo/vazio: [{0}]")
     @NullAndEmptySource
@@ -474,10 +459,6 @@ class ClienteTest {
         assertEquals(MSG_ENDERECO_INVALIDO, ex.getMessage());
     }
 
-    // ------------------------------------------------------------------
-    // Setters
-    // ------------------------------------------------------------------
-
     @Test
     @DisplayName("setDocumento: atualiza com CPF e CNPJ alfanumérico válidos")
     void setDocumento_deveAtualizarComDocumentoValido() {
@@ -641,10 +622,6 @@ class ClienteTest {
         assertEquals(NOME_VALIDO, cliente.getNome());
     }
 
-    // ------------------------------------------------------------------
-    // reconstituir
-    // ------------------------------------------------------------------
-
     @Test
     @DisplayName("reconstituir: mantém o id informado e normaliza os dados")
     void reconstituir_deveManterOIdInformadoENormalizarOsDados() {
@@ -700,10 +677,6 @@ class ClienteTest {
 
         assertEquals(MSG_DOCUMENTO_INVALIDO, ex.getMessage());
     }
-
-    // ------------------------------------------------------------------
-    // atualizar
-    // ------------------------------------------------------------------
 
     @Test
     @DisplayName("atualizar: substitui todos os dados normalizando os valores")

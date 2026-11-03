@@ -60,4 +60,29 @@ public class ProdutoEstoque {
         if (quantidade <= 0) throw new RegraNegocioException("Quantidade de entrada deve ser maior que zero.");
         this.quantidadeDisponivel += quantidade;
     }
+
+    public void removerEstoque(int quantidade) {
+        if (quantidade <= 0)
+            throw new RegraNegocioException("Quantidade de saída deve ser maior que zero.");
+
+        if (this.quantidadeDisponivel < quantidade)
+            throw new RegraNegocioException("Quantidade disponível insuficiente para remoção do estoque.");
+
+        this.quantidadeDisponivel -= quantidade;
+    }
+
+    public void atualizar(String nomePeca, BigDecimal valorUnitario) {
+        if (nomePeca == null || nomePeca.isBlank()) throw new RegraNegocioException("O nome da peça é obrigatório.");
+        if (valorUnitario == null || valorUnitario.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RegraNegocioException("Valor unitário deve ser maior que zero.");
+        }
+
+        this.nomePeca = nomePeca;
+        this.valorUnitario = valorUnitario;
+    }
+
+    public void validarExclusao() {
+        if (this.quantidadeReservada > 0)
+            throw new RegraNegocioException("Não é possível excluir a peça: há unidades reservadas em orçamento pendente.");
+    }
 }

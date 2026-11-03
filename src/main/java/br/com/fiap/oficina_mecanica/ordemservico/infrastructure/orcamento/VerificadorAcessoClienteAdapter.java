@@ -33,15 +33,16 @@ public class VerificadorAcessoClienteAdapter implements VerificadorAcessoCliente
         String cpfReal = clienteRepository.buscarDocumentoPorId(os.getClienteId())
                 .orElseThrow(() -> new RegraNegocioException("Cliente não encontrado."));
 
-        String cpfRealLimpo = extrairDigitos(cpfReal);
-        String cpfInformadoLimpo = extrairDigitos(cpfInformado);
+        String cpfRealLimpo = normalizar(cpfReal);
+        String cpfInformadoLimpo = normalizar(cpfInformado);
 
         if (cpfInformadoLimpo.isEmpty() || !cpfRealLimpo.equals(cpfInformadoLimpo)) {
             throw new RegraNegocioException("Credenciais inválidas");
         }
     }
 
-    private String extrairDigitos(String valor) {
-        return valor == null ? "" : valor.replaceAll("\\D", "");
+    // mantém as letras do CNPJ alfanumérico; tira só a pontuação
+    private String normalizar(String valor) {
+        return valor == null ? "" : valor.replaceAll("[^A-Za-z0-9]", "").toUpperCase();
     }
 }

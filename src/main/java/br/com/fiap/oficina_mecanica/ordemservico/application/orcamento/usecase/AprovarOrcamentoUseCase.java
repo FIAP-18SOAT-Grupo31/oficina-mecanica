@@ -1,12 +1,14 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
-import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoqueRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.AprovacaoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoMapper;
 import br.com.fiap.oficina_mecanica.ordemservico.application.orcamento.dto.OrcamentoOutput;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoAprovada;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoRecusada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.ItemPeca;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.Orcamento;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.orcamento.OrcamentoRepository;
@@ -25,14 +27,18 @@ public class AprovarOrcamentoUseCase {
     private final OrcamentoRepository repository;
     private final OrdemServicoRepository ordemServicoRepository;
     private final ProdutoEstoqueRepository estoqueRepository;
+    private final PublicadorEventos publicador;
 
-    public AprovarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository, ProdutoEstoqueRepository estoqueRepository) {
+    public AprovarOrcamentoUseCase(OrcamentoRepository repository, OrdemServicoRepository ordemServicoRepository,
+                                   ProdutoEstoqueRepository estoqueRepository,
+                                   PublicadorEventos publicador) {
         this.repository = repository;
         this.ordemServicoRepository = ordemServicoRepository;
         this.estoqueRepository = estoqueRepository;
+        this.publicador = publicador;
     }
 
-    @Transactional(noRollbackFor = RegraNegocioException.class)
+    @Transactional(noRollbackFor = OrcamentoExpiradoException.class)
     public OrcamentoOutput execute(UUID orcamentoId, AprovacaoInput input) {
         Orcamento orcamento = repository.buscarPorId(orcamentoId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Orçamento não encontrado."));
@@ -46,8 +52,9 @@ public class AprovarOrcamentoUseCase {
 
             os.recusarOrcamento();
             ordemServicoRepository.salvar(os);
+            publicador.publicar(new OrdemServicoRecusada(os.getId()));
 
-            throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
+            throw new OrcamentoExpiradoException();
         }
 
         List<UUID> servicosAprovados = input != null ? input.servicosAprovados() : null;
@@ -69,10 +76,14 @@ public class AprovarOrcamentoUseCase {
 
         if (orcamento.getStatus() == StatusOrcamento.REJEITADO) {
             os.recusarOrcamento();
+            ordemServicoRepository.salvar(os);
+            publicador.publicar(new OrdemServicoRecusada(os.getId()));
         } else {
             os.aprovarOrcamento();
+            ordemServicoRepository.salvar(os);
+            publicador.publicar(new OrdemServicoAprovada(os.getId(), os.getCodigoAcesso(),
+                    orcamento.getStatus() == StatusOrcamento.APROVADO_PARCIALMENTE));
         }
-        ordemServicoRepository.salvar(os);
 
         return OrcamentoMapper.toOutput(orcamentoSalvo);
     }

@@ -29,6 +29,14 @@ services:
     depends_on:
       - db
 
+  mailpit:
+    image: axllent/mailpit
+    container_name: oficina-mailpit
+    restart: always
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
   app:
     profiles: ["app"]
     build: .
@@ -37,15 +45,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     ports:
       - "8080:8080"
+    # sem .env, JWT_SECRET e DEMO_PASSWORD ficam de fora e valem os padroes do perfil dev
+    env_file:
+      - path: .env
+        required: false
     environment:
       SPRING_PROFILES_ACTIVE: ${APP_PROFILES:-dev}
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/oficina_mecanica
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-admin}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-admin}
-      JWT_SECRET: ${JWT_SECRET:-}
-      DEMO_PASSWORD: ${DEMO_PASSWORD:-}
+      APP_URL_BASE: ${APP_URL_BASE:-http://localhost:8080}
+      MAIL_HOST: mailpit
       SPRING_DOCKER_COMPOSE_ENABLED: "false"
 
 volumes:
