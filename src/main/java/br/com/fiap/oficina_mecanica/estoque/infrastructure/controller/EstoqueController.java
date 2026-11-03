@@ -13,6 +13,7 @@ import br.com.fiap.oficina_mecanica.estoque.application.usecase.CriarProdutoEsto
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.ExcluirProdutoEstoqueUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.ListarProdutosEstoqueUseCase;
 import br.com.fiap.oficina_mecanica.estoque.application.usecase.RemoverEstoqueUseCase;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -37,6 +38,7 @@ import static org.springframework.http.ResponseEntity.status;
 
 @RestController
 @RequestMapping("/api/estoque")
+@Tag(name = "Peças e insumos")
 public class EstoqueController {
 
     private final BuscarProdutoEstoquePorIdUseCase buscarProdutoEstoquePorIdUseCase;
