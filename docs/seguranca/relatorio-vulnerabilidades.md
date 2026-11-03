@@ -3,7 +3,7 @@
 | Item | Valor |
 |---|---|
 | Ferramenta | Trivy, via `aquasecurity/trivy-action@v0.36.0` no GitHub Actions (`trivy fs --scanners vuln,secret,misconfig`) |
-| Execução de referência | CI da branch `dev` no commit `079272e` em 28/10/2026 ([run 40682335666](https://github.com/FIAP-18SOAT-Grupo31/oficina-mecanica/actions/runs/40682335666)) |
+| Execução de referência | CI da branch `dev` no commit `6e80c89` em 03/11/2026, já com todos os PRs da entrega ([run 41553760238](https://github.com/FIAP-18SOAT-Grupo31/oficina-mecanica/actions/runs/41553760238)) |
 | Escopo | dependências Maven (`pom.xml`), `Dockerfile` e segredos no código |
 | Fora do escopo | `target/` e o `.env` local, que não vai para o git |
 | Resultado | 0 vulnerabilidades nas dependências e 0 problemas de configuração no `Dockerfile` ([saída completa](trivy-resultado.txt)). O scanner de segredos está ligado no CI (`scanners: vuln,secret,misconfig`), mas na tabela do anexo a coluna `Secrets` está como `-` (não verificado) nas duas linhas, então não dá para tirar conclusão sobre segredos só por ela |
@@ -30,11 +30,18 @@ Atualizamos as dependências e corrigimos a configuração do Dockerfile para re
 
 ## Outras análises
 
-O CodeQL (configuração padrão do code scanning do GitHub) analisa o código Java e os workflows em todo PR. O alerta `java/spring-disabled-csrf-protection` foi fechado como won't fix, porque o token vai no cabeçalho `Authorization` e não em cookie (ver [ADR 0003](../arquitetura/adr/0003-autenticacao-jwt.md)).
+O CodeQL (configuração padrão do code scanning do GitHub) analisa o código Java e os workflows em todo PR. O alerta `java/spring-disabled-csrf-protection` foi fechado como won't fix, porque o token vai no cabeçalho `Authorization` e não em cookie (ver [ADR 0003](../arquitetura/adr/0003-autenticacao-jwt.md)). Em 03/11/2026 não havia nenhum alerta aberto no code scanning.
 
 ## Pontos de atenção conhecidos
 
 O código de acesso da OS, junto com o CPF/CNPJ, dá acesso à área pública do cliente. Por isso: o e-mail sai por SMTP (Mailpit no ambiente local); quando o SMTP está desligado, o `EnviadorEmailLog` mascara o código e registra em DEBUG; o detalhe administrativo da OS não mostra mais o código; e a URL do link virou a propriedade `app.notificacao.url-base` (`APP_URL_BASE`).
+
+Outros pontos que conhecemos e deixamos para a próxima fase:
+
+- O código de acesso tem 6 caracteres hexadecimais. O que segura tentativa em massa é o limite de 30 requisições por minuto por IP nas rotas públicas, que fica em memória e vale por instância.
+- Não há lock no estoque nem na OS. Duas operações ao mesmo tempo sobre a mesma peça podem ler o mesmo saldo (ver [ADR 0004](../arquitetura/adr/0004-baixa-de-estoque-na-transacao-do-orcamento.md)).
+- Se o envio do e-mail falhar depois do commit, o erro vai para o log e não há reenvio automático.
+- No perfil `dev`, `JWT_SECRET` e `DEMO_PASSWORD` têm valores padrão para facilitar a execução local. No perfil `prd` a aplicação não sobe sem um `JWT_SECRET` de pelo menos 32 caracteres.
 
 ## Controles da aplicação
 
