@@ -165,7 +165,8 @@ No perfil `dev`, a aplicação também carrega dados de demonstração:
 
 - a cliente Maria da Silva (CPF `52998224725`) e o veículo `ABC1D23`;
 - o serviço "Troca de óleo" no catálogo e a peça "ÓLEO 5W30 (LITRO)" no estoque;
-- uma OS aguardando aprovação, com código de acesso `DEMO12` e um orçamento pendente com 4 unidades da peça reservadas.
+- uma OS aguardando aprovação, com código de acesso `DEMO12` e um orçamento pendente com 4 unidades da peça reservadas;
+- duas OS finalizadas (códigos `DEMO34` e `DEMO56`), com histórico de status, para o tempo médio de execução já ter valor.
 
 Para testar a área do cliente sem login:
 

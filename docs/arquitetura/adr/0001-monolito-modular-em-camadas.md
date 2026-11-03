@@ -6,11 +6,13 @@
 
 ## Contexto
 
-O enunciado pede um back-end monolítico e sugere arquitetura em camadas para o MVP. Ao mesmo tempo, o Event Storming mostrou contextos bem separados (atendimento e OS, cadastro de cliente e veículo, estoque, catálogo de serviços) e o grupo trabalha em paralelo, cada um em um pedaço do domínio.
+O enunciado pede um back-end monolítico e sugere arquitetura em camadas para o MVP. Ao mesmo tempo, o Event Storming mostrou contextos bem separados (atendimento e OS, cadastro de cliente e veículo, estoque; o catálogo de serviços apareceu depois, na implementação) e o grupo trabalha em paralelo, cada um em um pedaço do domínio.
 
 ## Decisão
 
 Montamos um único projeto Spring Boot dividido em módulos por contexto. Cada módulo tem três camadas. A `domain` tem entidades, objetos de valor, regras e interfaces de repositório, sem Spring nem JPA. A `application` tem os casos de uso (`*UseCase`), os DTOs e o `@Transactional`. A `infrastructure` tem controllers, entidades JPA, adaptadores e configuração.
+
+As dependências apontam para o `domain`: ele define as interfaces (por exemplo `ClienteRepository`) e a `infrastructure` implementa (`ClienteRepositoryAdapter`), como na Onion/Clean Architecture vista em aula, mas sem criar porta para tudo. Portas só onde um módulo consulta outro (cliente e veículo dentro da OS).
 
 ## Atualizado em 28/10/2026
 
@@ -26,6 +28,7 @@ Monólito era requisito do enunciado, então a discussão foi só sobre como org
 
 - Camadas globais (`controller/`, `service/`, `repository/` na raiz): mais simples no começo, mas mistura os contextos e gera conflito de merge entre os PRs.
 - Arquitetura hexagonal completa, com portas para tudo: mais isolamento, mas muito código de adaptador para o tamanho do projeto.
+- Vertical slice (uma pasta por caso de uso): bom para features independentes, mas aqui as regras de OS, orçamento e estoque são compartilhadas entre vários casos de uso e ficariam espalhadas.
 
 ## Consequências
 
@@ -36,5 +39,5 @@ Positivas:
 
 Negativas:
 
-- O `ordemservico` usa direto os repositórios de domínio de `estoque` e `servico`, e alguns adaptadores usam repositórios JPA de outro módulo, então o isolamento entre módulos depende de disciplina.
+- O `ordemservico` usa direto os repositórios de domínio de `estoque` e `servico`. Os adaptadores entre módulos usam repositórios de domínio do outro módulo (ex.: `VerificadorClienteAdapter` usa `ClienteRepository`). O caso mais acoplado é o `VerificadorUsoDoServicoAdapter`, que consulta por SQL a tabela de itens do orçamento. O isolamento entre módulos depende de disciplina.
 - Fica para a próxima fase: os testes ArchUnit hoje só conferem o padrão de erros, não as dependências entre camadas e módulos.

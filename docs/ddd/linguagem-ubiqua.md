@@ -100,10 +100,14 @@ Principais pontos em que o código ficou diferente do Miro e do egon.io.
 |---|---|---|
 | Mecânico recebe a OS, analisa o veículo e executa (Miro; egon 1 a 4) | O mecânico não usa o sistema. O atendente registra início do diagnóstico, orçamento, início da execução e finalização. | O papel `MECANICO` saiu na `V6__remove_papel_mecanico.sql`. |
 | Relatório do mecânico (agregado "Relatorio"; egon 2) | Não existe. O diagnóstico vira os itens do orçamento. | O orçamento já lista serviços e peças. |
-| "Notificar mecânico de OS criada" e o ponto de atenção "como é feita essa notificação?" | Só o cliente é avisado, por e-mail, depois do commit. | O aviso ao mecânico ficou fora do sistema; implementamos avisos ao cliente. |
-| WhatsApp e PDF da OS; link de acompanhamento (egon 2) | E-mail com o código de acesso; o cliente consulta pela API pública. | Fora do escopo do MVP. |
-| Ordem de compra e fornecedor quando falta estoque | Sem saldo, o orçamento não é gerado; a reposição é entrada manual (`/adicionar`). | Fora do escopo do MVP. |
-| egon 5: reprovação leva a OS para Finalizada e Entregue | Reprovação deixa a OS `RECUSADA`, estado final. | Separa OS sem execução das executadas. |
+| "Notificar mecânico de OS criada", o ponto de atenção "como é feita essa notificação?" e os avisos entre atendente e mecânico (egon 3 e 4) | Só o cliente é avisado, por e-mail, depois do commit. | A conversa entre atendente e mecânico ficou fora do sistema; implementamos os avisos ao cliente. |
+| Atendente envia ou revisa o aviso ao cliente (egon 1, 2, 3 e 4) | O e-mail sai sozinho a partir dos eventos (`OrdemServicoCriada`, `OrcamentoGerado`, `OrdemServicoAprovada`, `OrdemServicoFinalizada` etc.). | O atendente não precisa disparar nada. |
+| WhatsApp e PDF da OS (Miro; egon 2) | E-mail com o código de acesso; o cliente consulta pela API pública. | Fora do escopo do MVP. |
+| "Enviar link de acompanhamento" depois da OS criada e do orçamento (Miro; egon 2) | Os e-mails de `OrdemServicoCriada` e `OrcamentoGerado` levam o endereço da consulta pública e o código de acesso. | Igual ao board; o link é a rota da API pública, não uma página. |
+| Avisar o cliente de novo depois de 2 dias sem resposta (Miro) | Não tem lembrete. O orçamento tem validade; aprovar depois dela deixa o orçamento `EXPIRADO`. | Sem agendamento no MVP. |
+| Ordem de compra e fornecedor quando falta estoque; observação de peças faltantes na OS (Miro) | Sem saldo, o orçamento não é gerado; a reposição é entrada manual (`/adicionar`). Não existe orçamento com peça faltante nem campo de observação. | Fora do escopo do MVP. |
+| Busca da lista de OS por CPF/CNPJ ou placa (Miro) | Documento e placa servem para abrir a OS; a listagem filtra por status, e `/api/clientes` e `/api/veiculos` filtram por documento e placa. | Suficiente para o MVP. |
+| egon 5: reprovação deixa a OS Recusada e depois registra Entregue na retirada | Reprovação deixa a OS `RECUSADA`, que é estado final; a retirada do veículo não é registrada. | Separa OS sem execução das executadas. |
 
 ## Termos evitados
 

@@ -16,7 +16,7 @@ O `GerarOrcamentoUseCase` chama `reservar` para cada peça, movendo a quantidade
 
 O `AprovarOrcamentoUseCase` chama `confirmarBaixa` para as peças aprovadas (que saem do reservado) e `cancelarReserva` para as recusadas na aprovação parcial (que voltam ao disponível), junto com a mudança de status do orçamento e da OS. A versão do cliente, `AprovarOrcamentoClienteUseCase`, confere o acesso e delega para ele. Do mesmo jeito, o `RejeitarOrcamentoUseCase` (também chamado pelo `RejeitarOrcamentoClienteUseCase`) e o `CancelarOrdemServicoUseCase` devolvem a reserva de todas as peças com `cancelarReserva`.
 
-Quando o cliente tenta aprovar um orçamento vencido, a aprovação usa `noRollbackFor = RegraNegocioException.class`: o orçamento fica `EXPIRADO`, a reserva volta e a OS fica Recusada, mesmo com a resposta de erro.
+Quando o cliente tenta aprovar um orçamento vencido, a aprovação lança `OrcamentoExpiradoException`, a única exceção marcada com `noRollbackFor`: o orçamento fica `EXPIRADO`, a reserva volta e a OS fica Recusada, mesmo com a resposta de erro. Qualquer outro erro de regra desfaz a transação inteira.
 
 Os casos de uso do `ordemservico` usam direto o `ProdutoEstoqueRepository` do módulo `estoque`. Os eventos de domínio servem só para notificar o cliente e rodam depois do commit.
 
