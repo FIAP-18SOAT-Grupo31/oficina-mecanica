@@ -1,16 +1,23 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Pagina;
+import br.com.fiap.oficina_mecanica.compartilhado.domain.Paginacao;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.VerificadorVeiculo.VeiculoCadastrado;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCriada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.TempoExecucaoMedio;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,8 +43,18 @@ class CriarOrdemServicoUseCaseTest {
         }
 
         @Override
+        public Pagina<OrdemServico> listar(StatusOrdemServico status, Paginacao paginacao) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         public boolean existePorVeiculoId(UUID veiculoId) {
             return ordens.values().stream().anyMatch(ordem -> ordem.getVeiculoId().equals(veiculoId));
+        }
+
+        @Override
+        public TempoExecucaoMedio calcularTempoExecucaoMedio() {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -86,7 +103,10 @@ class CriarOrdemServicoUseCaseTest {
 
     private final OrdemServicoRepositoryEmMemoria repository = new OrdemServicoRepositoryEmMemoria();
     private final CadastroEmMemoria cadastro = new CadastroEmMemoria();
-    private final CriarOrdemServicoUseCase useCase = new CriarOrdemServicoUseCase(cadastro, cadastro, repository);
+    private final List<Object> eventos = new ArrayList<>();
+    private final PublicadorEventos publicador = eventos::add;
+    private final CriarOrdemServicoUseCase useCase =
+            new CriarOrdemServicoUseCase(cadastro, cadastro, repository, publicador);
     private final UUID clienteId = cadastro.cliente("52998224725");
     private final UUID veiculoId = cadastro.veiculo(clienteId, "ABC1D23");
 
@@ -100,6 +120,7 @@ class CriarOrdemServicoUseCaseTest {
         assertThat(salva.getClienteId()).isEqualTo(clienteId);
         assertThat(salva.getVeiculoId()).isEqualTo(veiculoId);
         assertThat(salva.getStatus()).isEqualTo(StatusOrdemServico.RECEBIDA);
+        assertThat(eventos).containsExactly(new OrdemServicoCriada(salva.getId(), salva.getCodigoAcesso()));
     }
 
     @Test
@@ -109,7 +130,7 @@ class CriarOrdemServicoUseCaseTest {
 
         OrdemServico salva = repository.buscarPorId(output.ordemServicoId()).orElseThrow();
         assertThat(salva.getClienteId()).isEqualTo(clienteId);
-        assertThat(salva.getVeiculoId()).isEqualTo(veiculoId);
+        assertThat(salva.getVeiculoId()).isEqualTo(veiculoId);        assertThat(eventos).containsExactly(new OrdemServicoCriada(salva.getId(), salva.getCodigoAcesso()));
     }
 
     @Test

@@ -1,7 +1,8 @@
 package br.com.fiap.oficina_mecanica.estoque.infrastructure;
 
 import br.com.fiap.oficina_mecanica.estoque.domain.ProdutoEstoque;
-import br.com.fiap.oficina_mecanica.estoque.infrastructure.entity.ProdutoEstoqueEntity;
+import br.com.fiap.oficina_mecanica.estoque.infrastructure.repository.entity.ProdutoEstoqueEntity;
+import br.com.fiap.oficina_mecanica.estoque.infrastructure.repository.entity.ProdutoEstoqueMapper;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

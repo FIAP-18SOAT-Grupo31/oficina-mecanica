@@ -1,10 +1,12 @@
 package br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase;
 
+import br.com.fiap.oficina_mecanica.compartilhado.application.PublicadorEventos;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RecursoNaoEncontradoException;
 import br.com.fiap.oficina_mecanica.compartilhado.domain.exception.RegraNegocioException;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoInput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.dto.CriarOrdemServicoOutput;
 import br.com.fiap.oficina_mecanica.ordemservico.application.ordemservico.usecase.VerificadorVeiculo.VeiculoCadastrado;
+import br.com.fiap.oficina_mecanica.ordemservico.domain.evento.OrdemServicoCriada;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import com.github.f4b6a3.uuid.UuidCreator;
@@ -19,12 +21,14 @@ public class CriarOrdemServicoUseCase {
     private final VerificadorCliente verificadorCliente;
     private final VerificadorVeiculo verificadorVeiculo;
     private final OrdemServicoRepository repository;
+    private final PublicadorEventos publicador;
 
     public CriarOrdemServicoUseCase(VerificadorCliente verificadorCliente, VerificadorVeiculo verificadorVeiculo,
-                                    OrdemServicoRepository repository) {
+                                    OrdemServicoRepository repository, PublicadorEventos publicador) {
         this.verificadorCliente = verificadorCliente;
         this.verificadorVeiculo = verificadorVeiculo;
         this.repository = repository;
+        this.publicador = publicador;
     }
 
     @Transactional
@@ -40,6 +44,8 @@ public class CriarOrdemServicoUseCase {
                 UuidCreator.getTimeOrderedEpoch(), clienteId, veiculo.id(), input.relatoProblema());
 
         OrdemServico ordemServicoSalva = repository.salvar(ordemServico);
+
+        publicador.publicar(new OrdemServicoCriada(ordemServicoSalva.getId(), ordemServicoSalva.getCodigoAcesso()));
 
         return new CriarOrdemServicoOutput(ordemServicoSalva.getId());
     }
