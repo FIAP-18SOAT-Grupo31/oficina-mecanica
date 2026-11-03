@@ -47,7 +47,7 @@ else
     req POST /api/auth/login "" '{"login":"admin","senha":"errada"}';  espera "login com senha errada" 401
     req POST /api/auth/login "" '{"login":""}';                        espera "login sem senha" 400
 
-    for usuario in admin atendente mecanico; do
+    for usuario in admin atendente; do
         if [ -n "$(login "$usuario")" ]; then
             printf '  ok    %-45s\n' "login de $usuario"
         else
@@ -56,7 +56,7 @@ else
         fi
     done
 
-    req GET /actuator/metrics "$(login mecanico)";  espera "actuator com papel MECANICO" 403
+    req GET /actuator/metrics "$(login atendente)"; espera "actuator com papel ATENDENTE" 403
     req GET /actuator/metrics "$(login admin)";     espera "actuator com papel ADMIN" 200
     req GET /actuator/metrics "token-invalido";     espera "token inválido" 401
 fi

@@ -42,18 +42,18 @@ class AutenticarUsuarioUseCaseTest {
 
     @Test
     void geraTokenQuandoLoginESenhaConferem() {
-        repository.salvar(new Usuario("mecanico", passwordEncoder.encode("segredo"), Papel.MECANICO));
+        repository.salvar(new Usuario("atendente", passwordEncoder.encode("segredo"), Papel.ATENDENTE));
 
-        TokenOutput token = useCase.execute(new LoginInput("mecanico", "segredo"));
+        TokenOutput token = useCase.execute(new LoginInput("atendente", "segredo"));
 
-        assertThat(token.accessToken()).isEqualTo("token-mecanico");
+        assertThat(token.accessToken()).isEqualTo("token-atendente");
         assertThat(token.tokenType()).isEqualTo("Bearer");
     }
 
     @Test
     void recusaSenhaErrada() {
-        repository.salvar(new Usuario("mecanico", passwordEncoder.encode("segredo"), Papel.MECANICO));
-        LoginInput input = new LoginInput("mecanico", "errada");
+        repository.salvar(new Usuario("atendente", passwordEncoder.encode("segredo"), Papel.ATENDENTE));
+        LoginInput input = new LoginInput("atendente", "errada");
 
         assertThatThrownBy(() -> useCase.execute(input)).isInstanceOf(CredenciaisInvalidasException.class);
     }

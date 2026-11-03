@@ -4,6 +4,7 @@ import br.com.fiap.oficina_mecanica.autenticacao.application.dto.LoginInput;
 import br.com.fiap.oficina_mecanica.autenticacao.application.dto.TokenOutput;
 import br.com.fiap.oficina_mecanica.autenticacao.application.usecase.AutenticarUsuarioUseCase;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Autenticação")
+@SecurityRequirements
 public class AutenticacaoController {
 
     private final AutenticarUsuarioUseCase autenticarUsuarioUseCase;

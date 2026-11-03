@@ -1,6 +1,8 @@
 package br.com.fiap.oficina_mecanica.cliente.infrastructure.entity;
 
+import br.com.fiap.oficina_mecanica.cliente.infrastructure.EnderecoEmbeddable;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -26,14 +28,18 @@ public class ClienteEntity {
     @Column(length = 20)
     private String telefone;
 
+    @Embedded
+    private EnderecoEmbeddable endereco;
+
     protected ClienteEntity() {}
 
-    public ClienteEntity(UUID id, String nome, String documento, String email, String telefone) {
+    public ClienteEntity(UUID id, String nome, String documento, String email, String telefone, EnderecoEmbeddable enderecoEmbeddable) {
         this.id = id;
         this.nome = nome;
         this.documento = documento;
         this.email = email;
         this.telefone = telefone;
+        this.endereco = enderecoEmbeddable;
     }
 
     public UUID getId() { return id; }
@@ -41,4 +47,5 @@ public class ClienteEntity {
     public String getDocumento() { return documento; }
     public String getEmail() { return email; }
     public String getTelefone() { return telefone; }
+    public EnderecoEmbeddable getEndereco() {return  endereco;}
 }

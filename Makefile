@@ -34,7 +34,7 @@ smoke: ## Smoke test da aplicação no ar (BASE_URL=http://localhost:8080 por pa
 test: ## Testes unitários e de integração
 	./mvnw -B test
 
-verify: ## Testes e cobertura mínima de 80% em domain e application
+verify: ## Testes e cobertura mínima de 80% de linhas no projeto todo (JaCoCo)
 	./mvnw -B verify
 
 cobertura: verify ## Gera o relatório de cobertura

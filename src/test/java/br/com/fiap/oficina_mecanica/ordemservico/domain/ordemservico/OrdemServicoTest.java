@@ -125,4 +125,12 @@ class OrdemServicoTest {
 
         assertThat(ordemServico.getStatus()).isEqualTo(StatusOrdemServico.RECUSADA);
     }
+
+    @Test
+    void nasceComCodigoDeAcessoDeSeisCaracteres() {
+        OrdemServico os = new OrdemServico(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), "Problema no motor");
+
+        assertThat(os.getCodigoAcesso()).isNotNull();
+        assertThat(os.getCodigoAcesso().length()).isEqualTo(6);
+    }
 }

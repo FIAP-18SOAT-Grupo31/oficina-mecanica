@@ -1,0 +1,119 @@
+# Linguagem ubíqua
+
+Vocabulário usado no Event Storming (Miro), nas histórias do egon.io e no código.
+
+Fontes:
+- Event Storming: https://miro.com/app/board/uXjVHnerRBQ=/?share_link_id=849086151688 (exportado em [`event-storming.pdf`](event-storming.pdf))
+- Domain Storytelling: [`domain-storytelling/`](domain-storytelling) (renderizado em [`diagramas.pdf`](diagramas.pdf))
+
+## Glossário
+
+### Atendimento e ordem de serviço
+
+| Termo | Significado | No código |
+|---|---|---|
+| Ordem de Serviço (OS) | Registro do atendimento de um veículo, da recepção à entrega. Agregado principal. | `OrdemServico`, `/api/ordens-servico` |
+| Relato do problema | O que o cliente conta na recepção (10 a 500 caracteres). | `OrdemServico.relatoProblema` |
+| Criar OS | Abrir a OS para um cliente e um veículo já cadastrados. O cliente é identificado pelo id ou pelo CPF/CNPJ (com ou sem pontuação), e o veículo pelo id ou pela placa. O veículo precisa ser do cliente. | `CriarOrdemServicoUseCase`, `POST /api/ordens-servico` (`clienteId` ou `documentoCliente`; `veiculoId` ou `placaVeiculo`) |
+| OS criada | Fato que dispara o aviso ao cliente com o código de acesso. | evento `OrdemServicoCriada` |
+| Código de acesso | Código curto e aleatório enviado ao cliente. Junto com o CPF/CNPJ, dá acesso à área pública. | `OrdemServico.codigoAcesso` |
+| Status da OS | Etapa do atendimento. Só muda pelas operações do agregado. | enum `StatusOrdemServico` |
+| Recebida | OS aberta, ainda sem orçamento. | `RECEBIDA` |
+| Em diagnóstico | Oficina identificando serviços e peças. O orçamento só é gerado nesse status. | `EM_DIAGNOSTICO`, `PATCH /api/ordens-servico/{id}/iniciar-diagnostico` |
+| Aguardando aprovação | Orçamento enviado, esperando a decisão do cliente. | `AGUARDANDO_APROVACAO` |
+| Aprovada | Orçamento aprovado (total ou parcial), serviço liberado para execução. | `APROVADA`, evento `OrdemServicoAprovada` |
+| Recusada | Orçamento rejeitado ou expirado. Estado final, sem execução. | `RECUSADA`, evento `OrdemServicoRecusada` |
+| Em execução | Serviços sendo feitos. | `EM_EXECUCAO`, `PATCH /api/ordens-servico/{id}/iniciar-execucao` |
+| Finalizada | Serviços concluídos; o cliente é avisado que o veículo está pronto. | `FINALIZADA`, evento `OrdemServicoFinalizada`, `PATCH .../finalizar` |
+| Entregue | Veículo retirado pelo cliente. Estado final. | `ENTREGUE`, `PATCH .../entregar` |
+| Cancelada | OS encerrada antes da aprovação; o orçamento pendente é rejeitado e as peças voltam ao estoque. | `CANCELADA`, evento `OrdemServicoCancelada`, `PATCH .../cancelar` |
+| Histórico de status | Registro de cada mudança de status com data e hora. | `TransicaoStatus`, tabela `historico_status_ordem_servico` |
+| Tempo médio de execução | Média do tempo entre o início da execução e a finalização das OS. | `ConsultarTempoExecucaoMedioUseCase`, `GET /api/ordens-servico/metricas/tempo-execucao` |
+| Listagem / detalhe da OS | Consulta administrativa das OS, com filtro por status. | `GET /api/ordens-servico`, `GET /api/ordens-servico/{id}` |
+| Acompanhamento pelo cliente | Consulta do andamento sem login. | `POST /api/publico/ordens-servico/{id}/consultar` |
+
+### Orçamento
+
+| Termo | Significado | No código |
+|---|---|---|
+| Orçamento | Proposta de valor da OS: mão de obra dos serviços + peças e insumos. | `Orcamento`, `/api/orcamentos` |
+| Gerar orçamento | Montar o orçamento com serviços do catálogo e peças do estoque; reserva as peças e envia ao cliente. | `GerarOrcamentoUseCase` (lê `ServicoRepository` e `ProdutoEstoqueRepository`), `POST /api/orcamentos`, evento `OrcamentoGerado` |
+| Item de serviço | Serviço do catálogo dentro do orçamento, com o nome e o valor da mão de obra copiados do catálogo no momento. | objeto de valor `ItemServico` |
+| Item de peça | Peça do estoque dentro do orçamento, com quantidade e valor unitário do momento. | objeto de valor `ItemPeca` |
+| Validade | Data limite para o cliente decidir. | `Orcamento.dataValidade` |
+| Situação do orçamento | Pendente, aprovado, aprovado parcialmente, rejeitado ou expirado. | enum `StatusOrcamento` |
+| Aprovação total | O cliente aceita todos os itens. | `APROVADO` |
+| Aprovação parcial | O cliente aceita só parte dos itens; os demais saem e o total é recalculado. | `APROVADO_PARCIALMENTE`, campos `servicosAprovados` e `pecasAprovadas` |
+| Reprovação / rejeição | O cliente recusa o orçamento inteiro (mesmo depois da validade, a rejeição resulta em `REJEITADO`). | `REJEITADO`, `.../rejeitar` |
+| Orçamento expirado | Tentativa de aprovar depois da validade: o orçamento fica `EXPIRADO` (gravado) e a OS, Recusada. Na consulta do cliente, a expiração só aparece na resposta. | `EXPIRADO`, `Orcamento.verificarExpiracao` |
+| Decisão do cliente | Aprovar ou rejeitar pela área pública, com CPF/CNPJ e código de acesso. | `POST /api/publico/orcamentos/{id}/aprovar` e `/rejeitar` |
+| Decisão registrada pelo atendente | Quando o cliente decide fora do sistema (telefone, balcão). | `PATCH /api/orcamentos/{id}/aprovar` e `/rejeitar` |
+
+### Catálogo, peças e estoque
+
+| Termo | Significado | No código |
+|---|---|---|
+| Serviço | Serviço oferecido pela oficina (ex.: troca de óleo, alinhamento) com nome único, descrição e valor de mão de obra. Não pode ser excluído depois de usado em orçamento. | agregado `Servico`, `ServicoRepository`, `/api/servicos`; referenciado no orçamento por `catalogoServicoId` |
+| Peça / insumo | Item físico (filtro, pastilha) ou consumível (óleo, fluido). No código, os dois são tratados igualmente; o nome é único. | agregado `ProdutoEstoque`, `/api/estoque` |
+| Saldo disponível | Quantidade livre para novos orçamentos. | `ProdutoEstoque.quantidadeDisponivel` |
+| Saldo reservado | Quantidade separada para orçamentos pendentes. | `ProdutoEstoque.quantidadeReservada` |
+| Reservar | Separar peças ao gerar o orçamento; falha se não houver saldo. | `ProdutoEstoque.reservar` |
+| Baixa de estoque | Consumir a reserva quando o orçamento é aprovado. | `ProdutoEstoque.confirmarBaixa` |
+| Devolver reserva | Voltar a reserva ao disponível (rejeição, item recusado, expiração, cancelamento). | `ProdutoEstoque.cancelarReserva` |
+| Entrada / saída manual | Ajuste administrativo de quantidade (compra recebida, perda, inventário). Mexe só no saldo disponível. | `ProdutoEstoque.adicionarEstoque` e `removerEstoque`, `POST /api/estoque/{id}/adicionar` e `/remover` |
+| Cadastro de peças | Criar, listar (com filtro por nome), consultar, atualizar nome e valor e excluir a peça. Não exclui peça com unidades reservadas em orçamento pendente. | `POST`, `GET`, `PUT` e `DELETE` em `/api/estoque`, `GET /api/estoque/peca?nomePeca=` |
+| Estoque insuficiente | Saldo menor que o pedido no orçamento; impede gerar o orçamento com aquela peça. | `RegraNegocioException` em `reservar` |
+
+### Pessoas e acesso
+
+| Termo | Significado | No código |
+|---|---|---|
+| Cliente | Pessoa física ou jurídica dona do veículo. Não tem login; usa a área pública. | `Cliente`, `/api/clientes` |
+| CPF/CNPJ (documento) | Identificação do cliente, validada pelos dígitos verificadores e única. | `Cliente.documento` |
+| Endereço | Endereço do cliente (UF validada). | objetos de valor `Endereco` e `Estado` |
+| Veículo | Automóvel do cliente. | `Veiculo`, `/api/veiculos` |
+| Placa | Identificação do veículo no padrão antigo (ABC1234) ou Mercosul (ABC1D23), única. | validação em `Veiculo` |
+| Atendente | Opera o sistema: cadastros, OS, orçamento, execução e entrega. | papel `ATENDENTE` |
+| Administrador | Mesmas permissões do atendente e acesso ao Actuator. | papel `ADMIN` |
+| Sistema | Ator automático: calcula o orçamento, reserva e baixa estoque, muda status e notifica. | casos de uso e eventos de domínio |
+| Notificação | Mensagem ao cliente por e-mail (SMTP; no ambiente local, o Mailpit). | `NotificadorOrdemServicoAdapter`, `NotificadorEmailAdapter` |
+
+## Mapa de contextos
+
+Desenhado na página 9 do [`diagramas.pdf`](diagramas.pdf). U é o contexto upstream (fornecedor) e D o downstream (cliente, que consome o U).
+
+Como cada relação aparece no código:
+
+- **Clientes e Veículos → Atendimento e execução.** A OS consulta cliente e veículo pelas portas `VerificadorCliente` e `VerificadorVeiculo` (conferem se o cadastro existe e acham o cliente pelo CPF/CNPJ e o veículo pela placa, devolvendo só id e dono) e, na consulta da OS, por `ConsultorClientes` e `ConsultorVeiculos`, que devolvem DTOs do próprio módulo de OS. O módulo de OS não conhece as classes de cliente e veículo; quem traduz são os adapters na infraestrutura. Por isso chamamos de camada anticorrupção.
+- **Estoque → Atendimento e execução.** O `GerarOrcamentoUseCase` usa direto o `ProdutoEstoqueRepository`: busca a peça, reserva a quantidade e salva, dentro da mesma transação do orçamento. Não tem porta nem tradução no meio.
+- **Catálogo → Atendimento e execução.** O mesmo caso de uso lê o `ServicoRepository` e copia nome e valor de mão de obra para o `ItemServico`. Depois disso o orçamento não depende mais do catálogo, então mudar o preço não altera orçamento já gerado.
+- **Autenticação → demais contextos.** Os outros módulos não chamam a autenticação. O `SegurancaConfig` exige JWT em todas as rotas, menos login, rotas públicas, Swagger e health.
+- **Atendimento e execução → E-mail ao cliente.** Os casos de uso publicam eventos de domínio e os adapters de notificação (`NotificadorOrdemServicoAdapter`, `NotificadorEmailAdapter`) escutam com `@TransactionalEventListener(AFTER_COMMIT)`, ou seja, o e-mail só sai depois do commit.
+
+O módulo `compartilhado` é só utilitário técnico (paginação, exceções, publicação de eventos e padrão de erros). Não é um shared kernel: nenhum modelo de domínio é compartilhado entre os contextos.
+
+## Relação com o código
+
+Principais pontos em que o código ficou diferente do Miro e do egon.io.
+
+| No Miro / egon.io | No código | Por quê |
+|---|---|---|
+| Mecânico recebe a OS, analisa o veículo e executa (Miro; egon 1 a 4) | O mecânico não usa o sistema. O atendente registra início do diagnóstico, orçamento, início da execução e finalização. | O papel `MECANICO` saiu na `V6__remove_papel_mecanico.sql`. |
+| Relatório do mecânico (agregado "Relatorio"; egon 2) | Não existe. O diagnóstico vira os itens do orçamento. | O orçamento já lista serviços e peças. |
+| "Notificar mecânico de OS criada", o ponto de atenção "como é feita essa notificação?" e os avisos entre atendente e mecânico (egon 3 e 4) | Só o cliente é avisado, por e-mail, depois do commit. | A conversa entre atendente e mecânico ficou fora do sistema; implementamos os avisos ao cliente. |
+| Atendente envia ou revisa o aviso ao cliente (egon 1, 2, 3 e 4) | O e-mail sai sozinho a partir dos eventos (`OrdemServicoCriada`, `OrcamentoGerado`, `OrdemServicoAprovada`, `OrdemServicoFinalizada` etc.). | O atendente não precisa disparar nada. |
+| WhatsApp e PDF da OS (Miro; egon 2) | E-mail com o código de acesso; o cliente consulta pela API pública. | Fora do escopo do MVP. |
+| "Enviar link de acompanhamento" depois da OS criada e do orçamento (Miro; egon 2) | Os e-mails de `OrdemServicoCriada` e `OrcamentoGerado` levam o endereço da consulta pública e o código de acesso. | Igual ao board; o link é a rota da API pública, não uma página. |
+| Avisar o cliente de novo depois de 2 dias sem resposta (Miro) | Não tem lembrete. O orçamento tem validade; aprovar depois dela deixa o orçamento `EXPIRADO`. | Sem agendamento no MVP. |
+| Ordem de compra e fornecedor quando falta estoque; observação de peças faltantes na OS (Miro) | Sem saldo, o orçamento não é gerado; a reposição é entrada manual (`/adicionar`). Não existe orçamento com peça faltante nem campo de observação. | Fora do escopo do MVP. |
+| Busca da lista de OS por CPF/CNPJ ou placa (Miro) | Documento e placa servem para abrir a OS; a listagem filtra por status, e `/api/clientes` e `/api/veiculos` filtram por documento e placa. | Suficiente para o MVP. |
+| egon 5: reprovação deixa a OS Recusada e depois registra Entregue na retirada | Reprovação deixa a OS `RECUSADA`, que é estado final; a retirada do veículo não é registrada. | Separa OS sem execução das executadas. |
+
+## Termos evitados
+
+| Evitar | Usar |
+|---|---|
+| Relatório | Orçamento (itens de serviço e peça) |
+| Negar / reprovar orçamento | Rejeitar orçamento (`REJEITADO`); a OS fica Recusada |
+| PDF do orçamento | Consulta pela API pública |
+| Ordem de serviço atualizada (evento genérico) | O fato específico: `OrcamentoGerado`, `OrdemServicoAprovada`, `OrdemServicoFinalizada` |

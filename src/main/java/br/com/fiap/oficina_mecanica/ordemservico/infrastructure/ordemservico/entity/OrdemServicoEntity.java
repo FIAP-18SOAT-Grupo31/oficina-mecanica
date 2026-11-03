@@ -37,10 +37,14 @@ public class OrdemServicoEntity {
     @Column(name = "data_conclusao")
     private LocalDateTime dataConclusao;
 
+    @Column(name = "codigo_acesso", nullable = false, length = 6, updatable = false)
+    private String codigoAcesso;
+
     protected OrdemServicoEntity() {}
 
     public OrdemServicoEntity(UUID id, UUID clienteId, UUID veiculoId, String relatoProblema,
-                              StatusOrdemServico status, LocalDateTime dataAbertura, LocalDateTime dataConclusao) {
+                              StatusOrdemServico status, LocalDateTime dataAbertura, LocalDateTime dataConclusao,
+                              String codigoAcesso) {
         this.id = id;
         this.clienteId = clienteId;
         this.veiculoId = veiculoId;
@@ -48,6 +52,7 @@ public class OrdemServicoEntity {
         this.status = status;
         this.dataAbertura = dataAbertura;
         this.dataConclusao = dataConclusao;
+        this.codigoAcesso = codigoAcesso;
     }
 
     public UUID getId() { return id; }
@@ -57,4 +62,5 @@ public class OrdemServicoEntity {
     public StatusOrdemServico getStatus() { return status; }
     public LocalDateTime getDataAbertura() { return dataAbertura; }
     public LocalDateTime getDataConclusao() { return dataConclusao; }
+    public String getCodigoAcesso() { return codigoAcesso; }
 }

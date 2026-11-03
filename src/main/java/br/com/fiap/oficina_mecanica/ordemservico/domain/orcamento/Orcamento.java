@@ -42,6 +42,12 @@ public class Orcamento {
         this.pecas = new ArrayList<>(pecas);
     }
 
+    public static void validarDataValidadeFutura(LocalDateTime dataValidade) {
+        if (dataValidade == null || dataValidade.isBefore(Horario.agora())) {
+            throw new RegraNegocioException("A data de validade deve ser informada e estar no futuro.");
+        }
+    }
+
     public void adicionarServico(ItemServico servico) {
         validarModificacao();
         this.servicos.add(servico);
@@ -64,15 +70,56 @@ public class Orcamento {
         return totalServicos.add(totalPecas);
     }
 
-    public void aprovar() {
+    public boolean verificarExpiracao() {
+        if (this.status == StatusOrcamento.PENDENTE && Horario.agora().isAfter(this.dataValidade)) {
+            this.status = StatusOrcamento.EXPIRADO;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean aguardandoDecisao() {
+        return this.status == StatusOrcamento.PENDENTE && !Horario.agora().isAfter(this.dataValidade);
+    }
+
+    public List<ItemPeca> aprovar(List<UUID> servicosAprovadosIds, List<UUID> pecasAprovadasIds) {
         if (this.status != StatusOrcamento.PENDENTE) {
             throw new RegraNegocioException("Apenas orçamentos pendentes podem ser aprovados.");
         }
-        if (Horario.agora().isAfter(this.dataValidade)) {
-            this.status = StatusOrcamento.EXPIRADO;
+        if (verificarExpiracao()) {
             throw new RegraNegocioException("O orçamento está expirado e não pode ser aprovado.");
         }
-        this.status = StatusOrcamento.APROVADO;
+
+        if (servicosAprovadosIds == null && pecasAprovadasIds == null) {
+            this.status = StatusOrcamento.APROVADO;
+            return List.of();
+        }
+
+        int totalItensOriginal = this.servicos.size() + this.pecas.size();
+
+        if (servicosAprovadosIds != null) {
+            this.servicos.removeIf(s -> !servicosAprovadosIds.contains(s.catalogoServicoId()));
+        }
+
+        List<ItemPeca> pecasRecusadas = new ArrayList<>();
+        if (pecasAprovadasIds != null) {
+            pecasRecusadas = this.pecas.stream()
+                    .filter(p -> !pecasAprovadasIds.contains(p.produtoEstoqueId()))
+                    .toList();
+            this.pecas.removeAll(pecasRecusadas);
+        }
+
+        int totalItensAtual = this.servicos.size() + this.pecas.size();
+
+        if (totalItensAtual == 0) {
+            this.status = StatusOrcamento.REJEITADO;
+        } else if (totalItensAtual < totalItensOriginal) {
+            this.status = StatusOrcamento.APROVADO_PARCIALMENTE;
+        } else {
+            this.status = StatusOrcamento.APROVADO;
+        }
+
+        return pecasRecusadas;
     }
 
     public void rejeitar() {

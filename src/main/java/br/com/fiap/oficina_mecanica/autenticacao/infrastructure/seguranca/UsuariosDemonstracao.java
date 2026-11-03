@@ -19,8 +19,7 @@ public class UsuariosDemonstracao implements ApplicationRunner {
     private static final Logger LOG = LoggerFactory.getLogger(UsuariosDemonstracao.class);
     private static final Map<String, Papel> USUARIOS = Map.of(
             "admin", Papel.ADMIN,
-            "atendente", Papel.ATENDENTE,
-            "mecanico", Papel.MECANICO);
+            "atendente", Papel.ATENDENTE);
 
     private final UsuarioRepository repository;
     private final PasswordEncoder passwordEncoder;
