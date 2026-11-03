@@ -26,6 +26,8 @@ import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServic
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.OrdemServicoRepository;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.StatusOrdemServico;
 import br.com.fiap.oficina_mecanica.ordemservico.domain.ordemservico.TempoExecucaoMedio;
+import br.com.fiap.oficina_mecanica.servico.application.usecase.ServicoRepositoryEmMemoria;
+import br.com.fiap.oficina_mecanica.servico.domain.Servico;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +47,7 @@ class OrcamentoUseCasesTest {
     private final OrcamentoRepositoryEmMemoria repository = new OrcamentoRepositoryEmMemoria();
     private final OrdemServicoRepositoryEmMemoria osRepository = new OrdemServicoRepositoryEmMemoria();
     private final ProdutoEstoqueRepositoryEmMemoria estoqueRepository = new ProdutoEstoqueRepositoryEmMemoria();
+    private final ServicoRepositoryEmMemoria servicoRepository = new ServicoRepositoryEmMemoria();
     private final List<UUID> notificados = new ArrayList<>();
     private final List<String> avisosOrdem = new ArrayList<>();
 
@@ -77,10 +80,12 @@ class OrcamentoUseCasesTest {
     private UUID ordemServicoIdFixa;
     private UUID pecaComEstoqueId;
     private UUID pecaSemEstoqueId;
+    private UUID servicoCatalogoId;
 
     @BeforeEach
     void setup() {
-        gerarOrcamento = new GerarOrcamentoUseCase(repository, publicador, osRepository, estoqueRepository);
+        gerarOrcamento = new GerarOrcamentoUseCase(repository, publicador, osRepository, estoqueRepository,
+                servicoRepository);
         aprovarOrcamento = new AprovarOrcamentoUseCase(repository, osRepository, estoqueRepository, publicador);
         rejeitarOrcamento = new RejeitarOrcamentoUseCase(repository, osRepository, estoqueRepository, publicador);
         buscarOrcamento = new BuscarOrcamentoUseCase(repository);
@@ -100,6 +105,9 @@ class OrcamentoUseCasesTest {
         pecaSemEstoqueId = UUID.randomUUID();
         ProdutoEstoque pecaSemEstoque = new ProdutoEstoque(pecaSemEstoqueId, "Correia Dentada", 0, new BigDecimal("120.00"));
         estoqueRepository.salvar(pecaSemEstoque);
+
+        servicoCatalogoId = servicoRepository.salvar(
+                new Servico("Troca de óleo", "Troca do óleo do motor", new BigDecimal("100.00"))).getId();
     }
 
     private GerarOrcamentoInput entrada(List<ItemServicoInput> servicos, List<ItemPecaInput> pecas) {
@@ -109,7 +117,7 @@ class OrcamentoUseCasesTest {
     @Test
     void geraOrcamentoComServicosEPecasCalculandoOTotalEReservandoEstoque() {
         GerarOrcamentoInput input = entrada(
-                List.of(new ItemServicoInput(UUID.randomUUID(), "Troca de óleo", new BigDecimal("100.00"))),
+                List.of(new ItemServicoInput(servicoCatalogoId)),
                 List.of(new ItemPecaInput(pecaComEstoqueId, "Filtro de Óleo", 4, new BigDecimal("40.00"))));
 
         OrcamentoOutput output = gerarOrcamento.execute(input);
@@ -123,6 +131,29 @@ class OrcamentoUseCasesTest {
         ProdutoEstoque estoque = estoqueRepository.buscarPorId(pecaComEstoqueId).orElseThrow();
         assertThat(estoque.getQuantidadeDisponivel()).isEqualTo(6);
         assertThat(estoque.getQuantidadeReservada()).isEqualTo(4);
+    }
+
+    @Test
+    void usaNomeEValorDoCatalogoNoItemDeServico() {
+        OrcamentoOutput output = gerarOrcamento.execute(entrada(List.of(new ItemServicoInput(servicoCatalogoId)), List.of()));
+
+        assertThat(output.servicos()).singleElement().satisfies(item -> {
+            assertThat(item.catalogoServicoId()).isEqualTo(servicoCatalogoId);
+            assertThat(item.descricao()).isEqualTo("Troca de óleo");
+            assertThat(item.valorMaoDeObra()).isEqualByComparingTo("100.00");
+        });
+        assertThat(output.valorTotal()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
+    void falhaAoGerarOrcamentoComServicoForaDoCatalogo() {
+        UUID inexistente = UUID.randomUUID();
+        GerarOrcamentoInput input = entrada(List.of(new ItemServicoInput(inexistente)), List.of());
+
+        assertThatThrownBy(() -> gerarOrcamento.execute(input))
+                .isInstanceOf(RecursoNaoEncontradoException.class)
+                .hasMessageContaining("Serviço não encontrado no catálogo");
+        assertThat(repository.buscarPorOrdemServicoId(ordemServicoIdFixa)).isEmpty();
     }
 
     @Test
@@ -195,10 +226,10 @@ class OrcamentoUseCasesTest {
 
     @Test
     void aprovaOrcamentoParcialmenteRecalculandoTotal() {
-        UUID servicoId = UUID.randomUUID();
+        UUID servicoId = servicoCatalogoId;
 
         GerarOrcamentoInput input = entrada(
-                List.of(new ItemServicoInput(servicoId, "Servico 1", new BigDecimal("100.00"))),
+                List.of(new ItemServicoInput(servicoId)),
                 List.of(new ItemPecaInput(pecaComEstoqueId, "Peca 1", 2, new BigDecimal("40.00")))
         );
 
@@ -218,10 +249,10 @@ class OrcamentoUseCasesTest {
 
     @Test
     void aprovarComTodosItensRecusadosRejeitaOrcamentoERecusaOSDevolvendoEstoque() {
-        UUID servicoId = UUID.randomUUID();
+        UUID servicoId = servicoCatalogoId;
 
         GerarOrcamentoInput input = entrada(
-                List.of(new ItemServicoInput(servicoId, "Servico 1", new BigDecimal("100.00"))),
+                List.of(new ItemServicoInput(servicoId)),
                 List.of(new ItemPecaInput(pecaComEstoqueId, "Peca 1", 2, new BigDecimal("40.00")))
         );
 
